@@ -416,14 +416,14 @@ void Engine::CreateSpaceship(MESH& mesh)
 void Engine::CreateCube(MESH& mesh)
 {
 	const float s = 0.5f; 
-	XMFLOAT3 p0 = { -s, -s, -s };					// Avant Bas Gauche
-	XMFLOAT3 p1 = {  s, -s, -s };					// Avant Bas Droite
-	XMFLOAT3 p2 = {  s,  s, -s };					// Avant Haut Droite
-	XMFLOAT3 p3 = { -s,  s, -s };					// Avant Haut Gauche
-	XMFLOAT3 p4 = { -s, -s,  s };					// Arrière Bas Gauche
-	XMFLOAT3 p5 = {  s, -s,  s };					// Arrière Bas Droite
-	XMFLOAT3 p6 = {  s,  s,  s };					// Arrière Haut Droite
-	XMFLOAT3 p7 = { -s,  s,  s };					// Arrière Haut Gauche
+	XMFLOAT3 p0 = { -s, -s, -s };							// Avant Bas Gauche
+	XMFLOAT3 p1 = {  s, -s, -s };							// Avant Bas Droite
+	XMFLOAT3 p2 = {  s,  s, -s };							// Avant Haut Droite
+	XMFLOAT3 p3 = { -s,  s, -s };							// Avant Haut Gauche
+	XMFLOAT3 p4 = { -s, -s,  s };							// Arrière Bas Gauche
+	XMFLOAT3 p5 = {  s, -s,  s };							// Arrière Bas Droite
+	XMFLOAT3 p6 = {  s,  s,  s };							// Arrière Haut Droite
+	XMFLOAT3 p7 = { -s,  s,  s };							// Arrière Haut Gauche
 	
 	XMFLOAT3 c1 = ToColor(255, 255, 255);
 	mesh.AddFace(p0, p1, p2, p3, c1);						// Face Avant (Z = -0.5)
@@ -730,9 +730,15 @@ void Engine::Present()
 	}
 #else
 	if ( m_windowWidth==m_renderWidth && m_windowHeight==m_renderHeight )
+	{
+		// Fast
 		SetDIBitsToDevice(m_hDC, 0, 0, m_renderWidth, m_renderHeight, 0, 0, 0, m_renderHeight, m_colorBuffer.data(), &m_bi, DIB_RGB_COLORS);
+	}
 	else
+	{
+		// Slow
 		StretchDIBits(m_hDC, 0, 0, m_windowWidth, m_windowHeight, 0, 0, m_renderWidth, m_renderHeight, m_colorBuffer.data(), &m_bi, DIB_RGB_COLORS, SRCCOPY);
+	}
 #endif
 }
 
@@ -821,7 +827,7 @@ void Engine::Draw(ENTITY* pEntity, TILE& tile)
 		// Verter shader
 		bool safe = true;
 		XMFLOAT3 screen[3];
-		VS_OUT out[3];
+		VERTEXSHADER out[3];
 		for ( int i=0 ; i<3 ; ++i )
 		{
 			// Vertex
@@ -880,7 +886,7 @@ void Engine::Draw(ENTITY* pEntity, TILE& tile)
 	}
 }
 
-void Engine::FillTriangle(XMFLOAT3* tri, VS_OUT* vo, MATERIAL& material, TILE& tile)
+void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, TILE& tile)
 {
 	const float x1 = tri[0].x, y1 = tri[0].y, z1 = tri[0].z;
 	const float x2 = tri[1].x, y2 = tri[1].y, z2 = tri[1].z;
@@ -974,7 +980,7 @@ void Engine::FillTriangle(XMFLOAT3* tri, VS_OUT* vo, MATERIAL& material, TILE& t
 			}
 
 			// Input
-			PS_IN in;
+			PIXELSHADER in;
 			in.x = x;
 			in.y = y;
 			in.depth = z;
@@ -1004,9 +1010,8 @@ void Engine::FillTriangle(XMFLOAT3* tri, VS_OUT* vo, MATERIAL& material, TILE& t
 			}
 			else if ( material.lighting==LAMBERT )
 			{
-				XMVECTOR n = XMLoadFloat3(&in.normal);
-				// Expensive (better results)
-				//n = XMVector3Normalize(n);
+				XMVECTOR n = XMLoadFloat3(&in.normal);				
+				//n = XMVector3Normalize(n); // Expensive (better results)
 				XMVECTOR l = XMLoadFloat3(&Engine::Instance()->m_lightDir);
 				float ndotl = XMVectorGetX(XMVector3Dot(n, l));
 				if ( ndotl<0.0f )
@@ -1020,12 +1025,12 @@ void Engine::FillTriangle(XMFLOAT3* tri, VS_OUT* vo, MATERIAL& material, TILE& t
 				in.color = in.albedo;
 
 			// Output
-			PS_OUT out;
+			XMFLOAT3 out;
 			bool discard = ps(out, in, material.data);
 			if ( discard==false )
 			{
 				m_depthBuffer[index] = z;
-				m_colorBuffer[index] = RGB(Clamp(int(out.color.z*255.0f), 0, 255), Clamp(int(out.color.y*255.0f), 0, 255), Clamp(int(out.color.x*255.0f), 0, 255));
+				m_colorBuffer[index] = RGB(Clamp(int(out.z*255.0f), 0, 255), Clamp(int(out.y*255.0f), 0, 255), Clamp(int(out.x*255.0f), 0, 255));
 			}
 
 			e12 += dE12dx;
@@ -1039,40 +1044,11 @@ void Engine::FillTriangle(XMFLOAT3* tri, VS_OUT* vo, MATERIAL& material, TILE& t
 	}
 }
 
-bool Engine::PixelShader(PS_OUT& out, const PS_IN& in, const void* data)
+bool Engine::PixelShader(XMFLOAT3& out, const PIXELSHADER& in, const void* data)
 {
-	out.color = in.color;
+	out = in.color;
 	return false;
 }
-
-//bool Engine::PS_Gouraud(PS_OUT& out, const PS_IN& in, const void* data)
-//{
-//	int r = Clamp((int)(in.albedo.z*in.intensity*255.0f), 0, 255);
-//	int g = Clamp((int)(in.albedo.y*in.intensity*255.0f), 0, 255);
-//	int b = Clamp((int)(in.albedo.x*in.intensity*255.0f), 0, 255);
-//	out.color = RGB(r, g, b);
-//	return false;
-//}
-//
-//bool Engine::PS_Lambert(PS_OUT& out, const PS_IN& in, const void* data)
-//{
-//	XMVECTOR n = XMLoadFloat3(&in.normal);
-//
-//	// Expensive (better results)
-//	//n = XMVector3Normalize(n);
-//
-//	XMVECTOR l = XMLoadFloat3(&Engine::Instance()->m_lightDir);
-//	float ndotl = XMVectorGetX(XMVector3Dot(n, l));
-//	if ( ndotl<0.0f )
-//		ndotl = 0.0f;
-//
-//	float intensity = ndotl + Engine::Instance()->m_ambientLight;
-//	int r = Clamp((int)(in.albedo.z*intensity*255.0f), 0, 255);
-//	int g = Clamp((int)(in.albedo.y*intensity*255.0f), 0, 255);
-//	int b = Clamp((int)(in.albedo.x*intensity*255.0f), 0, 255);
-//	out.color = RGB(r, g, b);
-//	return false;
-//}
 
 void Engine::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color)
 {

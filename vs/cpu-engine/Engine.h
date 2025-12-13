@@ -49,8 +49,8 @@ protected:
 	void DrawSky();
 	void Draw(ENTITY* pEntity, TILE& tile);
 	void Present();
-	void FillTriangle(XMFLOAT3* tri, VS_OUT* vo, MATERIAL& material, TILE& tile);
-	static bool PixelShader(PS_OUT& out, const PS_IN& in, const void* data);
+	void FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, TILE& tile);
+	static bool PixelShader(XMFLOAT3& out, const PIXELSHADER& in, const void* data);
 	void DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color);
 
 	virtual void OnStart() {}

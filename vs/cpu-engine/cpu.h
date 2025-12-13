@@ -52,13 +52,12 @@ inline XMVECTOR XMDIR					= g_XMIdentityR2;
 struct AABB;
 struct CAMERA;
 struct OBB;
-struct PS_IN;
-struct PS_OUT;
+struct PIXELSHADER;
 class Engine;
 
 // Types
 using ui32								= unsigned __int32;
-using PS_FUNC							= bool(*)(PS_OUT& out, const PS_IN& in, const void* data);
+using PS_FUNC							= bool(*)(XMFLOAT3& out, const PIXELSHADER& in, const void* data);
 
 // Macro
 #define DELPTR(p)						{ if ( (p) ) { delete (p); (p) = nullptr; } }
