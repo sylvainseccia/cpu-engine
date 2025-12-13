@@ -44,6 +44,9 @@
     <ClInclude Include="lodepng.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Thread.cpp">
@@ -72,6 +75,9 @@
     </ClCompile>
     <ClCompile Include="lodepng.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

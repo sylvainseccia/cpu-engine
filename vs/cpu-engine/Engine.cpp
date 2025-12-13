@@ -51,12 +51,12 @@ void Engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, 
 	WNDCLASS wc = { 0 };
 	wc.lpfnWndProc = WindowProc;
 	wc.hInstance = hInstance;
-	wc.lpszClassName = "RETRO_ENGINE";
+	wc.lpszClassName = "CPU-ENGINE";
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	RegisterClass(&wc);
 	RECT rect = { 0, 0, m_windowWidth, m_windowHeight };
 	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
-	m_hWnd = CreateWindow("RETRO_ENGINE", "RETRO ENGINE", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
+	m_hWnd = CreateWindow("CPU-ENGINE", "CPU ENGINE", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
 	SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
 
 	// Buffer
@@ -696,6 +696,9 @@ void Engine::Render_Box()
 		if ( pEntity->dead )
 			continue;
 
+		// Info
+		pEntity->clipped = false;
+
 		// World
 		pEntity->transform.Update();
 		XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.world);
@@ -759,7 +762,7 @@ void Engine::Render_Entity(int iTile)
 	for ( int iEntity=0 ; iEntity<m_entityCount ; iEntity++ )
 	{
 		ENTITY* pEntity = m_sortedEntities[iEntity];
-		if ( pEntity->dead )
+		if ( pEntity->dead || pEntity->pMesh==nullptr || pEntity->clipped )
 			continue;
 	
 		bool entityHasTile = (pEntity->tile>>tile.index) & 1 ? true : false;
@@ -827,6 +830,36 @@ void Engine::Clear(XMFLOAT3& color)
 	ui32 bgr = ToBGR(color);
 	std::fill(m_colorBuffer.begin(), m_colorBuffer.end(), bgr);
 	std::fill(m_depthBuffer.begin(), m_depthBuffer.end(), 1.0f);
+}
+
+void Engine::DrawText(FONT* pFont, const char* text, int x, int y)
+{
+	if ( pFont==nullptr || pFont->rgba.size()==0 || text==nullptr )
+		return;
+
+	int penX = x;
+	int penY = y;
+	int textLen = (int)strlen(text);
+	for ( int i=0 ; i<textLen ; ++i )
+	{
+		const byte c = text[i];
+		if ( c=='\n' )
+		{
+			penX = x;
+			penY += pFont->cellH;
+			continue;
+		}
+
+		const GLYPH& g = pFont->glyph[c];
+		if ( g.valid==false )
+		{
+			penX += pFont->cellW / 2;
+			continue;
+		}
+
+		Copy((byte*)m_colorBuffer.data(), m_renderWidth, m_renderHeight, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
+		penX += g.advance>0 ? g.advance : pFont->cellW;
+	}
 }
 
 void Engine::DrawSprite(SPRITE* pSprite)
@@ -900,11 +933,9 @@ void Engine::DrawSky()
 
 void Engine::DrawEntity(ENTITY* pEntity, TILE& tile)
 {
-	if ( pEntity==nullptr || pEntity->pMesh==nullptr )
-		return;
-
 	if ( m_camera.frustum.Intersect(pEntity->transform.pos, pEntity->radius)==false )
 	{
+		pEntity->clipped = true; // todo: not safe
 		m_clipEntityCount++;
 		return;
 	}

@@ -13,6 +13,7 @@ public:
 	void OnPostRender() override;
 
 protected:
+	FONT m_font;
 	MESH m_meshShip;
 	MESH m_meshCube;
 	MATERIAL m_materialShip;

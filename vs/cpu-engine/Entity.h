@@ -52,6 +52,7 @@ struct ENTITY
 	AABB aabb;
 	OBB obb;
 	RECTANGLE box;
+	bool clipped;
 
 	ENTITY();
 };

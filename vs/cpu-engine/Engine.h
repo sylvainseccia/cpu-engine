@@ -50,6 +50,7 @@ protected:
 
 	void Present();
 	void Clear(XMFLOAT3& color);
+	void DrawText(FONT* pFont, const char* text, int x, int y);
 	void DrawSprite(SPRITE* pSprite);
 	void DrawSky();
 	void DrawEntity(ENTITY* pEntity, TILE& tile);

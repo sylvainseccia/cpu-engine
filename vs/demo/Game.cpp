@@ -18,6 +18,7 @@ void Game::OnStart()
 {
 	// YOUR CODE HERE
 
+	m_font.Create("Consolas", 24);
 	m_texture.Load("bird.png");
 	m_pSprite = CreateSprite();
 	m_pSprite->pTexture = &m_texture;
@@ -118,7 +119,7 @@ void Game::OnPostRender()
 	info += std::to_string(m_missiles.size()) + " missiles, ";
 	info += std::to_string(m_clipEntityCount) + " clipped entities, ";
 	info += std::to_string(m_threadCount) + " threads, ";
-	info += std::to_string(m_tileCount) + " tiles, ";
-	info += " (FIRE: space or left button)";
-	SetWindowText(m_hWnd, info.c_str());
+	info += std::to_string(m_tileCount) + " tiles ";
+	info += "(FIRE: space or left button)";
+	DrawText(&m_font, info.c_str(), 10, 10);
 }

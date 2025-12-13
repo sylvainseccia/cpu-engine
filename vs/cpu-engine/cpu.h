@@ -47,6 +47,7 @@ inline XMVECTOR XMDIR					= g_XMIdentityR2;
 #undef far
 #undef min
 #undef max
+#undef DrawText
 
 // Forward declarations
 struct AABB;
@@ -80,6 +81,7 @@ using PS_FUNC							= bool(*)(XMFLOAT3& out, const PIXELSHADER& in, const void* 
 
 // Engine
 #include "UI.h"
+#include "Font.h"
 #include "Geometry.h"
 #include "Entity.h"
 #include "Multithreading.h"
