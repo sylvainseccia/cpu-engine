@@ -101,6 +101,7 @@ struct RAY
 struct MESH
 {
 	std::vector<TRIANGLE> triangles;
+	float radius;
 	AABB aabb;
 
 	MESH();

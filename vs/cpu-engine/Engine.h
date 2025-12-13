@@ -10,11 +10,12 @@ public:
 	virtual ~Engine();
 	static Engine* Instance();
 
-	void Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight);
+	void Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, float windowScaleAtStart = 1.0f);
 	void Uninitialize();
 	void Run();
 	void FixWindow();
 	void FixProjection();
+	void FixDevice();
 
 	ENTITY* CreateEntity();
 	void ReleaseEntity(ENTITY* pEntity);
@@ -135,4 +136,7 @@ protected:
 	int m_bornEntityCount;
 	std::vector<ENTITY*> m_deadEntities;
 	int m_deadEntityCount;
+
+	// Stats
+	int m_clipEntityCount;
 };

@@ -9,10 +9,7 @@
 ///////////
 
 #include <windows.h>
-#undef min
-#undef max
-#undef near
-#undef far
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
@@ -28,17 +25,25 @@
 // DirectX
 ////////////
 
-#include <DirectXMath.h>
-using namespace DirectX;
-
+// Enable GPU_PRESENT for improved stretching when window size != render size
+// or if you want to use V-Sync
 //#define GPU_PRESENT
+
 #ifdef GPU_PRESENT
 	#pragma comment(lib, "d2d1.lib")
 	#include <d2d1.h>
 #endif
 
+#include <DirectXMath.h>
+using namespace DirectX;
+
 // Engine
 ///////////
+
+#undef near
+#undef far
+#undef min
+#undef max
 
 using ui32								= unsigned __int32;
 

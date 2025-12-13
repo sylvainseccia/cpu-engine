@@ -89,6 +89,7 @@ void TRANSFORM::AddYPR(float yaw, float pitch, float roll)
 	if ( yaw )
 		qRot = XMQuaternionMultiply(qRot, XMQuaternionRotationAxis(axisUp, yaw));
 
+	qRot = XMQuaternionNormalize(qRot);
 	XMStoreFloat4(&quat, qRot);
 
 	XMMATRIX mRot = XMMatrixRotationQuaternion(qRot);
@@ -113,7 +114,7 @@ void TRANSFORM::LookAt(float x, float y, float z)
 	const XMMATRIX cam = XMMatrixTranspose(XMMatrixLookAtLH(XMVectorZero(), vDir, XMUP));
 	XMStoreFloat4x4(&rot, cam);
 
-	XMStoreFloat4(&quat, XMQuaternionRotationMatrix(cam));
+	XMStoreFloat4(&quat, XMQuaternionNormalize(XMQuaternionRotationMatrix(cam)));
 
 	right.x = rot._11;
 	right.y = rot._12;
@@ -132,7 +133,7 @@ void TRANSFORM::LookTo(float ndx, float ndy, float ndz)
 	XMMATRIX cam = XMMatrixTranspose(XMMatrixLookToLH(XMVectorZero(), vDir, XMUP));
 	XMStoreFloat4x4(&rot, cam);
 
-	XMStoreFloat4(&quat, XMQuaternionRotationMatrix(cam));
+	XMStoreFloat4(&quat, XMQuaternionNormalize(XMQuaternionRotationMatrix(cam)));
 
 	right.x = rot._11;
 	right.y = rot._12;
@@ -163,6 +164,56 @@ ENTITY::ENTITY()
 	material = Engine::ToColor(255, 255, 255);
 	lifetime = 0.0f;
 	tile = 0;
+	radius = 0.0f;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FRUSTUM::FRUSTUM()
+{
+	for ( int i=0 ; i<6 ; i++ )
+		planes[i] = { 0.0f, 0.0f, 0.0f, 0.0f };
+}
+
+void FRUSTUM::FromViewProj(const XMFLOAT4X4& viewProj)
+{
+	XMVECTOR left   = XMVectorSet(viewProj._14 + viewProj._11, viewProj._24 + viewProj._21, viewProj._34 + viewProj._31, viewProj._44 + viewProj._41);
+	XMVECTOR right  = XMVectorSet(viewProj._14 - viewProj._11, viewProj._24 - viewProj._21, viewProj._34 - viewProj._31, viewProj._44 - viewProj._41);
+	XMVECTOR bottom = XMVectorSet(viewProj._14 + viewProj._12, viewProj._24 + viewProj._22, viewProj._34 + viewProj._32, viewProj._44 + viewProj._42);
+	XMVECTOR top    = XMVectorSet(viewProj._14 - viewProj._12, viewProj._24 - viewProj._22, viewProj._34 - viewProj._32, viewProj._44 - viewProj._42);
+
+	XMVECTOR nearP  = XMVectorSet(viewProj._13, viewProj._23, viewProj._33, viewProj._43);
+	XMVECTOR farP   = XMVectorSet(viewProj._14-viewProj._13, viewProj._24-viewProj._23, viewProj._34-viewProj._33, viewProj._44-viewProj._43);
+
+	XMStoreFloat4(&planes[0], NormalizePlane(left));
+	XMStoreFloat4(&planes[1], NormalizePlane(right));
+	XMStoreFloat4(&planes[2], NormalizePlane(bottom));
+	XMStoreFloat4(&planes[3], NormalizePlane(top));
+	XMStoreFloat4(&planes[4], NormalizePlane(nearP));
+	XMStoreFloat4(&planes[5], NormalizePlane(farP));
+}
+
+bool FRUSTUM::Intersect(const XMFLOAT3& center, float radius)
+{
+	XMVECTOR c = XMVectorSet(center.x, center.y, center.z, 1.0f);
+	XMVECTOR r = XMVectorReplicate(radius);
+	for ( int i=0 ; i<6 ; ++i )
+	{
+		XMVECTOR dist = XMVector4Dot(XMLoadFloat4(&planes[i]), c);
+		if ( XMVector4Less(dist, XMVectorNegate(r)) )
+			return false;
+	}
+	return true;
+}
+
+XMVECTOR XM_CALLCONV FRUSTUM::NormalizePlane(FXMVECTOR p)
+{
+	// p = (a,b,c,d)
+	XMVECTOR n = XMVectorSetW(p, 0.0f);
+	XMVECTOR len = XMVector3Length(n);
+	return XMVectorDivide(p, len);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,4 +240,6 @@ void CAMERA::Update()
 	XMStoreFloat4x4(&matView, mat);
 	mat *= XMLoadFloat4x4(&matProj);
 	XMStoreFloat4x4(&matViewProj, mat);
+
+	frustum.FromViewProj(matViewProj);
 }

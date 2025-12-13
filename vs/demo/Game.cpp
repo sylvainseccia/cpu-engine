@@ -115,6 +115,7 @@ void Game::OnPostRender()
 
 	// Debug
 	std::string info = std::to_string(m_fps) + " fps, ";
-	info += std::to_string(m_missiles.size()) + " missiles";
+	info += std::to_string(m_missiles.size()) + " missiles, ";
+	info += std::to_string(m_clipEntityCount) + " clipped entities";
 	SetWindowText(m_hWnd, info.c_str());
 }

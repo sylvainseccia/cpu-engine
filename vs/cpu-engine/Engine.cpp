@@ -38,24 +38,15 @@ Engine* Engine::Instance()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight)
+void Engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, float windowScaleAtStart)
 {
 	if ( m_hInstance )
 		return;
 
-	// Device
-	m_hInstance = hInstance;
-	m_windowWidth = renderWidth;
-	m_windowHeight = renderHeight;
-	m_renderWidth = renderWidth;
-	m_renderHeight = renderHeight;
-	m_renderPixelCount = m_renderWidth * m_renderHeight;
-	m_renderWidthHalf = m_renderWidth * 0.5f;
-	m_renderHeightHalf = m_renderHeight * 0.5f;
-	m_colorBuffer.resize(m_renderPixelCount);
-	m_depthBuffer.resize(m_renderPixelCount);
-
 	// Window
+	m_hInstance = hInstance;
+	m_windowWidth = (int)(renderWidth*windowScaleAtStart);
+	m_windowHeight = (int)(renderHeight*windowScaleAtStart);
 	WNDCLASS wc = { 0 };
 	wc.lpfnWndProc = WindowProc;
 	wc.hInstance = hInstance;
@@ -66,17 +57,19 @@ void Engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight)
 	m_hWnd = CreateWindow("RETRO_ENGINE", "RETRO ENGINE", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
 	SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
 
+	// Buffer
+	m_renderWidth = renderWidth;
+	m_renderHeight = renderHeight;
+	m_renderPixelCount = m_renderWidth * m_renderHeight;
+	m_renderWidthHalf = m_renderWidth * 0.5f;
+	m_renderHeightHalf = m_renderHeight * 0.5f;
+	m_colorBuffer.resize(m_renderPixelCount);
+	m_depthBuffer.resize(m_renderPixelCount);
+
 	// Surface
 #ifdef GPU_PRESENT
 	HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
-	D2D1_SIZE_U size = D2D1::SizeU(m_windowWidth, m_windowHeight);
-	m_pD2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(m_hWnd, size), &m_pRenderTarget);
-	D2D1_SIZE_U renderSize = D2D1::SizeU(m_renderWidth, m_renderHeight);
-	D2D1_BITMAP_PROPERTIES props;
-	props.pixelFormat = D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
-	props.dpiX = 96.0f;
-	props.dpiY = 96.0f;
-	m_pRenderTarget->CreateBitmap(renderSize, props, &m_pBitmap);
+	FixDevice();
 #else
 	m_bi.bmiHeader.biWidth = m_renderWidth;
 	m_bi.bmiHeader.biHeight = -m_renderHeight;
@@ -256,6 +249,21 @@ void Engine::FixProjection()
 {
 	const float ratio = float(m_windowWidth) / float(m_windowHeight);
 	m_camera.UpdateProjection(ratio);
+}
+
+void Engine::FixDevice()
+{
+#ifdef GPU_PRESENT
+	D2D1_SIZE_U size = D2D1::SizeU(m_windowWidth, m_windowHeight);
+	m_pD2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(m_hWnd, size), &m_pRenderTarget);
+	
+	D2D1_SIZE_U renderSize = D2D1::SizeU(m_renderWidth, m_renderHeight);
+	D2D1_BITMAP_PROPERTIES props;
+	props.pixelFormat = D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
+	props.dpiX = 96.0f;
+	props.dpiY = 96.0f;
+	m_pRenderTarget->CreateBitmap(renderSize, props, &m_pBitmap);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -579,6 +587,9 @@ void Engine::Update_Purge()
 
 void Engine::Render()
 {
+	// Stats
+	m_clipEntityCount = 0;
+
 	// Prepare
 	m_camera.Update();
 	Render_Sort();
@@ -594,7 +605,7 @@ void Engine::Render()
 	// Callback
 	OnPreRender();
 
-	// Entities
+	// Entities (Multi-Threading)
 	for ( int i=0 ; i<m_threadCount ; i++ )
 		SetEvent(m_threads[i].m_hEventStart);
 	for ( int i=0 ; i<m_threadCount ; i++ )
@@ -635,6 +646,10 @@ void Engine::Render_Box()
 
 		// AABB
 		pEntity->aabb = pEntity->obb;
+
+		// Radius
+		float scale = std::max(pEntity->transform.sca.x, std::max(pEntity->transform.sca.y, pEntity->transform.sca.z));
+		pEntity->radius = pEntity->pMesh->radius *scale;
 
 		// Rectangle (screen)
 		XMMATRIX matWVP = matWorld;
@@ -704,7 +719,7 @@ void Engine::Present()
 #ifdef GPU_PRESENT
 	if ( m_pRenderTarget==nullptr || m_pBitmap==nullptr )
 		return;
-
+	
 	m_pRenderTarget->BeginDraw();
 	m_pBitmap->CopyFromMemory(NULL, m_colorBuffer.data(), m_renderWidth * 4);
 	D2D1_RECT_F destRect = D2D1::RectF(0.0f, 0.0f, (float)m_windowWidth, (float)m_windowHeight);
@@ -717,7 +732,7 @@ void Engine::Present()
 		m_pBitmap = nullptr;
 		m_pRenderTarget->Release();
 		m_pRenderTarget = nullptr;
-		// Rappeler Initialize() ou recréer les ressources...
+		FixDevice();
 	}
 #else
 	if ( m_windowWidth==m_renderWidth && m_windowHeight==m_renderHeight )
@@ -802,6 +817,14 @@ void Engine::Draw(ENTITY* pEntity, TILE& tile)
 	XMMATRIX matViewProj = XMLoadFloat4x4(&m_camera.matViewProj);
 	XMVECTOR lightDir = XMLoadFloat3(&m_lightDir);
 
+	// Clipping
+	if ( m_camera.frustum.Intersect(pEntity->transform.pos, pEntity->radius)==false )
+	{
+		m_clipEntityCount++;
+		return;
+	}
+
+	// Vertex and Pixel shaders
 	for ( const TRIANGLE& t : pEntity->pMesh->triangles )
 	{
 		// World space
@@ -812,15 +835,6 @@ void Engine::Draw(ENTITY* pEntity, TILE& tile)
 			loc = XMVectorSetW(loc, 1.0f);
 			vWorld[i] = XMVector3Transform(loc, matWorld);
 		}
-
-		//XMVECTOR camPos = XMLoadFloat3(&m_cam.pos);
-		//XMVECTOR e0 = XMVectorSubtract(vWorld[1], vWorld[0]);
-		//XMVECTOR e1 = XMVectorSubtract(vWorld[2], vWorld[0]);
-		//XMVECTOR faceNormal = XMVector3Normalize(XMVector3Cross(e0, e1));
-		//XMVECTOR toCam = XMVector3Normalize(XMVectorSubtract(camPos, vWorld[0]));
-		//float ndotv = XMVectorGetX(XMVector3Dot(faceNormal, toCam));
-		//if ( ndotv<=0.001f )
-		//	continue;
 
 		// Screen space
 		XMFLOAT3 vScreen[3];

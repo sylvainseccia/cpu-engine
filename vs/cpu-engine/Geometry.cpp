@@ -212,6 +212,7 @@ MESH::MESH()
 void MESH::Clear()
 {
 	triangles.clear();
+	radius = 0.0f;
 	aabb.Zero();
 }
 
@@ -302,5 +303,11 @@ void MESH::CalculateBox()
 			if ( t.v[i].pos.z>aabb.max.z )
 				aabb.max.z = t.v[i].pos.z;
 		}
-	}	
+	}
+
+	float fx = std::max(std::abs(aabb.min.x), std::abs(aabb.max.x));
+	float fy = std::max(std::abs(aabb.min.y), std::abs(aabb.max.y));
+	float fz = std::max(std::abs(aabb.min.z), std::abs(aabb.max.z));
+	float r2 = fx*fx + fy*fy + fz*fz;
+	radius = std::sqrt(r2);
 }
