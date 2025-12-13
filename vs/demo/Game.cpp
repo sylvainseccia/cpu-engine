@@ -92,6 +92,7 @@ void Game::OnUpdate()
 		pMissile->transform.SetScaling(0.2f);
 		pMissile->transform.pos = ray.pos;
 		pMissile->transform.LookTo(ray.dir);
+		pMissile->transform.Move(1.0f);
 		m_missiles.push_back(pMissile);
 	}
 }
@@ -116,6 +117,9 @@ void Game::OnPostRender()
 	// Debug
 	std::string info = std::to_string(m_fps) + " fps, ";
 	info += std::to_string(m_missiles.size()) + " missiles, ";
-	info += std::to_string(m_clipEntityCount) + " clipped entities";
+	info += std::to_string(m_clipEntityCount) + " clipped entities, ";
+	info += std::to_string(m_threadCount) + " threads, ";
+	info += std::to_string(m_tileCount) + " tiles, ";
+	info += " (FIRE: space or left button)";
 	SetWindowText(m_hWnd, info.c_str());
 }

@@ -5,9 +5,9 @@ struct VEC3_CMP
 	bool operator()(const XMFLOAT3& a, const XMFLOAT3& b) const
 	{
 		const float eps = 0.001f;
-		if ( fabs(a.x-b.x)>eps )
+		if ( std::abs(a.x-b.x)>eps )
 			return a.x<b.x;
-		if ( fabs(a.y-b.y)>eps )
+		if ( std::abs(a.y-b.y)>eps )
 			return a.y<b.y;
 		return a.z<(b.z-eps);
 	}

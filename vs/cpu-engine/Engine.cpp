@@ -775,7 +775,7 @@ void Engine::DrawSky()
 	uint32_t colRight = rightSideIsSky ? sCol : gCol;
 
 	std::fill(m_depthBuffer.begin(), m_depthBuffer.end(), 1.0f);
-	if ( abs(a)<0.000001f )
+	if ( std::abs(a)<0.000001f )
 	{
 		for ( int y=0 ; y<m_renderHeight ; y++ )
 		{
@@ -812,17 +812,18 @@ void Engine::Draw(ENTITY* pEntity, TILE& tile)
 	if ( pEntity==nullptr || pEntity->pMesh==nullptr )
 		return;
 
-	XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.world);
-	XMMATRIX matView = XMLoadFloat4x4(&m_camera.matView);
-	XMMATRIX matViewProj = XMLoadFloat4x4(&m_camera.matViewProj);
-	XMVECTOR lightDir = XMLoadFloat3(&m_lightDir);
-
 	// Clipping
 	if ( m_camera.frustum.Intersect(pEntity->transform.pos, pEntity->radius)==false )
 	{
 		m_clipEntityCount++;
 		return;
 	}
+
+	// Info
+	XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.world);
+	XMMATRIX matView = XMLoadFloat4x4(&m_camera.matView);
+	XMMATRIX matViewProj = XMLoadFloat4x4(&m_camera.matViewProj);
+	XMVECTOR lightDir = XMLoadFloat3(&m_lightDir);
 
 	// Vertex and Pixel shaders
 	for ( const TRIANGLE& t : pEntity->pMesh->triangles )
@@ -891,13 +892,13 @@ void Engine::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOA
 {
 	ui32 bgr = ToBGR(color);
 
-	int dx = abs(x1 - x0);
+	int dx = std::abs(x1 - x0);
 	int sx = x0 < x1 ? 1 : -1;
-	int dy = -abs(y1 - y0);
+	int dy = -std::abs(y1 - y0);
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx + dy;
 
-	float dist = (float)std::max(dx, abs(dy));
+	float dist = (float)std::max(dx, std::abs(dy));
 	if ( dist==0.0f )
 		return;
 
@@ -977,7 +978,7 @@ void Engine::FillTriangle(XMFLOAT3* tri, XMFLOAT3* colors, TILE& tile)
 	float b31 = x1 - x3;
 	float c31 = x3 * y1 - x1 * y3;
 	float area = a12 * x3 + b12 * y3 + c12;
-	if ( fabsf(area)<1e-6f )
+	if ( std::abs(area)<1e-6f )
 		return;
 
 	float invArea = 1.0f / area;
