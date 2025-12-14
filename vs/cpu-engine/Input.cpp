@@ -1,30 +1,30 @@
 #include "stdafx.h"
 
-Keyboard::Keyboard()
+Input::Input()
 {
 	memset(m_keys, 0, 256);
 }
 
-Keyboard::~Keyboard()
+Input::~Input()
 {
 }
 
-bool Keyboard::IsKey(int key)
+bool Input::IsKey(int key)
 {
 	return m_keys[key]==_DOWN || m_keys[key]==_PUSH;
 }
 
-bool Keyboard::IsKeyUp(int key)
+bool Input::IsKeyUp(int key)
 {
 	return m_keys[key]==_UP;
 }
 
-bool Keyboard::IsKeyDown(int key)
+bool Input::IsKeyDown(int key)
 {
 	return m_keys[key]==_DOWN;
 }
 
-void Keyboard::Update()
+void Input::Update()
 {
 	for ( int i=1 ; i<255 ; i++ )
 	{

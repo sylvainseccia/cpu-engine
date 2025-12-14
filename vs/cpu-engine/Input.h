@@ -1,6 +1,6 @@
 #pragma once
 
-class Keyboard
+class Input
 {
 public:
 	enum
@@ -12,8 +12,8 @@ public:
 	};
 
 public:
-	Keyboard();
-	virtual ~Keyboard();
+	Input();
+	virtual ~Input();
 
 	bool IsKey(int key);
 	bool IsKeyDown(int key);

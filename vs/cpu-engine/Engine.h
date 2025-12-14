@@ -59,7 +59,7 @@ private:
 	void Clear(XMFLOAT3& color);
 	void ClearSky();
 	void DrawEntity(ENTITY* pEntity, TILE& tile);
-	void FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, TILE& tile);
+	void FillTriangle(DRAWCALL& dc);
 	bool Copy(byte* dst, int dstW, int dstH, int dstX, int dstY, const uint8_t* src, int srcW, int srcH, int srcX, int srcY, int w, int h);
 	static bool PixelShader(XMFLOAT3& out, const PIXELSHADER& in, const void* data);
 
@@ -69,7 +69,7 @@ private:
 
 protected:
 	// Controller
-	Keyboard m_input;
+	Input m_input;
 
 	// Color
 	bool m_sky;
@@ -80,7 +80,7 @@ protected:
 	// Light
 	XMFLOAT3 m_lightDir;
 	float m_ambient;
-	MATERIAL m_material;
+	MATERIAL m_defaultMaterial;
 	
 	// Time
 	float m_time;

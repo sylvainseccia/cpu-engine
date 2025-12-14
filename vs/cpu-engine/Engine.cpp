@@ -495,11 +495,6 @@ void Engine::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOA
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 LRESULT Engine::OnWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch ( message )
@@ -930,17 +925,21 @@ void Engine::ClearSky()
 
 void Engine::DrawEntity(ENTITY* pEntity, TILE& tile)
 {
-	MATERIAL& material = pEntity->pMaterial ? *pEntity->pMaterial : m_material;
+	MATERIAL& material = pEntity->pMaterial ? *pEntity->pMaterial : m_defaultMaterial;
 	XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.world);
 	XMMATRIX normalMat = XMMatrixTranspose(XMMatrixInverse(nullptr, matWorld));
 	XMMATRIX matViewProj = XMLoadFloat4x4(&m_camera.matViewProj);
 	XMVECTOR lightDir = XMLoadFloat3(&m_lightDir);
+
+	DRAWCALL dc;
+	bool safe;
+	XMFLOAT3 screen[3];
+	VERTEXSHADER out[3];
+
 	for ( const TRIANGLE& triangle : pEntity->pMesh->triangles )
 	{
 		// Verter shader
-		bool safe = true;
-		XMFLOAT3 screen[3];
-		VERTEXSHADER out[3];
+		safe = true;
 		for ( int i=0 ; i<3 ; ++i )
 		{
 			// Vertex
@@ -995,15 +994,20 @@ void Engine::DrawEntity(ENTITY* pEntity, TILE& tile)
 			continue;
 
 		// Pixel shader
-		FillTriangle(screen, out, material, tile);
+		dc.tri = screen;
+		dc.vso = out;
+		dc.pMaterial = &material;
+		dc.pTile = &tile;
+		dc.depth = pEntity->depth;
+		FillTriangle(dc);
 	}
 }
 
-void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, TILE& tile)
+void Engine::FillTriangle(DRAWCALL& dc)
 {
-	const float x1 = tri[0].x, y1 = tri[0].y, z1 = tri[0].z;
-	const float x2 = tri[1].x, y2 = tri[1].y, z2 = tri[1].z;
-	const float x3 = tri[2].x, y3 = tri[2].y, z3 = tri[2].z;
+	const float x1 = dc.tri[0].x, y1 = dc.tri[0].y, z1 = dc.tri[0].z;
+	const float x2 = dc.tri[1].x, y2 = dc.tri[1].y, z2 = dc.tri[1].z;
+	const float x3 = dc.tri[2].x, y3 = dc.tri[2].y, z3 = dc.tri[2].z;
 
 	int minX = (int)floor(std::min(std::min(x1, x2), x3));
 	int maxX = (int)ceil(std::max(std::max(x1, x2), x3));
@@ -1015,10 +1019,10 @@ void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, T
 	if ( maxX>m_renderWidth ) maxX = m_renderWidth;
 	if ( maxY>m_renderHeight ) maxY = m_renderHeight;
 
-	if ( minX<tile.left ) minX = tile.left;
-	if ( maxX>tile.right ) maxX = tile.right;
-	if ( minY<tile.top ) minY = tile.top;
-	if ( maxY>tile.bottom ) maxY = tile.bottom;
+	if ( minX<dc.pTile->left ) minX = dc.pTile->left;
+	if ( maxX>dc.pTile->right ) maxX = dc.pTile->right;
+	if ( minY<dc.pTile->top ) minY = dc.pTile->top;
+	if ( maxY>dc.pTile->bottom ) maxY = dc.pTile->bottom;
 
 	if ( minX>=maxX || minY>=maxY )
 		return;
@@ -1050,7 +1054,7 @@ void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, T
 	const float dE31dx = a31;
 	const float dE31dy = b31;
 
-	const PS_FUNC ps = material.ps ? material.ps : &PixelShader;
+	const PS_FUNC ps = dc.pMaterial->ps ? dc.pMaterial->ps : &PixelShader;
 	for ( int y=minY ; y<maxY ; ++y )
 	{
 		float e12 = e12_row;
@@ -1084,7 +1088,7 @@ void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, T
 			float w3 = e12 * invArea;
 			float z = z3 + (z1 - z3) * w1 + (z2 - z3) * w2; // => z1 * w1 + z2 * w2 + z3 * w3
 			int index = y * m_renderWidth + x;
-			if ( z>=m_depthBuffer[index] )
+			if ( (dc.depth & DEPTH_READ) && z>=m_depthBuffer[index] )
 			{
 				e12 += dE12dx;
 				e23 += dE23dx;
@@ -1099,29 +1103,29 @@ void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, T
 			in.depth = z;
 
 			// Position (lerp)
-			in.pos.x = vo[2].worldPos.x + (vo[0].worldPos.x - vo[2].worldPos.x) * w1 + (vo[1].worldPos.x - vo[2].worldPos.x) * w2;
-			in.pos.y = vo[2].worldPos.y + (vo[0].worldPos.y - vo[2].worldPos.y) * w1 + (vo[1].worldPos.y - vo[2].worldPos.y) * w2;
-			in.pos.z = vo[2].worldPos.z + (vo[0].worldPos.z - vo[2].worldPos.z) * w1 + (vo[1].worldPos.z - vo[2].worldPos.z) * w2;
+			in.pos.x = dc.vso[2].worldPos.x + (dc.vso[0].worldPos.x - dc.vso[2].worldPos.x) * w1 + (dc.vso[1].worldPos.x - dc.vso[2].worldPos.x) * w2;
+			in.pos.y = dc.vso[2].worldPos.y + (dc.vso[0].worldPos.y - dc.vso[2].worldPos.y) * w1 + (dc.vso[1].worldPos.y - dc.vso[2].worldPos.y) * w2;
+			in.pos.z = dc.vso[2].worldPos.z + (dc.vso[0].worldPos.z - dc.vso[2].worldPos.z) * w1 + (dc.vso[1].worldPos.z - dc.vso[2].worldPos.z) * w2;
 
 			// Normal (lerp)
-			in.normal.x = vo[2].worldNormal.x + (vo[0].worldNormal.x - vo[2].worldNormal.x) * w1 + (vo[1].worldNormal.x - vo[2].worldNormal.x) * w2;
-			in.normal.y = vo[2].worldNormal.y + (vo[0].worldNormal.y - vo[2].worldNormal.y) * w1 + (vo[1].worldNormal.y - vo[2].worldNormal.y) * w2;
-			in.normal.z = vo[2].worldNormal.z + (vo[0].worldNormal.z - vo[2].worldNormal.z) * w1 + (vo[1].worldNormal.z - vo[2].worldNormal.z) * w2;
+			in.normal.x = dc.vso[2].worldNormal.x + (dc.vso[0].worldNormal.x - dc.vso[2].worldNormal.x) * w1 + (dc.vso[1].worldNormal.x - dc.vso[2].worldNormal.x) * w2;
+			in.normal.y = dc.vso[2].worldNormal.y + (dc.vso[0].worldNormal.y - dc.vso[2].worldNormal.y) * w1 + (dc.vso[1].worldNormal.y - dc.vso[2].worldNormal.y) * w2;
+			in.normal.z = dc.vso[2].worldNormal.z + (dc.vso[0].worldNormal.z - dc.vso[2].worldNormal.z) * w1 + (dc.vso[1].worldNormal.z - dc.vso[2].worldNormal.z) * w2;
 
 			// Color (lerp)
-			in.albedo.x = vo[2].albedo.x + (vo[0].albedo.x - vo[2].albedo.x) * w1 + (vo[1].albedo.x - vo[2].albedo.x) * w2;
-			in.albedo.y = vo[2].albedo.y + (vo[0].albedo.y - vo[2].albedo.y) * w1 + (vo[1].albedo.y - vo[2].albedo.y) * w2;
-			in.albedo.z = vo[2].albedo.z + (vo[0].albedo.z - vo[2].albedo.z) * w1 + (vo[1].albedo.z - vo[2].albedo.z) * w2;
+			in.albedo.x = dc.vso[2].albedo.x + (dc.vso[0].albedo.x - dc.vso[2].albedo.x) * w1 + (dc.vso[1].albedo.x - dc.vso[2].albedo.x) * w2;
+			in.albedo.y = dc.vso[2].albedo.y + (dc.vso[0].albedo.y - dc.vso[2].albedo.y) * w1 + (dc.vso[1].albedo.y - dc.vso[2].albedo.y) * w2;
+			in.albedo.z = dc.vso[2].albedo.z + (dc.vso[0].albedo.z - dc.vso[2].albedo.z) * w1 + (dc.vso[1].albedo.z - dc.vso[2].albedo.z) * w2;
 
 			// Lighting
-			if ( material.lighting==GOURAUD )
+			if ( dc.pMaterial->lighting==GOURAUD )
 			{
-				float intensity = vo[2].intensity + (vo[0].intensity - vo[2].intensity) * w1 + (vo[1].intensity - vo[2].intensity) * w2;
+				float intensity = dc.vso[2].intensity + (dc.vso[0].intensity - dc.vso[2].intensity) * w1 + (dc.vso[1].intensity - dc.vso[2].intensity) * w2;
 				in.color.x = in.albedo.x * intensity;
 				in.color.y = in.albedo.y * intensity;
 				in.color.z = in.albedo.z * intensity;
 			}
-			else if ( material.lighting==LAMBERT )
+			else if ( dc.pMaterial->lighting==LAMBERT )
 			{
 				XMVECTOR n = XMLoadFloat3(&in.normal);				
 				//n = XMVector3Normalize(n); // Expensive (better results)
@@ -1139,10 +1143,11 @@ void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, T
 
 			// Output
 			XMFLOAT3 out;
-			bool discard = ps(out, in, material.data);
+			bool discard = ps(out, in, dc.pMaterial->data);
 			if ( discard==false )
 			{
-				m_depthBuffer[index] = z;
+				if ( dc.depth & DEPTH_WRITE )
+					m_depthBuffer[index] = z;
 				m_colorBuffer[index] = ToBGR(out);
 			}
 

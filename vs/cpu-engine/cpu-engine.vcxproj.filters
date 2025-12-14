@@ -35,7 +35,7 @@
     <ClInclude Include="stdafx.h">
       <Filter>Library</Filter>
     </ClInclude>
-    <ClInclude Include="Keyboard.h">
+    <ClInclude Include="Input.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="UI.h">
@@ -49,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="global.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -70,7 +73,7 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Library</Filter>
     </ClCompile>
-    <ClCompile Include="Keyboard.cpp">
+    <ClCompile Include="Input.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="UI.cpp">
@@ -84,6 +87,9 @@
     </ClCompile>
     <ClCompile Include="global.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

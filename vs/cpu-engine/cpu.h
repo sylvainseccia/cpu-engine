@@ -68,6 +68,7 @@ struct AABB;
 struct CAMERA;
 struct OBB;
 struct PIXELSHADER;
+struct TILE;
 class Engine;
 
 // Types
@@ -93,16 +94,21 @@ using PS_FUNC							= bool(*)(XMFLOAT3& out, const PIXELSHADER& in, const void* 
 #define CENTER							1
 #define RIGHT							2
 
+// Depth
+#define DEPTH_READ						1
+#define DEPTH_WRITE						2
+
 // Core
 #include "lodepng.h"
 #include "global.h"
-#include "Keyboard.h"
+#include "Input.h"
 #include "Thread.h"
 
 // Engine
 #include "UI.h"
 #include "Font.h"
 #include "Geometry.h"
+#include "Shader.h"
 #include "Entity.h"
 #include "Multithreading.h"
 #include "Engine.h"

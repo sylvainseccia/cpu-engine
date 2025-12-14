@@ -83,9 +83,10 @@
     <ClInclude Include="Font.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="global.h" />
-    <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="lodepng.h" />
     <ClInclude Include="Multithreading.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Thread.h" />
     <ClInclude Include="UI.h" />
@@ -99,9 +100,10 @@
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="global.cpp" />
-    <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="Multithreading.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
