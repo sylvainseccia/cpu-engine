@@ -230,8 +230,8 @@ void MESH::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color)
 
 void MESH::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLOAT3& color)
 {
-	AddTriangle(a, c, b, color);
-	AddTriangle(a, d, c, color);
+	AddTriangle(a, b, c, color);
+	AddTriangle(a, c, d, color);
 }
 
 void MESH::Optimize()
@@ -313,21 +313,22 @@ void MESH::CalculateBox()
 
 void MESH::CreateCube(float halfSize, XMFLOAT3 color)
 {
+	Clear();
 	const float s = halfSize; 
-	XMFLOAT3 p0 = { -s, -s, -s };							// Avant Bas Gauche
-	XMFLOAT3 p1 = {  s, -s, -s };							// Avant Bas Droite
-	XMFLOAT3 p2 = {  s,  s, -s };							// Avant Haut Droite
-	XMFLOAT3 p3 = { -s,  s, -s };							// Avant Haut Gauche
-	XMFLOAT3 p4 = { -s, -s,  s };							// Arrière Bas Gauche
-	XMFLOAT3 p5 = {  s, -s,  s };							// Arrière Bas Droite
-	XMFLOAT3 p6 = {  s,  s,  s };							// Arrière Haut Droite
-	XMFLOAT3 p7 = { -s,  s,  s };							// Arrière Haut Gauche
-	AddFace(p0, p1, p2, p3, color);							// Face Avant (Z = -0.5)
-	AddFace(p5, p4, p7, p6, color);							// Face Arrière (Z = +0.5)
-	AddFace(p1, p5, p6, p2, color);							// Face Droite (X = +0.5)
-	AddFace(p4, p0, p3, p7, color);							// Face Gauche (X = -0.5)
-	AddFace(p3, p2, p6, p7, color);							// Face Haut (Y = +0.5)
-	AddFace(p4, p5, p1, p0, color);							// Face Bas (Y = -0.5)
+	XMFLOAT3 p0 = { -s, -s, -s };					// Avant Bas Gauche
+	XMFLOAT3 p1 = {  s, -s, -s };					// Avant Bas Droite
+	XMFLOAT3 p2 = {  s,  s, -s };					// Avant Haut Droite
+	XMFLOAT3 p3 = { -s,  s, -s };					// Avant Haut Gauche
+	XMFLOAT3 p4 = { -s, -s,  s };					// Arrière Bas Gauche
+	XMFLOAT3 p5 = {  s, -s,  s };					// Arrière Bas Droite
+	XMFLOAT3 p6 = {  s,  s,  s };					// Arrière Haut Droite
+	XMFLOAT3 p7 = { -s,  s,  s };					// Arrière Haut Gauche
+	AddFace(p0, p1, p2, p3, color);					// -Z (avant)
+	AddFace(p4, p7, p6, p5, color);					// +Z (arrière)
+	AddFace(p1, p5, p6, p2, color);					// +X (droite)
+	AddFace(p4, p0, p3, p7, color);					// -X (gauche)
+	AddFace(p3, p2, p6, p7, color);					// +Y (haut)
+	AddFace(p4, p5, p1, p0, color);					// -Y (bas)
 	Optimize();
 }
 
@@ -336,6 +337,7 @@ void MESH::CreateCircle(float radius, int count, XMFLOAT3 color)
 	if ( count<3 )
 		return;
 
+	Clear();
 	float step = XM_2PI / count;
 	float angle = 0.0f;
 	XMFLOAT3 p1, p2, p3;
@@ -350,7 +352,7 @@ void MESH::CreateCircle(float radius, int count, XMFLOAT3 color)
 		p2.z = sinf(angle) * radius;
 		p3.x = cosf(angle+step) * radius;
 		p3.z = sinf(angle+step) * radius;
-		AddTriangle(p1, p2, p3, color);
+		AddTriangle(p1, p3, p2, color);
 		angle += step;
 	}
 	Optimize();
@@ -419,6 +421,7 @@ void MESH::CreateSphere(float radius, int stacks, int slices, XMFLOAT3 color1, X
 
 void MESH::CreateSpaceship()
 {
+	Clear();
 	const float width = 2.0f;
 	XMFLOAT3 nose = { 0.0f, 0.0f, 1.5f };
 	XMFLOAT3 rTop = { 0.0f, 0.5f, -1.0f };
@@ -433,11 +436,11 @@ void MESH::CreateSpaceship()
 	XMFLOAT3 c5 = ToColor(255, 255, 255);
 	XMFLOAT3 c6 = ToColor(255, 255, 255);
 
-	AddTriangle(nose, rTop, wLeft, c1);					// Avant Gauche haut
-	AddTriangle(nose, wRight, rTop, c2);				// Avant Droit haut
-	AddTriangle(nose, wLeft, rBot, c3);					// Avant Gauche bas
-	AddTriangle(nose, rBot, wRight, c4);				// Avant Droit bas
-	AddTriangle(wLeft, rTop, rBot, c5);					// Moteur Gauche
-	AddTriangle(wRight, rBot, rTop, c6);				// Moteur Droit
+	AddTriangle(nose, wLeft, rTop, c1);		// Avant gauche haut
+	AddTriangle(nose, rTop, wRight, c2);	// Avant droit haut
+	AddTriangle(nose, rBot, wLeft, c3);		// Avant gauche bas
+	AddTriangle(nose, wRight, rBot, c4);	// Avant droit bas
+	AddTriangle(wLeft, rBot, rTop, c5);		// Moteur gauche
+	AddTriangle(wRight, rTop, rBot, c6);	// Moteur droit
 	Optimize();
 }

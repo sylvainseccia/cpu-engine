@@ -1063,9 +1063,10 @@ void Engine::DrawEntity(ENTITY* pEntity, TILE& tile)
 		if ( safe==false )
 			continue;
 
-		// Culling
-		float area = (screen[2].x-screen[0].x) * (screen[1].y-screen[0].y) - (screen[2].y-screen[0].y) * (screen[1].x-screen[0].x);
-		if ( area<=0.0f )
+		// Culling (DX)
+		//float area = (screen[2].x-screen[0].x) * (screen[1].y-screen[0].y) - (screen[2].y-screen[0].y) * (screen[1].x-screen[0].x);
+		float area = (screen[1].x-screen[0].x) * (screen[2].y-screen[0].y) - (screen[1].y-screen[0].y) * (screen[2].x-screen[0].x);
+		if ( area<=FLT_EPSILON )
 			continue;
 
 		// Pixel shader
