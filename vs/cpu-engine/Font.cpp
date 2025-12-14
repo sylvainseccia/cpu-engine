@@ -7,9 +7,9 @@ FONT::FONT()
 	count = 0;
 	cellW = 0;
 	cellH = 0;
+	advance = 0;
 	width = 0;
 	height = 0;
-	glyph[256] = {};
 }
 
 bool FONT::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cellWidth, int cellHeight, int firstChar, int lastChar)
@@ -33,6 +33,7 @@ bool FONT::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cellWidt
 	count = (lastChar - firstChar + 1);
 	cellW = cellWidth;
 	cellH = cellHeight;
+	advance = cellW;
 	width  = count * cellW;
 	height = cellH;
 
@@ -88,11 +89,7 @@ bool FONT::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cellWidt
 		glyph[c].w = cellW;
 		glyph[c].h = cellH;
 		glyph[c].valid = true;
-		ABC abc = {};
-		if ( GetCharABCWidthsW(hdc, c, c, &abc) )
-			glyph[c].advance = (int)(abc.abcA + abc.abcB + abc.abcC);
-		else
-			glyph[c].advance = (int)sz.cx;
+		advance = (int)sz.cx;
 	}
 
 	rgba.resize(width*height*4);

@@ -3,7 +3,6 @@
 struct GLYPH
 {
 	int x = 0, y = 0, w = 0, h = 0;
-	int advance = 0;
 	bool valid = false;
 };
 
@@ -15,6 +14,7 @@ struct FONT
 
 	int cellW;
 	int cellH;
+	int advance;
 
 	int width;
 	int height;

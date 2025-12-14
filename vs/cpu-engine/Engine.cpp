@@ -372,28 +372,46 @@ void Engine::DrawText(FONT* pFont, const char* text, int x, int y, int align)
 	if ( pFont==nullptr || pFont->rgba.size()==0 || text==nullptr )
 		return;
 
-	int penX = x;
-	int penY = y;
-	int textLen = (int)strlen(text);
-	for ( int i=0 ; i<textLen ; ++i )
+	const int cw = pFont->advance;
+	const int ch = pFont->cellH;
+	const char* p = text;
+	const char* lineStart = text;
+	int lineIndex = 0;
+
+	auto DrawLine = [&](const char* start, int len, int penY)
 	{
-		const byte c = text[i];
-		if ( c=='\n' )
+		int penX = x;
+		if ( align==CENTER ) penX = x - (len * cw) / 2;
+		else if ( align==RIGHT ) penX = x - (len * cw);
+		for ( int i=0 ; i<len ; ++i )
 		{
-			penX = x;
-			penY += pFont->cellH;
+			const byte c = (byte)start[i];
+			const GLYPH& g = pFont->glyph[c];
+			if ( g.valid==false )
+			{
+				penX += cw;
+				continue;
+			}
+			Copy((byte*)m_colorBuffer.data(), m_renderWidth, m_renderHeight, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
+			penX += cw;
+		}
+	};
+
+	while ( true )
+	{
+		const char c = *p;
+		if ( c=='\n' || c=='\0' )
+		{
+			const int len = (int)(p - lineStart);
+			DrawLine(lineStart, len, y + lineIndex * ch);
+			++lineIndex;
+			if ( c=='\0' )
+				break;
+			++p;
+			lineStart = p;
 			continue;
 		}
-
-		const GLYPH& g = pFont->glyph[c];
-		if ( g.valid==false )
-		{
-			penX += pFont->cellW / 2;
-			continue;
-		}
-
-		Copy((byte*)m_colorBuffer.data(), m_renderWidth, m_renderHeight, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
-		penX += g.advance>0 ? g.advance : pFont->cellW;
+		++p;
 	}
 }
 

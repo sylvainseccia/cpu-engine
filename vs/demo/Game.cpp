@@ -123,9 +123,9 @@ void Game::OnPostRender()
 	info += std::to_string(m_missiles.size()) + " missiles, ";
 	info += std::to_string(m_statsClipEntityCount) + " clipped entities, ";
 	info += std::to_string(m_statsThreadCount) + " threads, ";
-	info += std::to_string(m_statsTileCount) + " tiles ";
+	info += std::to_string(m_statsTileCount) + " tiles\n";
 	info += "(FIRE: space or left button)";
-	DrawText(&m_font, info.c_str(), 10, 10);
+	DrawText(&m_font, info.c_str(), GetWidth()/2, 10, CENTER);
 }
 
 void Game::MyPixelShader(PS_DATA& data)

@@ -16,6 +16,8 @@ public:
 	void FixWindow();
 	void FixProjection();
 	void FixDevice();
+	int GetWidth() { return m_renderWidth; }
+	int GetHeight() { return m_renderWidth; }
 
 	ENTITY* CreateEntity();
 	SPRITE* CreateSprite();
