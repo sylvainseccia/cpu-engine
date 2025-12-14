@@ -943,7 +943,7 @@ void Engine::ClearSky()
 	// Sky Line
 	////////////
 
-	float bandPx = 60.0f;
+	float bandPx = m_renderHeight/10.0f;
 	if ( bandPx<=0.5f )
 		return;
 
