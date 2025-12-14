@@ -47,6 +47,9 @@
     <ClInclude Include="Font.h">
       <Filter>Engine</Filter>
     </ClInclude>
+    <ClInclude Include="global.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Thread.cpp">
@@ -78,6 +81,9 @@
     </ClCompile>
     <ClCompile Include="Font.cpp">
       <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="global.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

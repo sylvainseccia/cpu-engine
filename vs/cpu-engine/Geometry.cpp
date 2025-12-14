@@ -135,10 +135,10 @@ bool XM_CALLCONV AABB::ToScreen(RECTANGLE& out, FXMMATRIX wvp, float renderWidth
 	if ( minX>maxX || minY>maxY )
 		return false;
 
-	minX = Engine::Clamp(minX, renderX, renderX+renderWidth);
-	maxX = Engine::Clamp(maxX, renderX, renderX+renderWidth);
-	minY = Engine::Clamp(minY, renderY, renderY+renderHeight);
-	maxY = Engine::Clamp(maxY, renderY, renderY+renderHeight);
+	minX = Clamp(minX, renderX, renderX+renderWidth);
+	maxX = Clamp(maxX, renderX, renderX+renderWidth);
+	minY = Clamp(minY, renderY, renderY+renderHeight);
+	maxY = Clamp(maxY, renderY, renderY+renderHeight);
 	out.min = { minX, minY };
 	out.max = { maxX, maxY };
 	return true;
@@ -310,6 +310,80 @@ void MESH::CalculateBox()
 	float fz = std::max(std::abs(aabb.min.z), std::abs(aabb.max.z));
 	float r2 = fx*fx + fy*fy + fz*fz;
 	radius = std::sqrt(r2);
+}
+
+
+void MESH::CreateSpaceship()
+{
+	const float width = 2.0f;
+	XMFLOAT3 nose = { 0.0f, 0.0f, 1.5f };
+	XMFLOAT3 rTop = { 0.0f, 0.5f, -1.0f };
+	XMFLOAT3 rBot = { 0.0f, -0.3f, -1.0f };
+	XMFLOAT3 wLeft = { -width*0.5f, 0.0f, -1.0f };
+	XMFLOAT3 wRight = { width*0.5f, 0.0f, -1.0f };
+
+	XMFLOAT3 c1 = ToColor(208, 208, 208);
+	XMFLOAT3 c2 = ToColor(192, 192, 192);
+	XMFLOAT3 c3 = ToColor(112, 112, 112);
+	XMFLOAT3 c4 = ToColor(96, 96, 96);
+	XMFLOAT3 c5 = ToColor(255, 255, 255);
+	XMFLOAT3 c6 = ToColor(255, 255, 255);
+
+	AddTriangle(nose, rTop, wLeft, c1);					// Avant Gauche haut
+	AddTriangle(nose, wRight, rTop, c2);				// Avant Droit haut
+	AddTriangle(nose, wLeft, rBot, c3);					// Avant Gauche bas
+	AddTriangle(nose, rBot, wRight, c4);				// Avant Droit bas
+	AddTriangle(wLeft, rTop, rBot, c5);					// Moteur Gauche
+	AddTriangle(wRight, rBot, rTop, c6);				// Moteur Droit
+	Optimize();
+}
+
+void MESH::CreateCube()
+{
+	const float s = 0.5f; 
+	XMFLOAT3 p0 = { -s, -s, -s };							// Avant Bas Gauche
+	XMFLOAT3 p1 = {  s, -s, -s };							// Avant Bas Droite
+	XMFLOAT3 p2 = {  s,  s, -s };							// Avant Haut Droite
+	XMFLOAT3 p3 = { -s,  s, -s };							// Avant Haut Gauche
+	XMFLOAT3 p4 = { -s, -s,  s };							// Arrière Bas Gauche
+	XMFLOAT3 p5 = {  s, -s,  s };							// Arrière Bas Droite
+	XMFLOAT3 p6 = {  s,  s,  s };							// Arrière Haut Droite
+	XMFLOAT3 p7 = { -s,  s,  s };							// Arrière Haut Gauche
+	
+	XMFLOAT3 c1 = ToColor(255, 255, 255);
+	AddFace(p0, p1, p2, p3, c1);							// Face Avant (Z = -0.5)
+	AddFace(p5, p4, p7, p6, c1);							// Face Arrière (Z = +0.5)
+	AddFace(p1, p5, p6, p2, c1);							// Face Droite (X = +0.5)
+	AddFace(p4, p0, p3, p7, c1);							// Face Gauche (X = -0.5)
+	AddFace(p3, p2, p6, p7, c1);							// Face Haut (Y = +0.5)
+	AddFace(p4, p5, p1, p0, c1);							// Face Bas (Y = -0.5)
+	Optimize();
+}
+
+void MESH::CreateCircle(float radius, int count)
+{
+	if ( count<3 )
+		return;
+
+	XMFLOAT3 c1 = ToColor(255, 255, 255);
+	float step = XM_2PI / count;
+	float angle = 0.0f;
+	XMFLOAT3 p1, p2, p3;
+	p1.x = 0.0f;
+	p1.y = 0.0f;
+	p1.z = 0.0f;
+	p2.y = 0.0f;
+	p3.y = 0.0f;
+	for ( int i=0 ; i<count ; i++ )
+	{
+		p2.x = cosf(angle) * radius;
+		p2.z = sinf(angle) * radius;
+		p3.x = cosf(angle+step) * radius;
+		p3.z = sinf(angle+step) * radius;
+		AddTriangle(p1, p2, p3, c1);
+		angle += step;
+	}
+	Optimize();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

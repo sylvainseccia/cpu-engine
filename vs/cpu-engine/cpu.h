@@ -88,8 +88,14 @@ using PS_FUNC							= bool(*)(XMFLOAT3& out, const PIXELSHADER& in, const void* 
 #define GOURAUD							1
 #define LAMBERT							2
 
+// Text
+#define LEFT							0
+#define CENTER							1
+#define RIGHT							2
+
 // Core
 #include "lodepng.h"
+#include "global.h"
 #include "Keyboard.h"
 #include "Thread.h"
 

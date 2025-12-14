@@ -18,7 +18,7 @@ void Game::OnStart()
 {
 	// YOUR CODE HERE
 
-	m_font.Create("Consolas", 24);
+	m_font.Create(18);
 	m_texture.Load("bird.png");
 	m_pSprite = CreateSprite();
 	m_pSprite->pTexture = &m_texture;
@@ -26,8 +26,8 @@ void Game::OnStart()
 	m_pSprite->x = 100;
 	m_pSprite->y = 100;
 
-	CreateSpaceship(m_meshShip);
-	CreateCube(m_meshCube);
+	m_meshShip.CreateSpaceship();
+	m_meshCube.CreateCube();
 
 	m_materialShip.color = ToColor(255, 128, 0);
 
@@ -73,7 +73,7 @@ void Game::OnUpdate()
 	}
 
 	// Fire
-	if ( m_keyboard.IsKey(VK_SPACE) )
+	if ( m_input.IsKey(VK_SPACE) )
 	{
 		ENTITY* pMissile = CreateEntity();
 		pMissile->pMesh = &m_meshCube;
@@ -83,7 +83,7 @@ void Game::OnUpdate()
 		pMissile->transform.Move(1.5f);
 		m_missiles.push_back(pMissile);
 	}
-	if ( m_keyboard.IsKeyDown(VK_LBUTTON) )
+	if ( m_input.IsKeyDown(VK_LBUTTON) )
 	{
 		XMFLOAT2 pt;
 		GetCursor(pt);
@@ -117,9 +117,9 @@ void Game::OnPostRender()
 	// Debug
 	std::string info = std::to_string(m_fps) + " fps, ";
 	info += std::to_string(m_missiles.size()) + " missiles, ";
-	info += std::to_string(m_clipEntityCount) + " clipped entities, ";
-	info += std::to_string(m_threadCount) + " threads, ";
-	info += std::to_string(m_tileCount) + " tiles ";
+	info += std::to_string(m_statsClipEntityCount) + " clipped entities, ";
+	info += std::to_string(m_statsThreadCount) + " threads, ";
+	info += std::to_string(m_statsTileCount) + " tiles ";
 	info += "(FIRE: space or left button)";
 	DrawText(&m_font, info.c_str(), 10, 10);
 }

@@ -101,9 +101,11 @@ void Engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, 
 #else
 	m_threadCount = 1;
 #endif
+	m_statsThreadCount = m_threadCount;
 	m_tileColCount = static_cast<unsigned int>(std::ceil(std::sqrt(m_threadCount)));
 	m_tileRowCount = (m_threadCount + m_tileColCount - 1) / m_tileColCount;
 	m_tileCount = m_tileColCount * m_tileRowCount;
+	m_statsTileCount = m_tileCount;
 	m_tileWidth = m_renderWidth / m_tileColCount;
 	m_tileHeight = m_renderHeight / m_tileRowCount;
 	int missingWidth = m_renderWidth - (m_tileWidth*m_tileColCount);
@@ -284,6 +286,17 @@ ENTITY* Engine::CreateEntity()
 	return pEntity;
 }
 
+SPRITE* Engine::CreateSprite()
+{
+	SPRITE* pSprite = new SPRITE;
+	if ( m_bornSpriteCount<m_bornSprites.size() )
+		m_bornSprites[m_bornSpriteCount] = pSprite;
+	else
+		m_bornSprites.push_back(pSprite);
+	m_bornSpriteCount++;
+	return pSprite;
+}
+
 void Engine::ReleaseEntity(ENTITY* pEntity)
 {
 	if ( pEntity==nullptr || pEntity->dead )
@@ -295,17 +308,6 @@ void Engine::ReleaseEntity(ENTITY* pEntity)
 	else
 		m_deadEntities.push_back(pEntity);
 	m_deadEntityCount++;
-}
-
-SPRITE* Engine::CreateSprite()
-{
-	SPRITE* pSprite = new SPRITE;
-	if ( m_bornSpriteCount<m_bornSprites.size() )
-		m_bornSprites[m_bornSpriteCount] = pSprite;
-	else
-		m_bornSprites.push_back(pSprite);
-	m_bornSpriteCount++;
-	return pSprite;
 }
 
 void Engine::ReleaseSprite(SPRITE* pSprite)
@@ -365,125 +367,152 @@ CAMERA* Engine::GetCamera()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ui32 Engine::ToBGR(XMFLOAT3& color)
+void Engine::DrawText(FONT* pFont, const char* text, int x, int y, int align)
 {
-	float r = std::max(0.0f, std::min(1.0f, color.x));
-	float g = std::max(0.0f, std::min(1.0f, color.y));
-	float b = std::max(0.0f, std::min(1.0f, color.z));
-	return RGB((int)(b * 255.0f), (int)(g * 255.0f), (int)(r * 255.0f));
-}
-
-XMFLOAT3 Engine::ToColor(int r, int g, int b)
-{
-	XMFLOAT3 color;
-	color.x = r/255.0f;
-	color.y = g/255.0f;
-	color.z = b/255.0f;
-	return color;
-}
-
-float Engine::Clamp(float v)
-{
-	if ( v<0.0f )
-		return 0.0f;
-	if ( v>1.0f )
-		return 1.0f;
-	return v;
-}
-
-float Engine::Clamp(float v, float min, float max)
-{
-	if ( v<min )
-		return min;
-	if ( v>max )
-		return max;
-	return v;
-}
-
-int Engine::Clamp(int v, int min, int max)
-{
-	if ( v<min )
-		return min;
-	if ( v>max )
-		return max;
-	return v;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void Engine::CreateSpaceship(MESH& mesh)
-{
-	const float width = 2.0f;
-	XMFLOAT3 nose = { 0.0f, 0.0f, 1.5f };
-	XMFLOAT3 rTop = { 0.0f, 0.5f, -1.0f };
-	XMFLOAT3 rBot = { 0.0f, -0.3f, -1.0f };
-	XMFLOAT3 wLeft = { -width*0.5f, 0.0f, -1.0f };
-	XMFLOAT3 wRight = { width*0.5f, 0.0f, -1.0f };
-
-	XMFLOAT3 c1 = ToColor(208, 208, 208);
-	XMFLOAT3 c2 = ToColor(192, 192, 192);
-	XMFLOAT3 c3 = ToColor(112, 112, 112);
-	XMFLOAT3 c4 = ToColor(96, 96, 96);
-	XMFLOAT3 c5 = ToColor(255, 255, 255);
-	XMFLOAT3 c6 = ToColor(255, 255, 255);
-
-	mesh.AddTriangle(nose, rTop, wLeft, c1);				// Avant Gauche haut
-	mesh.AddTriangle(nose, wRight, rTop, c2);				// Avant Droit haut
-	mesh.AddTriangle(nose, wLeft, rBot, c3);				// Avant Gauche bas
-	mesh.AddTriangle(nose, rBot, wRight, c4);				// Avant Droit bas
-	mesh.AddTriangle(wLeft, rTop, rBot, c5);				// Moteur Gauche
-	mesh.AddTriangle(wRight, rBot, rTop, c6);				// Moteur Droit
-	mesh.Optimize();
-}
-
-void Engine::CreateCube(MESH& mesh)
-{
-	const float s = 0.5f; 
-	XMFLOAT3 p0 = { -s, -s, -s };							// Avant Bas Gauche
-	XMFLOAT3 p1 = {  s, -s, -s };							// Avant Bas Droite
-	XMFLOAT3 p2 = {  s,  s, -s };							// Avant Haut Droite
-	XMFLOAT3 p3 = { -s,  s, -s };							// Avant Haut Gauche
-	XMFLOAT3 p4 = { -s, -s,  s };							// Arrière Bas Gauche
-	XMFLOAT3 p5 = {  s, -s,  s };							// Arrière Bas Droite
-	XMFLOAT3 p6 = {  s,  s,  s };							// Arrière Haut Droite
-	XMFLOAT3 p7 = { -s,  s,  s };							// Arrière Haut Gauche
-	
-	XMFLOAT3 c1 = ToColor(255, 255, 255);
-	mesh.AddFace(p0, p1, p2, p3, c1);						// Face Avant (Z = -0.5)
-	mesh.AddFace(p5, p4, p7, p6, c1);						// Face Arrière (Z = +0.5)
-	mesh.AddFace(p1, p5, p6, p2, c1);						// Face Droite (X = +0.5)
-	mesh.AddFace(p4, p0, p3, p7, c1);						// Face Gauche (X = -0.5)
-	mesh.AddFace(p3, p2, p6, p7, c1);						// Face Haut (Y = +0.5)
-	mesh.AddFace(p4, p5, p1, p0, c1);						// Face Bas (Y = -0.5)
-	mesh.Optimize();
-}
-
-void Engine::CreateCircle(MESH& mesh, float radius, int count)
-{
-	if ( count<3 )
+	if ( pFont==nullptr || pFont->rgba.size()==0 || text==nullptr )
 		return;
 
-	XMFLOAT3 c1 = ToColor(255, 255, 255);
-	float step = XM_2PI / count;
-	float angle = 0.0f;
-	XMFLOAT3 p1, p2, p3;
-	p1.x = 0.0f;
-	p1.y = 0.0f;
-	p1.z = 0.0f;
-	p2.y = 0.0f;
-	p3.y = 0.0f;
-	for ( int i=0 ; i<count ; i++ )
+	int penX = x;
+	int penY = y;
+	int textLen = (int)strlen(text);
+	for ( int i=0 ; i<textLen ; ++i )
 	{
-		p2.x = cosf(angle) * radius;
-		p2.z = sinf(angle) * radius;
-		p3.x = cosf(angle+step) * radius;
-		p3.z = sinf(angle+step) * radius;
-		mesh.AddTriangle(p1, p2, p3, c1);
-		angle += step;
+		const byte c = text[i];
+		if ( c=='\n' )
+		{
+			penX = x;
+			penY += pFont->cellH;
+			continue;
+		}
+
+		const GLYPH& g = pFont->glyph[c];
+		if ( g.valid==false )
+		{
+			penX += pFont->cellW / 2;
+			continue;
+		}
+
+		Copy((byte*)m_colorBuffer.data(), m_renderWidth, m_renderHeight, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
+		penX += g.advance>0 ? g.advance : pFont->cellW;
 	}
-	mesh.Optimize();
+}
+
+void Engine::DrawSprite(SPRITE* pSprite)
+{
+	if ( pSprite==nullptr || pSprite->dead || pSprite->pTexture==nullptr )
+		return;
+
+	int width = pSprite->pTexture->width;
+	int height = pSprite->pTexture->height;
+	byte* dst = (byte*)m_colorBuffer.data();
+	Copy(dst, m_renderWidth, m_renderHeight, pSprite->x, pSprite->y, pSprite->pTexture->rgba, width, height, 0, 0, width, height);
+}
+
+void Engine::DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color)
+{
+	COLORREF bgr = ToBGR(color);
+	if ( y<0 || y>=m_renderHeight )
+		return;
+	x1 = Clamp(x1, 0, m_renderWidth);
+	x2 = Clamp(x2, 0, m_renderWidth);
+	ui32* buf = m_colorBuffer.data() + y*m_renderWidth;
+	for ( int i=x1 ; i<x2 ; i++ )
+		buf[i] = bgr;
+}
+
+void Engine::DrawVertLine(int y1, int y2, int x, XMFLOAT3& color)
+{
+	COLORREF bgr = ToBGR(color);
+	if ( x<0 || x>=m_renderWidth )
+		return;
+	y1 = Clamp(y1, 0, m_renderHeight);
+	y2 = Clamp(y2, 0, m_renderHeight);
+	ui32* buf = m_colorBuffer.data() + y1*m_renderWidth + x;
+	for ( int i=y1 ; i<y2 ; i++ )
+	{
+		*buf = bgr;
+		buf += m_renderWidth;
+	}
+}
+
+void Engine::DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color)
+{
+	DrawHorzLine(x, x+w, y, color);
+	DrawHorzLine(x, x+w, y+h, color);
+	DrawVertLine(y, y+h, x, color);
+	DrawVertLine(y, y+h, x+w, color);
+}
+
+void Engine::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color)
+{
+	ui32 bgr = ToBGR(color);
+
+	int dx = std::abs(x1 - x0);
+	int sx = x0 < x1 ? 1 : -1;
+	int dy = -std::abs(y1 - y0);
+	int sy = y0 < y1 ? 1 : -1;
+	int err = dx + dy;
+
+	float dist = (float)std::max(dx, std::abs(dy));
+	if ( dist==0.0f )
+		return;
+
+	float zStep = (z1 - z0) / dist;
+	float currentZ = z0;
+
+	while ( true )
+	{
+		if ( x0>=0 && x0<m_renderWidth && y0>=0 && y0<m_renderHeight )
+		{
+			int index = y0 * m_renderWidth + x0;
+			if ( currentZ<m_depthBuffer[index] )
+			{
+				m_colorBuffer[index] = bgr;
+				m_depthBuffer[index] = currentZ;
+			}
+		}
+
+		if ( x0==x1 && y0==y1 )
+			break;
+
+		int e2 = 2 * err;
+		if ( e2>=dy )
+		{
+			err += dy;
+			x0 += sx;
+		}
+		if ( e2<=dx )
+		{
+			err += dx;
+			y0 += sy;
+		}
+
+		currentZ += zStep;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+LRESULT Engine::OnWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch ( message )
+	{
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+	case WM_SIZE:
+		FixWindow();
+		FixProjection();
+		break;
+	}
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -515,10 +544,14 @@ bool Engine::Time()
 	return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Engine::Update()
 {
 	// Controller
-	m_keyboard.Update();
+	m_input.Update();
 
 	// Physics
 	Update_Physics();
@@ -639,6 +672,10 @@ void Engine::Update_Purge()
 	m_bornSpriteCount = 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Engine::Render()
 {
 	// Prepare
@@ -650,7 +687,7 @@ void Engine::Render()
 
 	// Background
 	if ( m_sky )
-		DrawSky();
+		ClearSky();
 	else
 		Clear(m_clearColor);
 
@@ -740,7 +777,7 @@ void Engine::Render_Bounding()
 
 void Engine::Render_Clip()
 {
-	m_clipEntityCount = 0;
+	m_statsClipEntityCount = 0;
 	for ( int iEntity=0 ; iEntity<m_entityCount ; iEntity++ )
 	{
 		ENTITY* pEntity = m_entities[iEntity];
@@ -754,7 +791,7 @@ void Engine::Render_Clip()
 		else
 		{
 			pEntity->clipped = true;
-			m_clipEntityCount++;
+			m_statsClipEntityCount++;
 		}
 	}
 }
@@ -826,42 +863,6 @@ void Engine::Render_UI()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Engine::Present()
-{
-#ifdef CONFIG_GPU
-	if ( m_pRenderTarget==nullptr || m_pBitmap==nullptr )
-		return;
-	
-	m_pRenderTarget->BeginDraw();
-	m_pBitmap->CopyFromMemory(NULL, m_colorBuffer.data(), m_renderWidth * 4);
-	D2D1_RECT_F destRect = D2D1::RectF(0.0f, 0.0f, (float)m_windowWidth, (float)m_windowHeight);
-	if ( m_bilinear )
-		m_pRenderTarget->DrawBitmap(m_pBitmap, destRect, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, NULL);
-	else
-		m_pRenderTarget->DrawBitmap(m_pBitmap, destRect, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, NULL);
-	HRESULT hr = m_pRenderTarget->EndDraw();
-	if ( hr==D2DERR_RECREATE_TARGET )
-	{
-		m_pBitmap->Release();
-		m_pBitmap = nullptr;
-		m_pRenderTarget->Release();
-		m_pRenderTarget = nullptr;
-		FixDevice();
-	}
-#else
-	if ( m_windowWidth==m_renderWidth && m_windowHeight==m_renderHeight )
-	{
-		// Fast
-		SetDIBitsToDevice(m_hDC, 0, 0, m_renderWidth, m_renderHeight, 0, 0, 0, m_renderHeight, m_colorBuffer.data(), &m_bi, DIB_RGB_COLORS);
-	}
-	else
-	{
-		// Slow
-		StretchDIBits(m_hDC, 0, 0, m_windowWidth, m_windowHeight, 0, 0, m_renderWidth, m_renderHeight, m_colorBuffer.data(), &m_bi, DIB_RGB_COLORS, SRCCOPY);
-	}
-#endif
-}
-
 void Engine::Clear(XMFLOAT3& color)
 {
 	ui32 bgr = ToBGR(color);
@@ -869,83 +870,7 @@ void Engine::Clear(XMFLOAT3& color)
 	std::fill(m_depthBuffer.begin(), m_depthBuffer.end(), 1.0f);
 }
 
-void Engine::DrawText(FONT* pFont, const char* text, int x, int y)
-{
-	if ( pFont==nullptr || pFont->rgba.size()==0 || text==nullptr )
-		return;
-
-	int penX = x;
-	int penY = y;
-	int textLen = (int)strlen(text);
-	for ( int i=0 ; i<textLen ; ++i )
-	{
-		const byte c = text[i];
-		if ( c=='\n' )
-		{
-			penX = x;
-			penY += pFont->cellH;
-			continue;
-		}
-
-		const GLYPH& g = pFont->glyph[c];
-		if ( g.valid==false )
-		{
-			penX += pFont->cellW / 2;
-			continue;
-		}
-
-		Copy((byte*)m_colorBuffer.data(), m_renderWidth, m_renderHeight, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
-		penX += g.advance>0 ? g.advance : pFont->cellW;
-	}
-}
-
-void Engine::DrawSprite(SPRITE* pSprite)
-{
-	if ( pSprite==nullptr || pSprite->dead || pSprite->pTexture==nullptr )
-		return;
-
-	int width = pSprite->pTexture->width;
-	int height = pSprite->pTexture->height;
-	byte* dst = (byte*)m_colorBuffer.data();
-	Copy(dst, m_renderWidth, m_renderHeight, pSprite->x, pSprite->y, pSprite->pTexture->rgba, width, height, 0, 0, width, height);
-}
-
-void Engine::DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color)
-{
-	COLORREF bgr = ToBGR(color);
-	if ( y<0 || y>=m_renderHeight )
-		return;
-	x1 = Clamp(x1, 0, m_renderWidth);
-	x2 = Clamp(x2, 0, m_renderWidth);
-	ui32* buf = m_colorBuffer.data() + y*m_renderWidth;
-	for ( int i=x1 ; i<x2 ; i++ )
-		buf[i] = bgr;
-}
-
-void Engine::DrawVertLine(int y1, int y2, int x, XMFLOAT3& color)
-{
-	COLORREF bgr = ToBGR(color);
-	if ( x<0 || x>=m_renderWidth )
-		return;
-	y1 = Clamp(y1, 0, m_renderHeight);
-	y2 = Clamp(y2, 0, m_renderHeight);
-	ui32* buf = m_colorBuffer.data() + y1*m_renderWidth + x;
-	for ( int i=y1 ; i<y2 ; i++ )
-	{
-		*buf = bgr;
-		buf += m_renderWidth;
-	}
-}
-
-void Engine::DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color)
-{
-	DrawHorzLine(x, x+w, y, color);
-	DrawHorzLine(x, x+w, y+h, color);
-	DrawVertLine(y, y+h, x, color);
-	DrawVertLine(y, y+h, x+w, color);
-}
-
-void Engine::DrawSky()
+void Engine::ClearSky()
 {
 	ui32 gCol = ToBGR(m_groundColor);
 	ui32 sCol = ToBGR(m_skyColor);
@@ -1218,7 +1143,7 @@ void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, T
 			if ( discard==false )
 			{
 				m_depthBuffer[index] = z;
-				m_colorBuffer[index] = RGB(Clamp(int(out.z*255.0f), 0, 255), Clamp(int(out.y*255.0f), 0, 255), Clamp(int(out.x*255.0f), 0, 255));
+				m_colorBuffer[index] = ToBGR(out);
 			}
 
 			e12 += dE12dx;
@@ -1229,60 +1154,6 @@ void Engine::FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, T
 		e12_row += dE12dy;
 		e23_row += dE23dy;
 		e31_row += dE31dy;
-	}
-}
-
-bool Engine::PixelShader(XMFLOAT3& out, const PIXELSHADER& in, const void* data)
-{
-	out = in.color;
-	return false;
-}
-
-void Engine::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color)
-{
-	ui32 bgr = ToBGR(color);
-
-	int dx = std::abs(x1 - x0);
-	int sx = x0 < x1 ? 1 : -1;
-	int dy = -std::abs(y1 - y0);
-	int sy = y0 < y1 ? 1 : -1;
-	int err = dx + dy;
-
-	float dist = (float)std::max(dx, std::abs(dy));
-	if ( dist==0.0f )
-		return;
-
-	float zStep = (z1 - z0) / dist;
-	float currentZ = z0;
-
-	while ( true )
-	{
-		if ( x0>=0 && x0<m_renderWidth && y0>=0 && y0<m_renderHeight )
-		{
-			int index = y0 * m_renderWidth + x0;
-			if ( currentZ<m_depthBuffer[index] )
-			{
-				m_colorBuffer[index] = bgr;
-				m_depthBuffer[index] = currentZ;
-			}
-		}
-
-		if ( x0==x1 && y0==y1 )
-			break;
-
-		int e2 = 2 * err;
-		if ( e2>=dy )
-		{
-			err += dy;
-			x0 += sx;
-		}
-		if ( e2<=dx )
-		{
-			err += dx;
-			y0 += sy;
-		}
-
-		currentZ += zStep;
 	}
 }
 
@@ -1338,6 +1209,52 @@ bool Engine::Copy(byte* dst, int dstW, int dstH, int dstX, int dstY, const uint8
 	return true;
 }
 
+bool Engine::PixelShader(XMFLOAT3& out, const PIXELSHADER& in, const void* data)
+{
+	out = in.color;
+	return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Engine::Present()
+{
+#ifdef CONFIG_GPU
+	if ( m_pRenderTarget==nullptr || m_pBitmap==nullptr )
+		return;
+	
+	m_pRenderTarget->BeginDraw();
+	m_pBitmap->CopyFromMemory(NULL, m_colorBuffer.data(), m_renderWidth * 4);
+	D2D1_RECT_F destRect = D2D1::RectF(0.0f, 0.0f, (float)m_windowWidth, (float)m_windowHeight);
+	if ( m_bilinear )
+		m_pRenderTarget->DrawBitmap(m_pBitmap, destRect, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, NULL);
+	else
+		m_pRenderTarget->DrawBitmap(m_pBitmap, destRect, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, NULL);
+	HRESULT hr = m_pRenderTarget->EndDraw();
+	if ( hr==D2DERR_RECREATE_TARGET )
+	{
+		m_pBitmap->Release();
+		m_pBitmap = nullptr;
+		m_pRenderTarget->Release();
+		m_pRenderTarget = nullptr;
+		FixDevice();
+	}
+#else
+	if ( m_windowWidth==m_renderWidth && m_windowHeight==m_renderHeight )
+	{
+		// Fast
+		SetDIBitsToDevice(m_hDC, 0, 0, m_renderWidth, m_renderHeight, 0, 0, 0, m_renderHeight, m_colorBuffer.data(), &m_bi, DIB_RGB_COLORS);
+	}
+	else
+	{
+		// Slow
+		StretchDIBits(m_hDC, 0, 0, m_windowWidth, m_windowHeight, 0, 0, m_renderWidth, m_renderHeight, m_colorBuffer.data(), &m_bi, DIB_RGB_COLORS, SRCCOPY);
+	}
+#endif
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1348,20 +1265,5 @@ LRESULT Engine::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	if ( pEngine )
 		return pEngine->OnWindowProc(hWnd, message, wParam, lParam);
 
-	return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
-LRESULT Engine::OnWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch ( message )
-	{
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-	case WM_SIZE:
-		FixWindow();
-		FixProjection();
-		break;
-	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }

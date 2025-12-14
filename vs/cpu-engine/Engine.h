@@ -18,29 +18,36 @@ public:
 	void FixDevice();
 
 	ENTITY* CreateEntity();
-	void ReleaseEntity(ENTITY* pEntity);
 	SPRITE* CreateSprite();
+	void ReleaseEntity(ENTITY* pEntity);
 	void ReleaseSprite(SPRITE* pSprite);
 
 	void GetCursor(XMFLOAT2& pt);
 	RAY GetCameraRay(XMFLOAT2& pt);
 	CAMERA* GetCamera();
 
-	static ui32 ToBGR(XMFLOAT3& color);
-	static XMFLOAT3 ToColor(int r, int g, int b);
-	static float Clamp(float v);
-	static float Clamp(float v, float min, float max);
-	static int Clamp(int v, int min, int max);
-
-	static void CreateSpaceship(MESH& mesh);
-	static void CreateCube(MESH& mesh);
-	static void CreateCircle(MESH& mesh, float radius, int count = 6);
+	void DrawText(FONT* pFont, const char* text, int x, int y, int align = LEFT);
+	void DrawSprite(SPRITE* pSprite);
+	void DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color);
+	void DrawVertLine(int y1, int y2, int x, XMFLOAT3& color);
+	void DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color);
+	void DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color);
 
 protected:
+	virtual void OnStart() {}
+	virtual void OnUpdate() {}
+	virtual void OnExit() {}
+	virtual void OnPreRender() {}
+	virtual void OnPostRender() {}
+	virtual LRESULT OnWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+private:
 	bool Time();
+
 	void Update();
 	void Update_Physics();
 	void Update_Purge();
+
 	void Render();
 	void Render_Sort();
 	void Render_Bounding();
@@ -49,33 +56,48 @@ protected:
 	void Render_Tile(int iTile);
 	void Render_UI();
 
-	void Present();
 	void Clear(XMFLOAT3& color);
-	void DrawText(FONT* pFont, const char* text, int x, int y);
-	void DrawSprite(SPRITE* pSprite);
-	void DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color);
-	void DrawVertLine(int y1, int y2, int x, XMFLOAT3& color);
-	void DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color);
-	void DrawSky();
+	void ClearSky();
 	void DrawEntity(ENTITY* pEntity, TILE& tile);
 	void FillTriangle(XMFLOAT3* tri, VERTEXSHADER* vo, MATERIAL& material, TILE& tile);
-	static bool PixelShader(XMFLOAT3& out, const PIXELSHADER& in, const void* data);
-	void DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color);
 	bool Copy(byte* dst, int dstW, int dstH, int dstX, int dstY, const uint8_t* src, int srcW, int srcH, int srcX, int srcY, int w, int h);
+	static bool PixelShader(XMFLOAT3& out, const PIXELSHADER& in, const void* data);
 
-	virtual void OnStart() {}
-	virtual void OnUpdate() {}
-	virtual void OnExit() {}
-	virtual void OnPreRender() {}
-	virtual void OnPostRender() {}
+	void Present();
 
 	static LRESULT WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-	LRESULT OnWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+protected:
+	// Controller
+	Keyboard m_input;
+
+	// Color
+	bool m_sky;
+	XMFLOAT3 m_clearColor;
+	XMFLOAT3 m_groundColor;
+	XMFLOAT3 m_skyColor;
+
+	// Light
+	XMFLOAT3 m_lightDir;
+	float m_ambient;
+	MATERIAL m_material;
+	
+	// Time
+	float m_time;
+	float m_dt;
+	int m_fps;
+
+	// Camera
+	CAMERA m_camera;
+
+	// Stats
+	int m_statsClipEntityCount;
+	int m_statsThreadCount;
+	int m_statsTileCount;
 
 private:
 	static Engine* s_pEngine;
 
-protected:
 	// Thread
 	int m_threadCount;
 	ThreadJob* m_threads;
@@ -98,9 +120,6 @@ protected:
 	BITMAPINFO m_bi;
 #endif
 
-	// Controller
-	Keyboard m_keyboard;
-
 	// Buffer
 	int m_renderWidth;
 	int m_renderHeight;
@@ -118,27 +137,10 @@ protected:
 	int m_tileCount;
 	std::vector<TILE> m_tiles;
 
-	// Color
-	bool m_sky;
-	XMFLOAT3 m_clearColor;
-	XMFLOAT3 m_groundColor;
-	XMFLOAT3 m_skyColor;
-
-	// Light
-	XMFLOAT3 m_lightDir;
-	float m_ambient;
-	MATERIAL m_material;
-	
 	// Time
 	DWORD m_systime;
-	float m_time;
-	float m_dt;
 	DWORD m_fpsTime;
 	int m_fpsCount;
-	int m_fps;
-
-	// Camera
-	CAMERA m_camera;
 
 	// Entity
 	std::vector<ENTITY*> m_entities;
@@ -157,7 +159,4 @@ protected:
 	int m_bornSpriteCount;
 	std::vector<SPRITE*> m_deadSprites;
 	int m_deadSpriteCount;
-
-	// Stats
-	int m_clipEntityCount;
 };

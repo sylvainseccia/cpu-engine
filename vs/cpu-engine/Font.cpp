@@ -1,6 +1,18 @@
 #include "stdafx.h"
 
-bool FONT::Create(const char* fontName, int fontPx, int cellWidth, int cellHeight, int firstChar, int lastChar)
+FONT::FONT()
+{
+	first = 0;
+	last  = 0;
+	count = 0;
+	cellW = 0;
+	cellH = 0;
+	width = 0;
+	height = 0;
+	glyph[256] = {};
+}
+
+bool FONT::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cellWidth, int cellHeight, int firstChar, int lastChar)
 {
 	if ( cellHeight==-1 )
 		cellHeight = fontPx;
@@ -58,7 +70,7 @@ bool FONT::Create(const char* fontName, int fontPx, int cellWidth, int cellHeigh
 	}
 
 	HGDIOBJ oldFont = SelectObject(hdc, hFont);
-	SetTextColor(hdc, RGB(255, 255, 255));
+	SetTextColor(hdc, ToRGB(color));
 	SetBkMode(hdc, TRANSPARENT);
 	for ( int c=firstChar ; c<=lastChar ; ++c )
 	{

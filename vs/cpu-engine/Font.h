@@ -9,19 +9,20 @@ struct GLYPH
 
 struct FONT
 {
-	int first = 32;
-	int last  = 255;
-	int count = 0;
+	int first;
+	int last;
+	int count;
 
-	int cellW = 0;
-	int cellH = 0;
+	int cellW;
+	int cellH;
 
-	int width = 0;
-	int height = 0;
+	int width;
+	int height;
 
 	std::vector<byte> rgba;
 
-	GLYPH glyph[256] = {};
+	GLYPH glyph[256];
 
-	bool Create(const char* fontName, int fontPx, int cellW = -1, int cellH = -1, int firstChar = 32, int lastChar = 255);
+	FONT();
+	bool Create(int fontPx = 24, XMFLOAT3 color = {1.0f,1.0f,1.0f}, const char* fontName = "Consolas", int cellW = -1, int cellH = -1, int firstChar = 32, int lastChar = 255);
 };
