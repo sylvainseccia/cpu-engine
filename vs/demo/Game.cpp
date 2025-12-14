@@ -20,7 +20,7 @@ void Game::OnStart()
 
 	// Resources
 	m_font.Create(18);
-	m_texture.Load("bird.png");
+	m_texture.Load("bird_amiga.png");
 	m_meshShip.CreateSpaceship();
 	m_meshMissile.CreateSphere(0.5f);
 	m_meshSphere.CreateSphere(2.0f, 16, 16, ToColor(224, 224, 224));
@@ -29,8 +29,8 @@ void Game::OnStart()
 	m_pSprite = CreateSprite();
 	m_pSprite->pTexture = &m_texture;
 	m_pSprite->CenterAnchor();
-	m_pSprite->x = 100;
-	m_pSprite->y = 100;
+	m_pSprite->x = 30;
+	m_pSprite->y = 30;
 
 	// Shader
 	m_materialShip.color = ToColor(255, 128, 0);
@@ -56,7 +56,7 @@ void Game::OnUpdate()
 	// YOUR CODE HERE
 
 	// Bouge le sprite
-	m_pSprite->y = 100 + (int)(sinf(m_time)*50.0f);
+	m_pSprite->y = 30 + RoundToInt(sinf(m_time)*20.0f);
 
 	// Tourne sur XYZ
 	m_pShip->transform.AddYPR(m_dt, m_dt, m_dt);

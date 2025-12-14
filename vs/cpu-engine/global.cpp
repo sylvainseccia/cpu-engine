@@ -73,14 +73,20 @@ int Clamp(int v, int min, int max)
 
 int FloorToInt(float v)
 {
-	int i = (int)v; // trunc toward 0
-	return ((float)i > v) ? (i - 1) : i;
+	int i = (int)v;
+	return (float)i>v ? i-1 : i;
 }
 
 int CeilToInt(float v)
 {
-	int i = (int)v; // trunc toward 0
-	return ((float)i < v) ? (i + 1) : i;
+	int i = (int)v;
+	return (float)i<v ? i+1 : i;
+}
+
+int RoundToInt(float v)
+{
+	int i = (int)v;
+	return v>=0.0f ? ((float)i+0.5f<=v ? i+1 : i) : ((float)i-0.5f>=v ? i-1 : i);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
