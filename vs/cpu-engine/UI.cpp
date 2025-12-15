@@ -20,30 +20,17 @@ bool cpu_texture::Load(const char* path)
 	if ( data==nullptr )
 		return false;
 
-	lodepng::State state;
-	ui32 pngWidth, pngHeight;
-	if ( lodepng_inspect(&pngWidth, &pngHeight, &state, data, filesize) )
+	int w, h;
+	byte* buf = png_lib::parse_png_rgba(data, filesize, &w, &h);
+	if ( buf==nullptr )
 	{
 		delete [] data;
 		return false;
 	}
 
-	bool alpha = false;
-	if ( state.info_png.color.colortype==LCT_RGBA )
-		alpha = true;
-	else if ( state.info_png.color.colortype!=LCT_RGB )
-	{
-		delete [] data;
-		return false;
-	}
-
-	ui32 error = lodepng_decode32(&rgba, (ui32*)&width, (ui32*)&height, data, filesize);
-	delete [] data;
-	if ( error || width==0 || height==0 )
-	{
-		Close();
-		return false;
-	}
+	rgba = buf;
+	width = w;
+	height = h;
 	count = width * height;
 	size = count * 4;
 	return true;

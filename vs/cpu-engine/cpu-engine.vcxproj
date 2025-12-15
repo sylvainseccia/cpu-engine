@@ -85,9 +85,9 @@
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="lodepng.h" />
     <ClInclude Include="Multithreading.h" />
     <ClInclude Include="Particle.h" />
+    <ClInclude Include="png32.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="stdafx.h" />
@@ -104,9 +104,9 @@
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="global.cpp" />
     <ClCompile Include="Input.cpp" />
-    <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="Multithreading.cpp" />
     <ClCompile Include="Particle.cpp" />
+    <ClCompile Include="png32.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -41,9 +41,6 @@
     <ClInclude Include="UI.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="lodepng.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Font.h">
       <Filter>Engine</Filter>
     </ClInclude>
@@ -61,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="State.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="png32.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -88,9 +88,6 @@
     <ClCompile Include="UI.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="lodepng.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="Font.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
@@ -105,6 +102,9 @@
     </ClCompile>
     <ClCompile Include="State.cpp">
       <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="png32.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -27,6 +27,7 @@
 #include <map>
 #include <thread>
 #include <functional>
+//#include <stdint.h>
 
 // Config
 ///////////
@@ -46,11 +47,6 @@ using namespace DirectX;
 inline XMVECTOR XMRIGHT					= g_XMIdentityR0;
 inline XMVECTOR XMUP					= g_XMIdentityR1;
 inline XMVECTOR XMDIR					= g_XMIdentityR2;
-
-// Third Party
-///////////////
-
-#include "lodepng.h"
 
 // Engine
 ///////////
@@ -116,6 +112,7 @@ inline XMFLOAT3 ORANGE					= { 1.0f, 0.5f, 0.0f };
 #define DEPTH_WRITE						2
 
 // Core
+#include "png32.h"
 #include "global.h"
 #include "Input.h"
 #include "Thread.h"
