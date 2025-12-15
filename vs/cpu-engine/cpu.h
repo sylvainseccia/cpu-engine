@@ -83,11 +83,14 @@ using PS_FUNC							= void(*)(cpu_ps_io& data);
 // Special
 #define cpu								cpu_engine::GetInstanceRef()
 #define input							cpu_engine::GetInstance()->GetInput()
-#define elapsed							cpu_engine::GetInstance()->GetElapsed()
-#define gametime						cpu_engine::GetInstance()->GetTime()
+#define dtime							cpu_engine::GetInstance()->GetDeltaTime()
+#define ttime							cpu_engine::GetInstance()->GetTotalTime()
 #define since(t)						(cpu_engine::GetInstance()->GetTime()-t)
 
 // Float3
+inline XMFLOAT3 RIGHT					= { 1.0f, 0.0f, 0.0f };
+inline XMFLOAT3 UP						= { 0.0f, 1.0f, 0.0f };
+inline XMFLOAT3 DIR						= { 0.0f, 0.0f, 1.0f };
 inline XMFLOAT3 ZERO					= { 0.0f, 0.0f, 0.0f };
 inline XMFLOAT3 ONE						= { 1.0f, 1.0f, 1.0f };
 inline XMFLOAT3 WHITE					= { 1.0f, 1.0f, 1.0f };

@@ -64,7 +64,8 @@ void App::OnStart()
 
 	// Shader
 	m_materialShip.color = ToColor(255, 128, 0);
-	m_materialMissile.ps = MyPixelShader;
+	m_materialMissile.ps = MissileShader;
+	m_materialRock.ps = RockShader;
 
 	// 3D
 	m_missileSpeed = 10.0f;
@@ -74,6 +75,10 @@ void App::OnStart()
 	m_pBall->transform.pos.x = 3.0f;
 	m_pBall->transform.pos.y = 3.0f;
 	m_pBall->transform.pos.z = 5.0f;
+	m_pRock = CreateEntity();
+	m_pRock->pMesh = &m_meshSphere;
+	m_pRock->pMaterial = &m_materialRock;
+	m_pRock->transform.SetScaling(0.1f);
 
 	// Ship
 	m_pShip = new Ship;
@@ -86,19 +91,22 @@ void App::OnUpdate()
 	// YOUR CODE HERE
 
 	// Move sprite
-	m_pSprite->y = 30 + RoundToInt(sinf(m_time)*20.0f);
+	m_pSprite->y = 30 + RoundToInt(sinf(m_totalTime)*20.0f);
 
 	// Turn ball
-	m_pBall->transform.AddYPR(m_elapsed);
+	m_pBall->transform.AddYPR(m_deltaTime);
+
+	// Move rock
+	m_pRock->transform.OrbitAroundAxis(m_pBall->transform.pos, UP, 3.0f, m_totalTime*2.0f);
 
 	// Turn camera
-	m_camera.transform.AddYPR(0.0f, 0.0f, m_elapsed*0.1f);
+	m_camera.transform.AddYPR(0.0f, 0.0f, m_deltaTime*0.1f);
 
 	// Move missiles
 	for ( auto it=m_missiles.begin() ; it!=m_missiles.end() ; )
 	{
 		cpu_entity* pMissile = *it;
-		pMissile->transform.Move(m_elapsed*m_missileSpeed);
+		pMissile->transform.Move(m_deltaTime*m_missileSpeed);
 		if ( pMissile->lifetime>10.0f )
 		{
 			it = m_missiles.erase(it);
@@ -137,10 +145,18 @@ void App::OnPostRender()
 	DrawText(&m_font, info.c_str(), GetWidth()/2, 10, TEXT_CENTER);
 }
 
-void App::MyPixelShader(cpu_ps_io& io)
+void App::MissileShader(cpu_ps_io& io)
 {
 	// garder seulement le rouge du pixel éclairé
 	io.color.x = io.p.color.x;
+}
+
+void App::RockShader(cpu_ps_io& io)
+{
+	float scale = ((sinf(ttime*3.0f)*0.5f)+0.5f) * 0.5f + 0.5f; 
+	io.color.x = io.p.color.x * scale;
+	io.color.y = io.p.color.y * scale;
+	io.color.z = io.p.color.z;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,10 +196,10 @@ void Ship::Destroy()
 void Ship::Update()
 {
 	// Turn ship
-	m_pEntity->transform.AddYPR(elapsed, elapsed, elapsed);
+	m_pEntity->transform.AddYPR(dtime, dtime, dtime);
 
 	// Move ship
-	m_pEntity->transform.pos.z += elapsed * 1.0f;
+	m_pEntity->transform.pos.z += dtime * 1.0f;
 
 	// Fire
 	if ( input.IsKey(VK_SPACE) )

@@ -193,8 +193,8 @@ void cpu_engine::Run()
 
 	// Start
 	m_systime = timeGetTime();
-	m_time = 0.0f;
-	m_elapsed = 0.0f;
+	m_totalTime = 0.0f;
+	m_deltaTime = 0.0f;
 	m_fpsTime = 0;
 	m_fpsCount = 0;
 	m_fps = 0;
@@ -530,8 +530,8 @@ bool cpu_engine::Time()
 	m_systime = curtime;
 	if ( deltatime>30 )
 		deltatime = 30;
-	m_elapsed = deltatime/1000.0f;
-	m_time += m_elapsed;
+	m_deltaTime = deltatime/1000.0f;
+	m_totalTime += m_deltaTime;
 
 	if ( m_systime-m_fpsTime>=1000 )
 	{
@@ -575,7 +575,7 @@ void cpu_engine::Update_Physics()
 		if ( pEntity->dead )
 			continue;
 
-		pEntity->lifetime += m_elapsed;
+		pEntity->lifetime += m_deltaTime;
 	}
 }
 
@@ -587,7 +587,7 @@ void cpu_engine::Update_FSM()
 		if ( pFSM->dead )
 			continue;
 
-		pFSM->Update(m_elapsed);
+		pFSM->Update(m_deltaTime);
 	}
 }
 

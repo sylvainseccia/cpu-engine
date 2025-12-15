@@ -24,6 +24,7 @@ struct cpu_transform
 	void SetScaling(float scale);
 	void SetPosition(float x, float y, float z);
 	void Move(float dist);
+	void OrbitAroundAxis(XMFLOAT3& center, XMFLOAT3& axis, float radius, float angle);
 	void ResetRotation();
 	void SetRotation(cpu_transform& transform);
 	void SetYPR(float yaw, float pitch = 0.0f, float roll = 0.0f);

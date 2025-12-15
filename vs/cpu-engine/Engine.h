@@ -22,8 +22,8 @@ public:
 	int GetWidth() { return m_renderWidth; }
 	int GetHeight() { return m_renderWidth; }
 	cpu_input& GetInput() { return m_input; }
-	float GetTime() { return m_time; };
-	float GetElapsed() { return m_elapsed; }
+	float GetTotalTime() { return m_totalTime; }
+	float GetDeltaTime() { return m_deltaTime; };
 
 	template <typename T>
 	cpu_fsm<T>* CreateFSM(T* pInstance);
@@ -98,8 +98,8 @@ protected:
 	cpu_material m_defaultMaterial;
 	
 	// Time
-	float m_time;
-	float m_elapsed;
+	float m_totalTime;
+	float m_deltaTime;
 	int m_fps;
 
 	// Camera

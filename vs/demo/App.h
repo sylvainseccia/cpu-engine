@@ -19,7 +19,8 @@ public:
 	void OnPreRender() override;
 	void OnPostRender() override;
 
-	static void MyPixelShader(cpu_ps_io& io);
+	static void MissileShader(cpu_ps_io& io);
+	static void RockShader(cpu_ps_io& io);
 
 private:
 	inline static App* s_pApp = nullptr;
@@ -37,12 +38,14 @@ private:
 	// Shader
 	cpu_material m_materialShip;
 	cpu_material m_materialMissile;
+	cpu_material m_materialRock;
 
 	// 3D
 	Ship* m_pShip;
 	std::list<cpu_entity*> m_missiles;
 	float m_missileSpeed;
 	cpu_entity* m_pBall;
+	cpu_entity* m_pRock;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

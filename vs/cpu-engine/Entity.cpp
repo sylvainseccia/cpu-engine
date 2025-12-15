@@ -51,6 +51,21 @@ void cpu_transform::Move(float dist)
 	pos.z += dir.z * dist;
 }
 
+void cpu_transform::OrbitAroundAxis(XMFLOAT3& center, XMFLOAT3& axis, float radius, float angle)
+{
+	XMVECTOR nAxis = XMVector3Normalize(XMLoadFloat3(&axis));
+	float d = XMVectorGetX(XMVector3Dot(nAxis, XMUP));
+	XMVECTOR ref = fabsf(d)>0.99f ? XMRIGHT : XMUP;
+	XMVECTOR radialDir = XMVector3Normalize(XMVector3Cross(nAxis, ref));
+	XMVECTOR radial = XMVectorScale(radialDir, radius);
+	XMMATRIX r = XMMatrixRotationAxis(nAxis, angle);
+	XMVECTOR rotatedRadial = XMVector3TransformNormal(radial, r);
+	XMVECTOR position = XMVectorAdd(XMLoadFloat3(&center), rotatedRadial);
+	pos.x = XMVectorGetX(position);
+	pos.y = XMVectorGetY(position);
+	pos.z = XMVectorGetZ(position);
+}
+
 void cpu_transform::ResetRotation()
 {
 	dir = { 0.0f, 0.0f, 1.0f };
