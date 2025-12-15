@@ -47,7 +47,7 @@ struct cpu_pixel
 
 struct cpu_ps_io
 {
-	// cpu_input
+	// Input
 	cpu_pixel p;
 	void* values;
 

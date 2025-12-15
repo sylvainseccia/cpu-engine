@@ -2,7 +2,6 @@
 
 void cpu_thread_job::OnCallback()
 {
-	cpu_engine* pEngine = cpu_engine::Instance();
 	m_quitRequest = false;
 
 	// cpu_thread
@@ -16,11 +15,11 @@ void cpu_thread_job::OnCallback()
 		// Job
 		while ( true )
 		{
-			int index = pEngine->m_nextTile.fetch_add(1, std::memory_order_relaxed);
+			int index = cpu.m_nextTile.fetch_add(1, std::memory_order_relaxed);
 			if ( index>=m_count )
 				break;
 
-			pEngine->Render_Tile(index);
+			cpu.Render_Tile(index);
 
 #ifdef CONFIG_MT_DEBUG
 			pEngine->Present();

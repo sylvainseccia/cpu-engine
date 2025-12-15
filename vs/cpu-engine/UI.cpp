@@ -74,6 +74,7 @@ cpu_sprite::cpu_sprite()
 	index = -1;
 	sortedIndex = -1;
 	dead = false;
+	visible = true;
 }
 
 void cpu_sprite::CenterAnchor()

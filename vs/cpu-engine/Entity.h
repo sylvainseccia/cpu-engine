@@ -54,6 +54,7 @@ struct cpu_entity
 	cpu_rectangle box;
 	bool clipped;
 	byte depth;
+	bool visible;
 
 	cpu_entity();
 };

@@ -1,8 +1,8 @@
 #pragma once
 
-class cpu_input
+struct cpu_input
 {
-public:
+private:
 	enum
 	{
 		_NONE,
@@ -11,15 +11,14 @@ public:
 		_PUSH,
 	};
 
+private:
+	byte keys[256];
+
 public:
 	cpu_input();
-	virtual ~cpu_input();
 
 	bool IsKey(int key);
 	bool IsKeyDown(int key);
 	bool IsKeyUp(int key);
 	void Update();
-
-protected:
-	byte m_keys[256];
 };

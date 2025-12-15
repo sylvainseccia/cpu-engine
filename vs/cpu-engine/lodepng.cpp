@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 #ifdef LODEPNG_COMPILE_CPP
-#include <fstream>
+//#include <fstream>
 #endif /*LODEPNG_COMPILE_CPP*/
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1310) /*Visual Studio: A few warning types are not desired here.*/
@@ -4324,12 +4324,12 @@ static ui32 readChunk_tIME(LodePNGInfo* info, const byte* data, size_t chunkLeng
   if(chunkLength != 7) return 73; /*invalid tIME chunk size*/
 
   info->time_defined = 1;
-  info->time.year = 256u * data[0] + data[1];
-  info->time.month = data[2];
-  info->time.day = data[3];
-  info->time.hour = data[4];
-  info->time.minute = data[5];
-  info->time.second = data[6];
+  info->timefix.year = 256u * data[0] + data[1];
+  info->timefix.month = data[2];
+  info->timefix.day = data[3];
+  info->timefix.hour = data[4];
+  info->timefix.minute = data[5];
+  info->timefix.second = data[6];
 
   return 0; /* OK */
 }
@@ -4908,18 +4908,18 @@ static ui32 addChunk_bKGD(ucvector* out, const LodePNGInfo* info)
   return error;
 }
 
-static ui32 addChunk_tIME(ucvector* out, const LodePNGTime* time)
+static ui32 addChunk_tIME(ucvector* out, const LodePNGTime* timefix)
 {
   ui32 error = 0;
   byte* data = (byte*)lodepng_malloc(7);
   if(!data) return 83; /*alloc fail*/
-  data[0] = (byte)(time->year / 256);
-  data[1] = (byte)(time->year % 256);
-  data[2] = (byte)time->month;
-  data[3] = (byte)time->day;
-  data[4] = (byte)time->hour;
-  data[5] = (byte)time->minute;
-  data[6] = (byte)time->second;
+  data[0] = (byte)(timefix->year / 256);
+  data[1] = (byte)(timefix->year % 256);
+  data[2] = (byte)timefix->month;
+  data[3] = (byte)timefix->day;
+  data[4] = (byte)timefix->hour;
+  data[5] = (byte)timefix->minute;
+  data[6] = (byte)timefix->second;
   error = addChunk(out, "tIME", data, 7);
   lodepng_free(data);
   return error;
@@ -5553,7 +5553,7 @@ ui32 lodepng_encode(byte** out, size_t* outsize,
     if(state->error) break;
 #ifdef LODEPNG_COMPILE_ANCILLARY_CHUNKS
     /*tIME*/
-    if(info.time_defined) addChunk_tIME(&outv, &info.time);
+    if(info.time_defined) addChunk_tIME(&outv, &info.timefix);
     /*tEXt and/or zTXt*/
     for(i = 0; i != info.text_num; ++i)
     {

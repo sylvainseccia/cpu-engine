@@ -8,7 +8,9 @@ public:
 public:
 	cpu_engine();
 	virtual ~cpu_engine();
-	static cpu_engine* Instance();
+
+	static cpu_engine* GetInstance();
+	static cpu_engine& GetInstanceRef();
 
 	void Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, float windowScaleAtStart = 1.0f, bool hardwareBilinear = false);
 	void Uninitialize();
@@ -16,8 +18,12 @@ public:
 	void FixWindow();
 	void FixProjection();
 	void FixDevice();
+	HWND GetHWND() { return m_hWnd; }
 	int GetWidth() { return m_renderWidth; }
 	int GetHeight() { return m_renderWidth; }
+	cpu_input& GetInput() { return m_input; }
+	float GetTime() { return m_time; };
+	float GetElapsed() { return m_elapsed; }
 
 	template <typename T>
 	cpu_fsm<T>* CreateFSM(T* pInstance);
@@ -25,10 +31,10 @@ public:
 	cpu_sprite* CreateSprite();
 	cpu_particle_emitter* CreateParticleEmitter();
 	template <typename T>
-	void ReleaseFSM(cpu_fsm<T>* pFSM);
-	void ReleaseEntity(cpu_entity* pEntity);
-	void ReleaseSprite(cpu_sprite* pSprite);
-	void ReleaseParticleEmitter(cpu_particle_emitter* pEmitter);
+	cpu_fsm<T>* ReleaseFSM(cpu_fsm<T>* pFSM);
+	cpu_entity* ReleaseEntity(cpu_entity* pEntity);
+	cpu_sprite* ReleaseSprite(cpu_sprite* pSprite);
+	cpu_particle_emitter* ReleaseParticleEmitter(cpu_particle_emitter* pEmitter);
 
 	void GetCursor(XMFLOAT2& pt);
 	cpu_ray GetCameraRay(XMFLOAT2& pt);
@@ -93,7 +99,7 @@ protected:
 	
 	// Time
 	float m_time;
-	float m_dt;
+	float m_elapsed;
 	int m_fps;
 
 	// Camera
@@ -106,7 +112,7 @@ protected:
 	int m_statsDrawnTriangleCount;
 
 private:
-	static cpu_engine* s_pEngine;
+	inline static cpu_engine* s_pEngine;
 
 	// cpu_thread
 	int m_threadCount;
@@ -153,30 +159,31 @@ private:
 	int m_fpsCount;
 
 	// State
-	cpu_manager<cpu_fsm_base> m_fsms;
+	cpu_manager<cpu_fsm_base> m_fsmManager;
 
 	// Entity
-	cpu_manager<cpu_entity> m_entities;
+	cpu_manager<cpu_entity> m_entityManager;
 
 	// Particle
 	cpu_particle_data m_particleData;
 	cpu_particle_physics m_particlePhysics;
-	cpu_manager<cpu_particle_emitter> m_particleEmitters;
+	cpu_manager<cpu_particle_emitter> m_particleManager;
 
 	// Sprite
-	cpu_manager<cpu_sprite> m_sprites;
+	cpu_manager<cpu_sprite> m_spriteManager;
 };
 
 template <typename T>
 cpu_fsm<T>* cpu_engine::CreateFSM(T* pInstance)
 {
 	cpu_fsm<T>* pFSM = new cpu_fsm<T>(pInstance);
-	m_fsms.Add((cpu_fsm_base*)pFSM);
+	m_fsmManager.Add((cpu_fsm_base*)pFSM);
 	return pFSM;
 }
 
 template <typename T>
-void cpu_engine::ReleaseFSM(cpu_fsm<T>* pFSM)
+cpu_fsm<T>* cpu_engine::ReleaseFSM(cpu_fsm<T>* pFSM)
 {
-	m_fsms.Release(pFSM);
+	m_fsmManager.Release(pFSM);
+	return nullptr;
 }

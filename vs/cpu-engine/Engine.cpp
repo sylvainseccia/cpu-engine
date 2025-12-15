@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-cpu_engine* cpu_engine::s_pEngine;
-
 cpu_engine::cpu_engine()
 {
 	s_pEngine = this;
@@ -29,9 +27,14 @@ cpu_engine::~cpu_engine()
 	assert( m_hInstance==nullptr );
 }
 
-cpu_engine* cpu_engine::Instance()
+cpu_engine* cpu_engine::GetInstance()
 {
 	return s_pEngine;
+}
+
+cpu_engine& cpu_engine::GetInstanceRef()
+{
+	return *s_pEngine;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,9 +94,9 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	m_ambient = 0.2f;
 
 	// Entity
-	m_entities.Clear();
-	m_sprites.Clear();
-	m_particleEmitters.Clear();
+	m_entityManager.Clear();
+	m_spriteManager.Clear();
+	m_particleManager.Clear();
 	
 	// Tile
 #ifdef CONFIG_MT
@@ -191,7 +194,7 @@ void cpu_engine::Run()
 	// Start
 	m_systime = timeGetTime();
 	m_time = 0.0f;
-	m_dt = 0.0f;
+	m_elapsed = 0.0f;
 	m_fpsTime = 0;
 	m_fpsCount = 0;
 	m_fps = 0;
@@ -277,37 +280,35 @@ void cpu_engine::FixDevice()
 
 cpu_entity* cpu_engine::CreateEntity()
 {
-	return m_entities.Create();
+	return m_entityManager.Create();
 }
 
 cpu_sprite* cpu_engine::CreateSprite()
 {
-	return m_sprites.Create();
+	return m_spriteManager.Create();
 }
 
 cpu_particle_emitter* cpu_engine::CreateParticleEmitter()
 {
-	return m_particleEmitters.Create();
+	return m_particleManager.Create();
 }
 
-//void cpu_engine::ReleaseFSM(cpu_fsm* pFSM)
-//{
-//	m_fsms.Release(pFSM);
-//}
-
-void cpu_engine::ReleaseEntity(cpu_entity* pEntity)
+cpu_entity* cpu_engine::ReleaseEntity(cpu_entity* pEntity)
 {
-	m_entities.Release(pEntity);
+	m_entityManager.Release(pEntity);
+	return nullptr;
 }
 
-void cpu_engine::ReleaseSprite(cpu_sprite* pSprite)
+cpu_sprite* cpu_engine::ReleaseSprite(cpu_sprite* pSprite)
 {
-	m_sprites.Release(pSprite);
+	m_spriteManager.Release(pSprite);
+	return nullptr;
 }
 
-void cpu_engine::ReleaseParticleEmitter(cpu_particle_emitter* pEmitter)
+cpu_particle_emitter* cpu_engine::ReleaseParticleEmitter(cpu_particle_emitter* pEmitter)
 {
-	m_particleEmitters.Release(pEmitter);
+	m_particleManager.Release(pEmitter);
+	return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -404,7 +405,7 @@ void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 
 void cpu_engine::DrawSprite(cpu_sprite* pSprite)
 {
-	if ( pSprite==nullptr || pSprite->dead || pSprite->pTexture==nullptr )
+	if ( pSprite==nullptr || pSprite->dead || pSprite->visible==false || pSprite->pTexture==nullptr )
 		return;
 
 	int width = pSprite->pTexture->width;
@@ -529,8 +530,8 @@ bool cpu_engine::Time()
 	m_systime = curtime;
 	if ( deltatime>30 )
 		deltatime = 30;
-	m_dt = deltatime/1000.0f;
-	m_time += m_dt;
+	m_elapsed = deltatime/1000.0f;
+	m_time += m_elapsed;
 
 	if ( m_systime-m_fpsTime>=1000 )
 	{
@@ -568,34 +569,34 @@ void cpu_engine::Update()
 
 void cpu_engine::Update_Physics()
 {
-	for ( int i=0 ; i<m_entities.count ; i++ )
+	for ( int i=0 ; i<m_entityManager.count ; i++ )
 	{
-		cpu_entity* pEntity = m_entities[i];
+		cpu_entity* pEntity = m_entityManager[i];
 		if ( pEntity->dead )
 			continue;
 
-		pEntity->lifetime += m_dt;
+		pEntity->lifetime += m_elapsed;
 	}
 }
 
 void cpu_engine::Update_FSM()
 {
-	for ( int i=0 ; i<m_fsms.count ; i++ )
+	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
-		cpu_fsm_base* pFSM = m_fsms[i];
+		cpu_fsm_base* pFSM = m_fsmManager[i];
 		if ( pFSM->dead )
 			continue;
 
-		pFSM->Update(m_dt);
+		pFSM->Update(m_elapsed);
 	}
 }
 
 void cpu_engine::Update_Purge()
 {
-	m_fsms.Purge();
-	m_entities.Purge();
-	m_sprites.Purge();
-	m_particleEmitters.Purge();
+	m_fsmManager.Purge();
+	m_entityManager.Purge();
+	m_spriteManager.Purge();
+	m_particleManager.Purge();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -653,14 +654,14 @@ void cpu_engine::Render()
 void cpu_engine::Render_SortZ()
 {
 	// Entities
-	std::sort(m_entities.sortedList.begin(), m_entities.sortedList.begin()+m_entities.count, [](const cpu_entity* pA, const cpu_entity* pB) { return pA->view.z < pB->view.z; });
-	for ( int i=0 ; i<m_entities.count ; i++ )
-		m_entities.sortedList[i]->sortedIndex = i;
+	std::sort(m_entityManager.sortedList.begin(), m_entityManager.sortedList.begin()+m_entityManager.count, [](const cpu_entity* pA, const cpu_entity* pB) { return pA->view.z < pB->view.z; });
+	for ( int i=0 ; i<m_entityManager.count ; i++ )
+		m_entityManager.sortedList[i]->sortedIndex = i;
 
 	// Sprites
-	std::sort(m_sprites.sortedList.begin(), m_sprites.sortedList.begin()+m_sprites.count, [](const cpu_sprite* pA, const cpu_sprite* pB) { return pA->z < pB->z; });
-	for ( int i=0 ; i<m_sprites.count ; i++ )
-		m_sprites.sortedList[i]->sortedIndex = i;
+	std::sort(m_spriteManager.sortedList.begin(), m_spriteManager.sortedList.begin()+m_spriteManager.count, [](const cpu_sprite* pA, const cpu_sprite* pB) { return pA->z < pB->z; });
+	for ( int i=0 ; i<m_spriteManager.count ; i++ )
+		m_spriteManager.sortedList[i]->sortedIndex = i;
 }
 
 void cpu_engine::Render_RecalculateMatrices()
@@ -668,9 +669,9 @@ void cpu_engine::Render_RecalculateMatrices()
 	float width = (float)m_renderWidth;
 	float height = (float)m_renderHeight;
 
-	for ( int iEntity=0 ; iEntity<m_entities.count ; iEntity++ )
+	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
-		cpu_entity* pEntity = m_entities[iEntity];
+		cpu_entity* pEntity = m_entityManager[iEntity];
 		if ( pEntity->dead )
 			continue;
 
@@ -705,10 +706,10 @@ void cpu_engine::Render_RecalculateMatrices()
 void cpu_engine::Render_ApplyClipping()
 {
 	m_statsClipEntityCount = 0;
-	for ( int iEntity=0 ; iEntity<m_entities.count ; iEntity++ )
+	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
-		cpu_entity* pEntity = m_entities[iEntity];
-		if ( pEntity->dead )
+		cpu_entity* pEntity = m_entityManager[iEntity];
+		if ( pEntity->dead || pEntity->visible==false )
 			continue;
 
 		if ( m_camera.frustum.Intersect(pEntity->transform.pos, pEntity->radius) )
@@ -729,10 +730,10 @@ void cpu_engine::Render_PrepareTiles()
 	m_nextTile = 0;
 
 	// Entities
-	for ( int iEntity=0 ; iEntity<m_entities.count ; iEntity++ )
+	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
-		cpu_entity* pEntity = m_entities[iEntity];
-		if ( pEntity->dead )
+		cpu_entity* pEntity = m_entityManager[iEntity];
+		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr || pEntity->clipped )
 			continue;
 
 		int minX = Clamp(int(pEntity->box.min.x) / m_tileWidth, 0, m_tileColCount-1);
@@ -755,10 +756,10 @@ void cpu_engine::Render_PrepareTiles()
 void cpu_engine::Render_Tile(int iTile)
 {
 	cpu_tile& tile = m_tiles[iTile];
-	for ( int iEntity=0 ; iEntity<m_entities.count ; iEntity++ )
+	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
-		cpu_entity* pEntity = m_entities.sortedList[iEntity];
-		if ( pEntity->dead || pEntity->pMesh==nullptr || pEntity->clipped )
+		cpu_entity* pEntity = m_entityManager.sortedList[iEntity];
+		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr || pEntity->clipped )
 			continue;
 	
 		bool entityHasTile = (pEntity->tile>>tile.index) & 1 ? true : false;
@@ -775,9 +776,9 @@ void cpu_engine::Render_Tile(int iTile)
 
 void cpu_engine::Render_UI()
 {
-	for ( int iSprite=0 ; iSprite<m_sprites.count ; iSprite++ )
+	for ( int iSprite=0 ; iSprite<m_spriteManager.count ; iSprite++ )
 	{
-		cpu_sprite* pSprite = m_sprites.sortedList[iSprite];
+		cpu_sprite* pSprite = m_spriteManager.sortedList[iSprite];
 		if ( pSprite->dead )
 			continue;
 
@@ -1126,11 +1127,11 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 			{
 				XMVECTOR n = XMLoadFloat3(&io.p.normal);				
 				//n = XMVector3Normalize(n); // Expensive (better results)
-				XMVECTOR l = XMLoadFloat3(&cpu_engine::Instance()->m_lightDir);
+				XMVECTOR l = XMLoadFloat3(&m_lightDir);
 				float ndotl = XMVectorGetX(XMVector3Dot(n, l));
 				if ( ndotl<0.0f )
 					ndotl = 0.0f;
-				float intensity = ndotl + cpu_engine::Instance()->m_ambient;
+				float intensity = ndotl + m_ambient;
 				io.p.color.x = io.p.albedo.x * intensity;
 				io.p.color.y = io.p.albedo.y * intensity;
 				io.p.color.z = io.p.albedo.z * intensity;

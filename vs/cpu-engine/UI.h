@@ -29,6 +29,7 @@ struct cpu_sprite
 	int index;
 	int sortedIndex;
 	bool dead;
+	bool visible;
 
 	cpu_sprite();
 	void CenterAnchor();

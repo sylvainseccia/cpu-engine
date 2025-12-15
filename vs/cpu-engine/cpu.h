@@ -41,7 +41,12 @@ inline XMVECTOR XMRIGHT					= g_XMIdentityR0;
 inline XMVECTOR XMUP					= g_XMIdentityR1;
 inline XMVECTOR XMDIR					= g_XMIdentityR2;
 
-// cpu_engine
+// Third Party
+///////////////
+
+#include "lodepng.h"
+
+// Engine
 ///////////
 
 #undef near
@@ -70,6 +75,15 @@ using PS_FUNC							= void(*)(cpu_ps_io& data);
 // Macro
 #define DELPTR(p)						{ if ( (p) ) { delete (p); (p) = nullptr; } }
 #define RELPTR(p)						{ if ( (p) ) { (p)->Release(); (p) = nullptr; } }
+#define I(p)							p::GetInstance()
+#define CAPTION(v)						SetWindowText(cpu.GetHWND(), std::to_string(v).c_str());
+
+// Special
+#define cpu								cpu_engine::GetInstanceRef()
+#define input							cpu_engine::GetInstance()->GetInput()
+#define elapsed							cpu_engine::GetInstance()->GetElapsed()
+#define gametime						cpu_engine::GetInstance()->GetTime()
+#define since(t)						(cpu_engine::GetInstance()->GetTime()-t)
 
 // Float3
 inline XMFLOAT3 ZERO					= { 0.0f, 0.0f, 0.0f };
@@ -96,13 +110,12 @@ inline XMFLOAT3 ORANGE					= { 1.0f, 0.5f, 0.0f };
 #define DEPTH_WRITE						2
 
 // Core
-#include "lodepng.h"
 #include "global.h"
 #include "Input.h"
 #include "Thread.h"
-#include "State.h"
 
-// cpu_engine
+// Engine
+#include "State.h"
 #include "UI.h"
 #include "Font.h"
 #include "Particle.h"
@@ -111,3 +124,4 @@ inline XMFLOAT3 ORANGE					= { 1.0f, 0.5f, 0.0f };
 #include "Entity.h"
 #include "Multithreading.h"
 #include "Engine.h"
+
