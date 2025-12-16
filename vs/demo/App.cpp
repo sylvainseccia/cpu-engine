@@ -141,7 +141,7 @@ void App::OnPostRender()
 	info += std::to_string(m_statsDrawnTriangleCount) + " triangles, ";
 	info += std::to_string(m_statsThreadCount) + " threads, ";
 	info += std::to_string(m_statsTileCount) + " tiles\n";
-	info += "(FIRE: space or left button)";
+	info += "(FIRE: space or left/right button)";
 	DrawText(&m_font, info.c_str(), GetWidth()/2, 10, TEXT_CENTER);
 }
 
@@ -204,7 +204,7 @@ void Ship::Update()
 	// Fire
 	if ( input.IsKey(VK_SPACE) )
 		I(App)->SpawnMissile();
-	if ( input.IsKeyDown(VK_LBUTTON) )
+	if ( input.IsKeyDown(VK_LBUTTON) || input.IsKey(VK_RBUTTON) )
 		I(App)->SpawnMissileWithMouse();
 }
 
