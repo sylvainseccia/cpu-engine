@@ -40,6 +40,8 @@ public:
 	cpu_ray GetCameraRay(XMFLOAT2& pt);
 	cpu_camera* GetCamera();
 
+	int GetTotalTriangleCount();
+
 	void DrawText(cpu_font* pFont, const char* text, int x, int y, int align = TEXT_LEFT);
 	void DrawSprite(cpu_sprite* pSprite);
 	void DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color);
@@ -105,7 +107,7 @@ protected:
 	// Camera
 	cpu_camera m_camera;
 
-	// Stats
+	// Stats: render
 	int m_statsClipEntityCount;
 	int m_statsThreadCount;
 	int m_statsTileCount;

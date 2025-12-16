@@ -139,6 +139,7 @@ void App::OnPostRender()
 	info += std::to_string(m_missiles.size()) + " missiles, ";
 	info += std::to_string(m_statsClipEntityCount) + " clipped entities, ";
 	info += std::to_string(m_statsDrawnTriangleCount) + " triangles, ";
+	//info += std::to_string(m_statsDrawnTriangleCount) + "/" + std::to_string(GetTotalTriangleCount()) + " triangles, ";
 	info += std::to_string(m_statsThreadCount) + " threads, ";
 	info += std::to_string(m_statsTileCount) + " tiles\n";
 	info += "(FIRE: space or left/right button)";

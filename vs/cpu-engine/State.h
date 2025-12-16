@@ -7,6 +7,7 @@ struct cpu_fsm_base
 	bool dead;
 	int index;
 	int sortedIndex;
+
 	int state;
 	float globalTotalTime;
 	float totalTime;

@@ -355,6 +355,22 @@ cpu_camera* cpu_engine::GetCamera()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int cpu_engine::GetTotalTriangleCount()
+{
+	int count = 0;
+	for ( int i=0 ; i<m_entityManager.count ; i++ )
+	{
+		cpu_mesh* pMesh = m_entityManager[i]->pMesh;
+		if ( pMesh )
+			count += (int)pMesh->triangles.size();
+	}
+	return count;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int align)
 {
 	if ( pFont==nullptr || pFont->rgba.size()==0 || text==nullptr )
@@ -405,9 +421,6 @@ void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 
 void cpu_engine::DrawSprite(cpu_sprite* pSprite)
 {
-	if ( pSprite==nullptr || pSprite->dead || pSprite->visible==false || pSprite->pTexture==nullptr )
-		return;
-
 	int width = pSprite->pTexture->width;
 	int height = pSprite->pTexture->height;
 	byte* dst = (byte*)m_colorBuffer.data();
@@ -622,7 +635,6 @@ void cpu_engine::Render()
 	OnPreRender();
 
 	// Entities
-	m_statsDrawnTriangleCount = 0;
 #ifdef CONFIG_MT_DEBUG
 	for ( int i=0 ; i<m_threadCount ; i++ )
 	{
@@ -635,6 +647,11 @@ void cpu_engine::Render()
 	for ( int i=0 ; i<m_threadCount ; i++ )
 		WaitForSingleObject(m_threads[i].m_hEventEnd, INFINITE);
 #endif
+
+	// Stats
+	m_statsDrawnTriangleCount = 0;
+	for ( int i=0 ; i<m_tileCount ; i++ )
+		m_statsDrawnTriangleCount += m_tiles[i].statsDrawnTriangleCount;
 
 	// Callback
 	OnPostRender();
@@ -709,7 +726,7 @@ void cpu_engine::Render_ApplyClipping()
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->dead || pEntity->visible==false )
+		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr )
 			continue;
 
 		if ( m_camera.frustum.Intersect(pEntity->transform.pos, pEntity->radius) )
@@ -756,6 +773,7 @@ void cpu_engine::Render_PrepareTiles()
 void cpu_engine::Render_Tile(int iTile)
 {
 	cpu_tile& tile = m_tiles[iTile];
+	tile.statsDrawnTriangleCount = 0;
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager.sortedList[iEntity];
@@ -779,7 +797,7 @@ void cpu_engine::Render_UI()
 	for ( int iSprite=0 ; iSprite<m_spriteManager.count ; iSprite++ )
 	{
 		cpu_sprite* pSprite = m_spriteManager.sortedList[iSprite];
-		if ( pSprite->dead )
+		if ( pSprite->dead || pSprite->visible==false || pSprite->pTexture==nullptr )
 			continue;
 
 		DrawSprite(pSprite);
@@ -990,7 +1008,6 @@ void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
 		dc.pTile = &tile;
 		dc.depth = pEntity->depth;
 		FillTriangle(dc);
-		m_statsDrawnTriangleCount++;
 
 		// Wireframe
 #ifdef CONFIG_WIREFRAME
@@ -1160,6 +1177,9 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 		e23_row += dE23dy;
 		e31_row += dE31dy;
 	}
+
+	// Stats
+	dc.pTile->statsDrawnTriangleCount++;
 }
 
 bool cpu_engine::Copy(byte* dst, int dstW, int dstH, int dstX, int dstY, const uint8_t* src, int srcW, int srcH, int srcX, int srcY, int w, int h)
