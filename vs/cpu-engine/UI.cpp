@@ -22,11 +22,9 @@ bool cpu_texture::Load(const char* path)
 
 	int w, h;
 	byte* buf = png_lib::parse_png_rgba(data, filesize, &w, &h);
+	delete [] data;
 	if ( buf==nullptr )
-	{
-		delete [] data;
 		return false;
-	}
 
 	rgba = buf;
 	width = w;

@@ -24,7 +24,45 @@ cpu_engine::cpu_engine()
 
 cpu_engine::~cpu_engine()
 {
-	assert( m_hInstance==nullptr );
+	Free();
+}
+
+void cpu_engine::Free()
+{
+	if ( m_hInstance==nullptr )
+		return;
+
+	// cpu_thread
+	for ( int i=0 ; i<m_threadCount ; i++ )
+	{
+		cpu_thread_job& thread = m_threads[i];
+		CloseHandle(thread.m_hEventStart);
+		CloseHandle(thread.m_hEventEnd);
+	}
+	delete [] m_threads;
+	m_threads = nullptr;
+	
+	// Surface
+#ifdef CONFIG_GPU
+	RELPTR(m_pBitmap);
+	RELPTR(m_pRenderTarget);
+	RELPTR(m_pD2DFactory);
+#else
+	if ( m_hDC )
+	{
+		ReleaseDC(m_hWnd, m_hDC);
+		m_hDC = nullptr;
+	}
+#endif
+
+	// Window
+	if ( m_hWnd )
+	{
+		DestroyWindow(m_hWnd);
+		m_hWnd = nullptr;
+	}
+	UnregisterClass("RETRO_ENGINE", m_hInstance);
+	m_hInstance = nullptr;
 }
 
 cpu_engine* cpu_engine::GetInstance()
@@ -145,44 +183,6 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 
 	// Window
 	ShowWindow(m_hWnd, SW_SHOW);
-}
-
-void cpu_engine::Uninitialize()
-{
-	if ( m_hInstance==nullptr )
-		return;
-
-	// cpu_thread
-	for ( int i=0 ; i<m_threadCount ; i++ )
-	{
-		cpu_thread_job& thread = m_threads[i];
-		CloseHandle(thread.m_hEventStart);
-		CloseHandle(thread.m_hEventEnd);
-	}
-	delete [] m_threads;
-	m_threads = nullptr;
-
-	// Surface
-#ifdef CONFIG_GPU
-	RELPTR(m_pBitmap);
-	RELPTR(m_pRenderTarget);
-	RELPTR(m_pD2DFactory);
-#else
-	if ( m_hDC )
-	{
-		ReleaseDC(m_hWnd, m_hDC);
-		m_hDC = nullptr;
-	}
-#endif
-
-	// Window
-	if ( m_hWnd )
-	{
-		DestroyWindow(m_hWnd);
-		m_hWnd = nullptr;
-	}
-	UnregisterClass("RETRO_ENGINE", m_hInstance);
-	m_hInstance = nullptr;
 }
 
 void cpu_engine::Run()
@@ -1116,14 +1116,14 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 			io.p.albedo.z = dc.vo[2].albedo.z + (dc.vo[0].albedo.z - dc.vo[2].albedo.z) * w1 + (dc.vo[1].albedo.z - dc.vo[2].albedo.z) * w2;
 
 			// Lighting
-			if ( dc.pMaterial->lighting==GOURAUD )
+			if ( dc.pMaterial->lighting==LIGHTING_GOURAUD )
 			{
 				float intensity = dc.vo[2].intensity + (dc.vo[0].intensity - dc.vo[2].intensity) * w1 + (dc.vo[1].intensity - dc.vo[2].intensity) * w2;
 				io.p.color.x = io.p.albedo.x * intensity;
 				io.p.color.y = io.p.albedo.y * intensity;
 				io.p.color.z = io.p.albedo.z * intensity;
 			}
-			else if ( dc.pMaterial->lighting==LAMBERT )
+			else if ( dc.pMaterial->lighting==LIGHTING_LAMBERT )
 			{
 				XMVECTOR n = XMLoadFloat3(&io.p.normal);				
 				//n = XMVector3Normalize(n); // Expensive (better results)

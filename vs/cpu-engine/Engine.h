@@ -8,12 +8,12 @@ public:
 public:
 	cpu_engine();
 	virtual ~cpu_engine();
+	void Free();
 
 	static cpu_engine* GetInstance();
 	static cpu_engine& GetInstanceRef();
 
 	void Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, float windowScaleAtStart = 1.0f, bool hardwareBilinear = false);
-	void Uninitialize();
 	void Run();
 	void FixWindow();
 	void FixProjection();

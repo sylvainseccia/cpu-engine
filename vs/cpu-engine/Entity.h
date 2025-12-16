@@ -113,8 +113,16 @@ struct cpu_manager
 	{
 		Clear();
 	}
+	~cpu_manager()
+	{
+		Clear();
+	}
 	void Clear()
 	{
+		assert( bornCount==0 );
+		assert( deadCount==0 );
+		for ( int i=0 ; i<count ; i++ )
+			delete list[i];
 		list.clear();
 		sortedList.clear();
 		count = 0;

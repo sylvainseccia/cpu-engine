@@ -3,9 +3,9 @@
 cpu_material::cpu_material()
 {
 #ifdef _DEBUG
-	lighting = GOURAUD;
+	lighting = LIGHTING_GOURAUD;
 #else
-	lighting = LAMBERT;
+	lighting = LIGHTING_LAMBERT;
 #endif
 
 	ps = nullptr;

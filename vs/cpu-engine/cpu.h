@@ -27,7 +27,9 @@
 #include <map>
 #include <thread>
 #include <functional>
-//#include <stdint.h>
+#ifdef _DEBUG
+	#include <crtdbg.h>
+#endif
 
 // Config
 ///////////
@@ -74,6 +76,12 @@ using i64								= __int64;
 using ui64								= unsigned __int64;
 using PS_FUNC							= void(*)(cpu_ps_io& data);
 
+// Memory
+#ifdef _DEBUG
+	#define DEBUG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+	#define new DEBUG_NEW
+#endif
+
 // Macro
 #define DELPTR(p)						{ if ( (p) ) { delete (p); (p) = nullptr; } }
 #define RELPTR(p)						{ if ( (p) ) { (p)->Release(); (p) = nullptr; } }
@@ -101,9 +109,9 @@ inline XMFLOAT3 GREEN					= { 0.0f, 1.0f, 0.0f };
 inline XMFLOAT3 ORANGE					= { 1.0f, 0.5f, 0.0f };
 
 // Light
-#define UNLIT							0
-#define GOURAUD							1
-#define LAMBERT							2
+#define LIGHTING_UNLIT					0
+#define LIGHTING_GOURAUD				1
+#define LIGHTING_LAMBERT				2
 
 // Text
 #define TEXT_LEFT						0
