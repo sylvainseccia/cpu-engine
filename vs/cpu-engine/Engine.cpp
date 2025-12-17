@@ -669,7 +669,7 @@ void cpu_engine::Render()
 #endif
 
 	// Particles
-	Render_Particles(false);
+	Render_Particles();
 
 	// Stats
 	m_statsDrawnTriangleCount = 0;
@@ -815,7 +815,7 @@ void cpu_engine::Render_Tile(int iTile)
 #endif
 }
 
-void cpu_engine::Render_Particles(bool additiveNoAlpha, float brightness)
+void cpu_engine::Render_Particles()
 {
 	if ( m_particleData.alive<=0 )
 		return;
@@ -828,16 +828,20 @@ void cpu_engine::Render_Particles(bool additiveNoAlpha, float brightness)
 			continue;
 
 		const float invW = 1.0f / clip.w;
-		const float ndcX = clip.x * invW;   // [-1,1]
-		const float ndcY = clip.y * invW;   // [-1,1]
-		const float ndcZ = clip.z * invW;	// [0,1]
-		if ( ndcX<-1.0f || ndcX>1.0f || ndcY<-1.0f || ndcY>1.0f || ndcZ<0.0f || ndcZ>1.0f )
+		const float ndcX = clip.x * invW;
+		if ( ndcX<-1.0f || ndcX>1.0f )
+			continue;
+		const float ndcY = clip.y * invW;
+		if ( ndcY<-1.0f || ndcY>1.0f )
+			continue;
+		const float ndcZ = clip.z * invW;
+		if ( ndcZ<0.0f || ndcZ>1.0f )
 			continue;
 
 		const int sx = (int)((ndcX + 1.0f) * m_renderWidthHalf);
 		const int sy = (int)((1.0f - ndcY) * m_renderHeightHalf);
 		const float sz = ndcZ;
-		if ( (int)sx>=m_renderWidth || (int)sy>=m_renderHeight )
+		if ( sx<0 || sy<0 || sx>=m_renderWidth || sy>=m_renderHeight )
 			continue;
 
 		const int idx = sy * m_renderWidth + sx;
@@ -845,20 +849,14 @@ void cpu_engine::Render_Particles(bool additiveNoAlpha, float brightness)
 			continue;
 		m_depthBuffer[idx] = sz;
 
-		float r = m_particleData.r[i] * brightness;
-		float g = m_particleData.g[i] * brightness;
-		float b = m_particleData.b[i] * brightness;
-		//float attn = 1.0f / (1.0f + 6.0f * sz); // tweak 6.0f
-		//float attn = 1.0f - (sz * sz);
-		//r *= attn;
-		//g *= attn;
-		//b *= attn;
+		float a = 1.0f - m_particleData.age[i] * m_particleData.invDuration[i];
+		a *= a;
 
-		ui32 color = ToRGB(r, g, b);
-		if ( additiveNoAlpha )
-			m_colorBuffer[idx] = SwapRB(AddSaturateRGBA(m_colorBuffer[idx], color));
-		else
-			m_colorBuffer[idx] = SwapRB(color);
+		XMFLOAT3 dst = ToColorFromBGR(m_colorBuffer[idx]);
+		float r = dst.x + m_particleData.r[i]*a;
+		float g = dst.y + m_particleData.g[i]*a;
+		float b = dst.z + m_particleData.b[i]*a;
+		m_colorBuffer[idx] = ToBGR(r, g, b);
 	}
 }
 

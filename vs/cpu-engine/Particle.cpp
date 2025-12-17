@@ -212,13 +212,17 @@ cpu_particle_emitter::cpu_particle_emitter()
 	sortedIndex = -1;
 	dead = false;
 
-	rate = 200.0f;
+	rate = 100.0f;
 	durationMin = 0.5f;
 	durationMax = 3.0f;
 	pos = ZERO;
 	dir = UP;
-	color = WHITE;
-	speed = 1.0f;
+	colorMin = { 1.0f, 1.0f, 1.0f };
+	colorMax = { 1.0f, 1.0f, 1.0f };
+	spread = 0.5f;
+	speedMin = 0.7f;
+	speedMax = 1.3f;
+	spawnRadius = 0.05f;
 
 	accum = 0.0f;
 };
@@ -226,28 +230,6 @@ cpu_particle_emitter::cpu_particle_emitter()
 void cpu_particle_emitter::Update(cpu_particle_data& p, float dt)
 {
 	// TODO: exposer les variables
-
-	const float spread = 0.5f;        // dispersion directionnelle
-	const float speedMin = 0.7f;       // variation de vitesse
-	const float speedMax = 1.3f;
-	const float spawnRadius = 0.05f;   // volume d'émission
-
-	XMFLOAT3 vel = dir;
-	vel.x *= speed;
-	vel.y *= speed;
-	vel.z *= speed;
-
-	float len = sqrtf(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
-	if ( len<1e-6f )
-	{
-		vel.x = 0.0f;
-		vel.y = 1.0f;
-		vel.z = 0.0f;
-		len = 1.0f;
-	}
-	vel.x /= len;
-	vel.y /= len;
-	vel.z /= len;
 
 	accum += rate * dt;
 	int n = (int)accum;
@@ -271,10 +253,10 @@ void cpu_particle_emitter::Update(cpu_particle_data& p, float dt)
 		float dvz = RandSigned(seed) * spread;
 
 		float speed = speedMin + (speedMax - speedMin) * Rand01(seed);
-		p.vx[i] = (vel.x + dvx) * speed;
-		p.vy[i] = (vel.y + dvy) * speed;
-		p.vy[i] = (vel.y + dvy) * speed;
-		p.vz[i] = (vel.z + dvz) * speed;
+		p.vx[i] = (dir.x + dvx) * speed;
+		p.vy[i] = (dir.y + dvy) * speed;
+		p.vy[i] = (dir.y + dvy) * speed;
+		p.vz[i] = (dir.z + dvz) * speed;
 
 		p.age[i] = 0.0f;
 
@@ -282,9 +264,11 @@ void cpu_particle_emitter::Update(cpu_particle_data& p, float dt)
 		p.duration[i] = durationMin + (durationMax - durationMin) * rand;
 		p.invDuration[i] = 1.0f / p.duration[i];
 
-		p.r[i] = color.x;
-		p.g[i] = color.y;
-		p.b[i] = color.z;
+		float t = Rand01(seed);
+		float intensity = 0.8f + 0.2f * Rand01(seed);
+		p.r[i] = std::lerp(colorMin.x, colorMax.x, t) * intensity;
+		p.g[i] = std::lerp(colorMin.y, colorMax.y, t) * intensity;
+		p.b[i] = std::lerp(colorMin.z, colorMax.z, t) * intensity;
 
 		p.seed[i] = seed;
 	}

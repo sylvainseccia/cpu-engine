@@ -69,13 +69,17 @@ struct cpu_particle_emitter
 	int sortedIndex;
 	bool dead;
 
-	float rate; // particles/sec
-	float durationMin;
-	float durationMax;
-	XMFLOAT3 pos;
-	XMFLOAT3 dir;
-	XMFLOAT3 color;
-	float speed;
+	float rate;				// particles/sec
+	float durationMin;		// duration range
+	float durationMax;		// duration range
+	XMFLOAT3 pos;			// world position
+	XMFLOAT3 dir;			// normalized direction
+	XMFLOAT3 colorMin;		// color range
+	XMFLOAT3 colorMax;		// color range
+	float spread;			// dispersion directionnelle
+	float speedMin;			// speed range
+	float speedMax;			// speed range
+	float spawnRadius;		// volume d'émission
 
 private:
 	float accum;

@@ -87,12 +87,11 @@ void App::OnStart()
 
 	// Particle
 	m_particleData.Create(1000000);
-	//m_particlePhysics.maxSpeed = 10.0f;
 	m_particlePhysics.gy = -0.5f;
 	m_pEmitter = CreateParticleEmitter();
-	m_pEmitter->rate = 10000.0f;
-	m_pEmitter->speed = 1.0f;
-	m_pEmitter->color = ToColor(192, 192, 255);
+	m_pEmitter->rate = 100000.0f;
+	m_pEmitter->colorMin = ToColor(192, 192, 255);
+	m_pEmitter->colorMax = ToColor(255, 192, 192);
 }
 
 void App::OnUpdate()
@@ -109,6 +108,9 @@ void App::OnUpdate()
 	m_pRock->transform.OrbitAroundAxis(m_pBall->transform.pos, UP, 3.0f, m_totalTime*2.0f);
 	m_pEmitter->pos = m_pRock->transform.pos;
 	m_pEmitter->dir = m_pRock->transform.dir;
+	m_pEmitter->dir.x = -m_pEmitter->dir.x; 
+	m_pEmitter->dir.y = -m_pEmitter->dir.y; 
+	m_pEmitter->dir.z = -m_pEmitter->dir.z; 
 
 	// Turn camera
 	m_camera.transform.AddYPR(0.0f, 0.0f, m_deltaTime*0.1f);

@@ -16,6 +16,9 @@ ui32 ToRGB(float r, float g, float b);
 ui32 ToBGR(XMFLOAT3& color);
 ui32 ToBGR(float r, float g, float b);
 XMFLOAT3 ToColor(int r, int g, int b);
+XMFLOAT3 ToColorFromRGB(ui32 rgb);
+XMFLOAT3 ToColorFromBGR(ui32 bgr);
+XMFLOAT4 ToColor(int r, int g, int b, int a);
 ui32 LerpBGR(ui32 c0, ui32 c1, float t);
 ui32 AddSaturateRGBA(ui32 dst, ui32 src);
 

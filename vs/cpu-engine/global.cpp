@@ -74,6 +74,34 @@ XMFLOAT3 ToColor(int r, int g, int b)
 	return color;
 }
 
+XMFLOAT3 ToColorFromRGB(ui32 rgb)
+{
+	XMFLOAT3 color;
+	color.x = (rgb & 0xFF)/255.0f;
+	color.y = ((rgb>>16) & 0xFF)/255.0f;
+	color.z = ((rgb>>24) & 0xFF)/255.0f;
+	return color;
+}
+
+XMFLOAT3 ToColorFromBGR(ui32 bgr)
+{
+	XMFLOAT3 color;
+	color.x = ((bgr>>24) & 0xFF)/255.0f;
+	color.y = ((bgr>>16) & 0xFF)/255.0f;
+	color.z = (bgr & 0xFF)/255.0f;
+	return color;
+}
+
+XMFLOAT4 ToColor(int r, int g, int b, int a)
+{
+	XMFLOAT4 color;
+	color.x = Clamp(r, 0, 255)/255.0f;
+	color.y = Clamp(g, 0, 255)/255.0f;
+	color.z = Clamp(b, 0, 255)/255.0f;
+	color.w = Clamp(a, 0, 255)/255.0f;
+	return color;
+}
+
 ui32 LerpBGR(ui32 c0, ui32 c1, float t)
 {
 	int b0 = (int)( c0        & 255);

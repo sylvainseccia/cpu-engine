@@ -72,7 +72,7 @@ private:
 	void Render_ApplyClipping();
 	void Render_PrepareTiles();
 	void Render_Tile(int iTile);
-	void Render_Particles(bool additiveNoAlpha, float brightness = 1.0f);
+	void Render_Particles();
 	void Render_UI();
 
 	void Clear(XMFLOAT3& color);
@@ -145,6 +145,7 @@ private:
 #endif
 
 	// Buffer
+	cpu_rendertarget m_rt;
 	int m_renderWidth;
 	int m_renderHeight;
 	int m_renderPixelCount;
