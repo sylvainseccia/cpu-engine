@@ -21,7 +21,7 @@ public:
 	void FixProjection();
 	void FixDevice();
 	HWND GetHWND() { return m_hWnd; }
-	cpu_rt* GetMainRT() { return &m_rt; }
+	cpu_rt* GetMainRT() { return &m_mainRT; }
 	cpu_rt* SetRT(cpu_rt* pRT) { cpu_rt* pOld = m_pRT; m_pRT = pRT; return pOld; }
 	cpu_rt* GetRT() { return m_pRT; }
 	cpu_input& GetInput() { return m_input; }
@@ -84,8 +84,10 @@ private:
 	void Render_TileParticles(int iTile);
 	void Render_UI();
 
-	void Clear(XMFLOAT3& color);
-	void ClearSky();
+	void Clear();
+	void ClearDepth();
+	void Fill(XMFLOAT3& rgb);
+	void FillSky();
 	void DrawEntity(cpu_entity* pEntity, cpu_tile& tile);
 	void FillTriangle(cpu_drawcall& dc);
 	bool Copy(byte* dst, int dstW, int dstH, int dstX, int dstY, const byte* src, int srcW, int srcH, int srcX, int srcY, int w, int h);
@@ -100,7 +102,7 @@ protected:
 	cpu_input m_input;
 
 	// Color
-	bool m_sky;
+	int m_clear;
 	XMFLOAT3 m_clearColor;
 	XMFLOAT3 m_groundColor;
 	XMFLOAT3 m_skyColor;
@@ -156,7 +158,7 @@ private:
 #endif
 
 	// Buffer
-	cpu_rt m_rt;
+	cpu_rt m_mainRT;
 	cpu_rt* m_pRT;
 
 	// Camera

@@ -93,7 +93,12 @@ using PS_FUNC							= void(*)(cpu_ps_io& data);
 #define I(p)							p::GetInstance()
 #define CAPTION(v)						SetWindowText(cpu.GetHWND(), std::to_string(v).c_str());
 #define ID(s)							GetStateID<s>()
+#define RGBX(r,g,b)						((ui32)(((byte)(r)|((ui16)((byte)(g))<<8))|(((ui16)(byte)(b))<<16))|0xFF000000)
 #define RGBA(r,g,b,a)					((ui32)(((byte)(r)|((ui16)((byte)(g))<<8))|(((ui16)(byte)(b))<<16))|(((ui32)(byte)(a))<<24))
+#define R(rgba)							((rgba)&0xFF)
+#define G(rgba)							(((rgba)>>8)&0xFF)
+#define B(rgba)							(((rgba)>>16)&0xFF)
+#define A(rgba)							(((rgba)>>24)&0xFF)
 #define JOBS(j)							{m_nextTile=0;for(size_t i=0;i<(j).size();i++)(j)[i].PostStartEvent();for(size_t i=0;i<(j).size();i++)(j)[i].WaitEndEvent();}
 
 // Special
@@ -125,6 +130,12 @@ inline XMFLOAT3 ORANGE					= { 1.0f, 0.5f, 0.0f };
 #define TEXT_LEFT						0
 #define TEXT_CENTER						1
 #define TEXT_RIGHT						2
+
+// Clear
+#define CLEAR_NONE						0
+#define CLEAR_TRANSPARENT				1
+#define CLEAR_COLOR						2
+#define CLEAR_SKY						3
 
 // Depth
 #define DEPTH_READ						1

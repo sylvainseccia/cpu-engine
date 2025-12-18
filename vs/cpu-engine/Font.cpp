@@ -71,7 +71,7 @@ bool cpu_font::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cell
 	}
 
 	HGDIOBJ oldFont = SelectObject(hdc, hFont);
-	SetTextColor(hdc, ToRGB(color));
+	SetTextColor(hdc, ToRGB(color)&0xFFFFFF);
 	SetBkMode(hdc, TRANSPARENT);
 	for ( int c=firstChar ; c<=lastChar ; ++c )
 	{
@@ -97,14 +97,15 @@ bool cpu_font::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cell
 	byte* bgra = (byte*)bits;
 	for ( int i=0 ; i<n ; ++i )
 	{
-		const byte b = bgra[i*4+0];
-		const byte g = bgra[i*4+1];
-		const byte r = bgra[i*4+2];
+		int offset = i*4;
+		const byte b = bgra[offset+0];
+		const byte g = bgra[offset+1];
+		const byte r = bgra[offset+2];
 		const byte a = std::max({ r, g, b }); // conserve l'antialias (gris -> alpha partiel)
-		rgba[i*4+0] = r;
-		rgba[i*4+1] = g;
-		rgba[i*4+2] = b;
-		rgba[i*4+3] = a;
+		rgba[offset+0] = r;
+		rgba[offset+1] = g;
+		rgba[offset+2] = b;
+		rgba[offset+3] = a;
 	}
 
 	SelectObject(hdc, oldFont);

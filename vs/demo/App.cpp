@@ -90,8 +90,8 @@ void App::OnStart()
 	m_particlePhysics.gy = -0.5f;
 	m_pEmitter = CreateParticleEmitter();
 	m_pEmitter->density = 1000.0f;
-	m_pEmitter->colorMin = ToColor(192, 192, 255);
-	m_pEmitter->colorMax = ToColor(255, 192, 192);
+	m_pEmitter->colorMin = ToColor(255, 0, 0);
+	m_pEmitter->colorMax = ToColor(255, 0, 0);
 }
 
 void App::OnUpdate()

@@ -95,14 +95,15 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
 
 	// Buffer
-	m_rt.width = renderWidth;
-	m_rt.height = renderHeight;
-	m_rt.pixelCount = renderWidth * renderHeight;
-	m_rt.widthHalf = renderWidth * 0.5f;
-	m_rt.heightHalf = renderHeight * 0.5f;
-	m_rt.colorBuffer.resize(m_rt.pixelCount);
-	m_rt.depth = true;
-	m_rt.depthBuffer.resize(m_rt.pixelCount);
+	m_pRT = &m_mainRT;
+	m_mainRT.width = renderWidth;
+	m_mainRT.height = renderHeight;
+	m_mainRT.pixelCount = renderWidth * renderHeight;
+	m_mainRT.widthHalf = renderWidth * 0.5f;
+	m_mainRT.heightHalf = renderHeight * 0.5f;
+	m_mainRT.colorBuffer.resize(m_mainRT.pixelCount);
+	m_mainRT.depth = true;
+	m_mainRT.depthBuffer.resize(m_mainRT.pixelCount);
 
 	// Surface
 #ifdef CONFIG_GPU
@@ -111,12 +112,12 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 #else
 	m_hDC = GetDC(m_hWnd);
 	SetStretchBltMode(m_hDC, COLORONCOLOR);
-	m_bi.bmiHeader.biWidth = m_rt.width;
-	m_bi.bmiHeader.biHeight = -m_rt.height;
+	m_bi.bmiHeader.biWidth = m_mainRT.width;
+	m_bi.bmiHeader.biHeight = -m_mainRT.height;
 #endif
 
 	// Colors
-	m_sky = true;
+	m_clear = CLEAR_SKY;
 	m_clearColor = ToColor(32, 32, 64);
 	m_groundColor = ToColor(32, 64, 32);
 	m_skyColor = ToColor(32, 32, 64);
@@ -143,10 +144,10 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	m_tileRowCount = (m_threadCount + m_tileColCount - 1) / m_tileColCount;
 	m_tileCount = m_tileColCount * m_tileRowCount;
 	m_statsTileCount = m_tileCount;
-	m_tileWidth = m_rt.width / m_tileColCount;
-	m_tileHeight = m_rt.height / m_tileRowCount;
-	int missingWidth = m_rt.width - (m_tileWidth*m_tileColCount);
-	int missingHeight = m_rt.height - (m_tileHeight*m_tileRowCount);
+	m_tileWidth = m_mainRT.width / m_tileColCount;
+	m_tileHeight = m_mainRT.height / m_tileRowCount;
+	int missingWidth = m_mainRT.width - (m_tileWidth*m_tileColCount);
+	int missingHeight = m_mainRT.height - (m_tileHeight*m_tileRowCount);
 	for ( int row=0 ; row<m_tileRowCount ; row++ )
 	{
 		for ( int col=0 ; col<m_tileColCount ; col++ )
@@ -267,7 +268,8 @@ void cpu_engine::FixDevice()
 	D2D1_SIZE_U size = D2D1::SizeU(m_windowWidth, m_windowHeight);
 	m_pD2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(m_hWnd, size), &m_pRenderTarget);
 	
-	D2D1_SIZE_U renderSize = D2D1::SizeU(m_rt.width, m_rt.height);
+	cpu_rt& rt = *GetRT();
+	D2D1_SIZE_U renderSize = D2D1::SizeU(rt.width, rt.height);
 	D2D1_BITMAP_PROPERTIES props;
 	props.pixelFormat = D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
 	props.dpiX = 96.0f;
@@ -332,19 +334,23 @@ cpu_rt* cpu_engine::Release(cpu_rt* pRT)
 
 void cpu_engine::GetCursor(XMFLOAT2& pos)
 {
+	cpu_rt& rt = *GetMainRT();
+
 	POINT pt;
 	GetCursorPos(&pt);
 	ScreenToClient(m_hWnd, &pt);
 	pos.x = (float)pt.x;
 	pos.y = (float)pt.y;
-	pos.x = pos.x*m_rt.width/m_windowWidth;
-	pos.y = pos.y*m_rt.height/m_windowHeight;
+	pos.x = pos.x*rt.width/m_windowWidth;
+	pos.y = pos.y*rt.height/m_windowHeight;
 }
 
 cpu_ray cpu_engine::GetCameraRay(XMFLOAT2& pt)
 {
-	float px = pt.x*2.0f/m_rt.width - 1.0f;
-	float py = pt.y*2.0f/m_rt.height - 1.0f;
+	cpu_rt& rt = *GetMainRT();
+
+	float px = pt.x*2.0f/rt.width - 1.0f;
+	float py = pt.y*2.0f/rt.height - 1.0f;
 
 	float x = px/m_camera.matProj._11;
 	float y = -py/m_camera.matProj._22;
@@ -391,6 +397,7 @@ void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 	if ( pFont==nullptr || pFont->rgba.size()==0 || text==nullptr )
 		return;
 
+	cpu_rt& rt = *GetRT();
 	const int cw = pFont->advance;
 	const int ch = pFont->cellH;
 	const char* p = text;
@@ -411,7 +418,7 @@ void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 				penX += cw;
 				continue;
 			}
-			Copy((byte*)m_rt.colorBuffer.data(), m_rt.width, m_rt.height, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
+			Copy((byte*)rt.colorBuffer.data(), rt.width, rt.height, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
 			penX += cw;
 		}
 	};
@@ -436,36 +443,39 @@ void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 
 void cpu_engine::DrawSprite(cpu_sprite* pSprite)
 {
+	cpu_rt& rt = *GetRT();
 	int width = pSprite->pTexture->width;
 	int height = pSprite->pTexture->height;
-	byte* dst = (byte*)m_rt.colorBuffer.data();
-	Copy(dst, m_rt.width, m_rt.height, pSprite->x, pSprite->y, pSprite->pTexture->rgba, width, height, 0, 0, width, height);
+	byte* dst = (byte*)rt.colorBuffer.data();
+	Copy(dst, rt.width, rt.height, pSprite->x, pSprite->y, pSprite->pTexture->rgba, width, height, 0, 0, width, height);
 }
 
 void cpu_engine::DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color)
 {
+	cpu_rt& rt = *GetRT();
 	COLORREF bgr = ToBGR(color);
-	if ( y<0 || y>=m_rt.height )
+	if ( y<0 || y>=rt.height )
 		return;
-	x1 = Clamp(x1, 0, m_rt.width);
-	x2 = Clamp(x2, 0, m_rt.width);
-	ui32* buf = m_rt.colorBuffer.data() + y*m_rt.width;
+	x1 = Clamp(x1, 0, rt.width);
+	x2 = Clamp(x2, 0, rt.width);
+	ui32* buf = rt.colorBuffer.data() + y*rt.width;
 	for ( int i=x1 ; i<x2 ; i++ )
 		buf[i] = bgr;
 }
 
 void cpu_engine::DrawVertLine(int y1, int y2, int x, XMFLOAT3& color)
 {
+	cpu_rt& rt = *GetRT();
 	COLORREF bgr = ToBGR(color);
-	if ( x<0 || x>=m_rt.width )
+	if ( x<0 || x>=rt.width )
 		return;
-	y1 = Clamp(y1, 0, m_rt.height);
-	y2 = Clamp(y2, 0, m_rt.height);
-	ui32* buf = m_rt.colorBuffer.data() + y1*m_rt.width + x;
+	y1 = Clamp(y1, 0, rt.height);
+	y2 = Clamp(y2, 0, rt.height);
+	ui32* buf = rt.colorBuffer.data() + y1*rt.width + x;
 	for ( int i=y1 ; i<y2 ; i++ )
 	{
 		*buf = bgr;
-		buf += m_rt.width;
+		buf += rt.width;
 	}
 }
 
@@ -479,6 +489,7 @@ void cpu_engine::DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color)
 
 void cpu_engine::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color)
 {
+	cpu_rt& rt = *GetRT();
 	ui32 bgr = ToBGR(color);
 
 	int dx = abs(x1 - x0);
@@ -496,13 +507,13 @@ void cpu_engine::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XM
 
 	while ( true )
 	{
-		if ( x0>=0 && x0<m_rt.width && y0>=0 && y0<m_rt.height )
+		if ( x0>=0 && x0<rt.width && y0>=0 && y0<rt.height )
 		{
-			int index = y0 * m_rt.width + x0;
-			if ( currentZ<m_rt.depthBuffer[index] )
+			int index = y0 * rt.width + x0;
+			if ( currentZ<rt.depthBuffer[index] )
 			{
-				m_rt.colorBuffer[index] = bgr;
-				m_rt.depthBuffer[index] = currentZ;
+				rt.colorBuffer[index] = bgr;
+				rt.depthBuffer[index] = currentZ;
 			}
 		}
 
@@ -653,7 +664,7 @@ void cpu_engine::Update_Purge()
 void cpu_engine::Render()
 {
 	// RT
-	m_pRT = &m_rt;
+	m_pRT = &m_mainRT;
 
 	// Tiles
 	for ( int i=0 ; i<m_tileCount ; i++ )
@@ -666,11 +677,22 @@ void cpu_engine::Render()
 	Render_ApplyClipping();
 	Render_AssignEntityTile();
 
+	// Depth
+	ClearDepth();
+
 	// Background
-	if ( m_sky )
-		ClearSky();
-	else
-		Clear(m_clearColor);
+	switch ( m_clear )
+	{
+	case CLEAR_TRANSPARENT:
+		Clear();
+		break;
+	case CLEAR_COLOR:
+		Fill(m_clearColor);
+		break;
+	case CLEAR_SKY:
+		FillSky();
+		break;
+	}
 
 	// Callback
 	OnPreRender();
@@ -732,8 +754,9 @@ void cpu_engine::Render_SortZ()
 
 void cpu_engine::Render_RecalculateMatrices()
 {
-	float width = (float)m_rt.width;
-	float height = (float)m_rt.height;
+	cpu_rt& rt = *GetRT();
+	float width = (float)rt.width;
+	float height = (float)rt.height;
 
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
@@ -836,6 +859,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 
 void cpu_engine::Render_AssignParticleTile(int iTileForAssign)
 {
+	cpu_rt& rt = *GetRT();
 	cpu_tile& tile = m_tiles[iTileForAssign];
 
 	int count = m_particleData.alive / m_tileCount;
@@ -867,9 +891,9 @@ void cpu_engine::Render_AssignParticleTile(int iTileForAssign)
 		if ( ndcZ<0.0f || ndcZ>1.0f )
 			continue;
 
-		const int sx = (int)((ndcX + 1.0f) * m_rt.widthHalf);
-		const int sy = (int)((1.0f - ndcY) * m_rt.heightHalf);
-		if ( sx<0 || sy<0 || sx>=m_rt.width || sy>=m_rt.height )
+		const int sx = (int)((ndcX + 1.0f) * rt.widthHalf);
+		const int sy = (int)((1.0f - ndcY) * rt.heightHalf);
+		if ( sx<0 || sy<0 || sx>=rt.width || sy>=rt.height )
 			continue;
 
 		int iTile = (sy/m_tileHeight)*m_tileColCount + sx/m_tileWidth;
@@ -883,6 +907,7 @@ void cpu_engine::Render_AssignParticleTile(int iTileForAssign)
 
 void cpu_engine::Render_TileParticles(int iTile)
 {
+	cpu_rt& rt = *GetRT();
 	cpu_tile& tile = m_tiles[iTile];
 	if ( tile.particleCount==0 )
 		return;
@@ -894,20 +919,20 @@ void cpu_engine::Render_TileParticles(int iTile)
 		const int sx = m_particleData.sx[p];
 		const int sy = m_particleData.sy[p];
 		const float sz = m_particleData.sz[p];
-		const int pix = sy * m_rt.width + sx;
+		const int pix = sy * rt.width + sx;
 
-		if ( sz>=m_rt.depthBuffer[pix] )
+		if ( sz>=rt.depthBuffer[pix] )
 			continue;
-		m_rt.depthBuffer[pix] = sz;
+		rt.depthBuffer[pix] = sz;
 
 		float a = 1.0f - m_particleData.age[i] * m_particleData.invDuration[i];
 		a *= a;
 
-		XMFLOAT3 dst = ToColorFromBGR(m_rt.colorBuffer[pix]);
+		XMFLOAT3 dst = ToColorFromBGR(rt.colorBuffer[pix]);
 		float r = dst.x + m_particleData.r[i]*a;
 		float g = dst.y + m_particleData.g[i]*a;
 		float b = dst.z + m_particleData.b[i]*a;
-		m_rt.colorBuffer[pix] = ToBGR(r, g, b);
+		rt.colorBuffer[pix] = ToBGR(r, g, b);
 	}
 }
 
@@ -927,15 +952,28 @@ void cpu_engine::Render_UI()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void cpu_engine::Clear(XMFLOAT3& color)
+void cpu_engine::Clear()
 {
-	ui32 bgr = ToBGR(color);
-	std::fill(m_rt.colorBuffer.begin(), m_rt.colorBuffer.end(), bgr);
-	std::fill(m_rt.depthBuffer.begin(), m_rt.depthBuffer.end(), 1.0f);
+	cpu_rt& rt = *GetRT();
+	std::fill(rt.colorBuffer.begin(), rt.colorBuffer.end(), 0);
 }
 
-void cpu_engine::ClearSky()
+void cpu_engine::ClearDepth()
 {
+	cpu_rt& rt = *GetRT();
+	std::fill(rt.depthBuffer.begin(), rt.depthBuffer.end(), 1.0f);
+}
+
+void cpu_engine::Fill(XMFLOAT3& rgb)
+{
+	cpu_rt& rt = *GetRT();
+	std::fill(rt.colorBuffer.begin(), rt.colorBuffer.end(), ToBGR(rgb));
+}
+
+void cpu_engine::FillSky()
+{
+	cpu_rt& rt = *GetRT();
+
 	ui32 gCol = ToBGR(m_groundColor);
 	ui32 sCol = ToBGR(m_skyColor);
 
@@ -950,8 +988,8 @@ void cpu_engine::ClearSky()
 	float p11 = m_camera.matProj._11; // Cotan(FovX/2) / Aspect
 	float p22 = m_camera.matProj._22; // Cotan(FovY/2)
 
-	float a = nx / (p11 * m_rt.widthHalf);
-	float b = -ny / (p22 * m_rt.heightHalf); // Le signe '-' compense l'axe Y inversé de l'écran
+	float a = nx / (p11 * rt.widthHalf);
+	float b = -ny / (p22 * rt.heightHalf); // Le signe '-' compense l'axe Y inversé de l'écran
 	float c = nz - (nx / p11) + (ny / p22);
 
 	bool rightSideIsSky = a > 0;
@@ -959,42 +997,41 @@ void cpu_engine::ClearSky()
 	ui32 colLeft  = rightSideIsSky ? gCol : sCol;
 	ui32 colRight = rightSideIsSky ? sCol : gCol;
 
-	std::fill(m_rt.depthBuffer.begin(), m_rt.depthBuffer.end(), 1.0f);
 	if ( fabsf(a)<0.000001f )
 	{
-		for ( int y=0 ; y<m_rt.height ; y++ )
+		for ( int y=0 ; y<rt.height ; y++ )
 		{
 			float val = b * (float)y + c;
 			ui32 col = val>0.0f ? sCol : gCol;
-			std::fill(m_rt.colorBuffer.begin() + (y * m_rt.width),  m_rt.colorBuffer.begin() + ((y + 1) * m_rt.width), col);
+			std::fill(rt.colorBuffer.begin() + (y * rt.width),  rt.colorBuffer.begin() + ((y + 1) * rt.width), col);
 		}
 	}
 	else
 	{
 		float invA = -1.0f / a;
-		for ( int y=0 ; y<m_rt.height ; y++ )
+		for ( int y=0 ; y<rt.height ; y++ )
 		{
 			float fSplitX = (b * (float)y + c) * invA;
 			int splitX;
 			if ( fSplitX<0.0f )
 				splitX = 0;
-			else if ( fSplitX>(float)m_rt.width)
-				splitX = m_rt.width;
+			else if ( fSplitX>(float)rt.width)
+				splitX = rt.width;
 			else
 				splitX = (int)fSplitX;
 
-			ui32* rowPtr = m_rt.colorBuffer.data() + (y * m_rt.width);
+			ui32* rowPtr = rt.colorBuffer.data() + (y * rt.width);
 			if ( splitX>0 )
 				std::fill(rowPtr, rowPtr + splitX, colLeft);
-			if ( splitX<m_rt.width )
-				std::fill(rowPtr + splitX, rowPtr + m_rt.width, colRight);
+			if ( splitX<rt.width )
+				std::fill(rowPtr + splitX, rowPtr + rt.width, colRight);
 		}
 	}
 
 	// Sky Line
 	////////////
 
-	float bandPx = m_rt.height/20.0f;
+	float bandPx = rt.height/20.0f;
 	if ( bandPx<=0.5f )
 		return;
 
@@ -1008,23 +1045,23 @@ void cpu_engine::ClearSky()
 
 	if ( fabsf(a)<1e-6f )
 	{
-		for ( int y=0 ; y<m_rt.height ; ++y )
+		for ( int y=0 ; y<rt.height ; ++y )
 		{
 			float distPx = (b * (float)y + c) * invGrad;
 			if ( fabsf(distPx)>bandPx )
 				continue;
 			float t = Clamp(0.5f + distPx * invBand);
 			t = t * t * (3.0f - 2.0f * t); // optional
-			ui32 col = LerpBGR(gCol, sCol, t);
-			ui32* row = m_rt.colorBuffer.data() + y * m_rt.width;
-			std::fill(row, row + m_rt.width, col);
+			ui32 col = LerpColor(gCol, sCol, t);
+			ui32* row = rt.colorBuffer.data() + y * rt.width;
+			std::fill(row, row + rt.width, col);
 		}
 		return;
 	}
 
-	for ( int y=0 ; y<m_rt.height ; ++y )
+	for ( int y=0 ; y<rt.height ; ++y )
 	{
-		ui32* row = m_rt.colorBuffer.data() + y * m_rt.width;
+		ui32* row = rt.colorBuffer.data() + y * rt.width;
 		float byc = b * (float)y + c;
 		float xA = (-limit - byc) / a;
 		float xB = ( +limit - byc) / a;
@@ -1032,9 +1069,12 @@ void cpu_engine::ClearSky()
 		float xMaxF = (xA > xB) ? xA : xB;
 		int x0 = FloorToInt(xMinF);
 		int x1 = CeilToInt(xMaxF);
-		if ( x1<0 || x0>=m_rt.width ) continue;
-		if ( x0<0 ) x0 = 0;
-		if ( x1>=m_rt.width) x1 = m_rt.width - 1;
+		if ( x1<0 || x0>=rt.width )
+			continue;
+		if ( x0<0 )
+			x0 = 0;
+		if ( x1>=rt.width)
+			x1 = rt.width - 1;
 		float val = byc + a * (float)x0;
 		ui32* p = row + x0;
 		ui32* e = row + x1 + 1;
@@ -1043,7 +1083,7 @@ void cpu_engine::ClearSky()
 			float distPx = val * invGrad;
 			float t = Clamp(0.5f + distPx * invBand);
 			t = t * t * (3.0f - 2.0f * t); // optional
-			*p++ = LerpBGR(gCol, sCol, t);
+			*p++ = LerpColor(gCol, sCol, t);
 			val += a;
 		}
 	}
@@ -1051,6 +1091,7 @@ void cpu_engine::ClearSky()
 
 void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
 {
+	cpu_rt& rt = *GetRT();
 	cpu_material& material = pEntity->pMaterial ? *pEntity->pMaterial : m_defaultMaterial;
 	XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.world);
 	XMMATRIX normalMat = XMMatrixTranspose(XMMatrixInverse(nullptr, matWorld));
@@ -1107,8 +1148,8 @@ void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
 			float ndcX = vo[i].clipPos.x * vo[i].invW;			// [-1,1]
 			float ndcY = vo[i].clipPos.y * vo[i].invW;			// [-1,1]
 			float ndcZ = vo[i].clipPos.z * vo[i].invW;			// [0,1] avec XMMatrixPerspectiveFovLH
-			screen[i].x = (ndcX + 1.0f) * m_rt.widthHalf;
-			screen[i].y = (1.0f - ndcY) * m_rt.heightHalf;
+			screen[i].x = (ndcX + 1.0f) * rt.widthHalf;
+			screen[i].y = (1.0f - ndcY) * rt.heightHalf;
 			screen[i].z = Clamp(ndcZ);							// profondeur normalisée 0..1
 		}
 		if ( safe==false )
@@ -1139,6 +1180,8 @@ void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
 
 void cpu_engine::FillTriangle(cpu_drawcall& dc)
 {
+	cpu_rt& rt = *GetRT();
+
 	const float x1 = dc.tri[0].x, y1 = dc.tri[0].y, z1 = dc.tri[0].z;
 	const float x2 = dc.tri[1].x, y2 = dc.tri[1].y, z2 = dc.tri[1].z;
 	const float x3 = dc.tri[2].x, y3 = dc.tri[2].y, z3 = dc.tri[2].z;
@@ -1150,8 +1193,8 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 
 	if ( minX<0 ) minX = 0;
 	if ( minY<0 ) minY = 0;
-	if ( maxX>m_rt.width ) maxX = m_rt.width;
-	if ( maxY>m_rt.height ) maxY = m_rt.height;
+	if ( maxX>rt.width ) maxX = rt.width;
+	if ( maxY>rt.height ) maxY = rt.height;
 
 	if ( minX<dc.pTile->left ) minX = dc.pTile->left;
 	if ( maxX>dc.pTile->right ) maxX = dc.pTile->right;
@@ -1222,8 +1265,8 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 			float w2 = e31 * invArea;
 			float w3 = e12 * invArea;
 			float z = z3 + (z1 - z3) * w1 + (z2 - z3) * w2; // => z1 * w1 + z2 * w2 + z3 * w3
-			int index = y * m_rt.width + x;
-			if ( (dc.depth & DEPTH_READ) && z>=m_rt.depthBuffer[index] )
+			int index = y * rt.width + x;
+			if ( (dc.depth & DEPTH_READ) && z>=rt.depthBuffer[index] )
 			{
 				e12 += dE12dx;
 				e23 += dE23dx;
@@ -1283,8 +1326,8 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 			if ( io.discard==false )
 			{
 				if ( dc.depth & DEPTH_WRITE )
-					m_rt.depthBuffer[index] = z;
-				m_rt.colorBuffer[index] = ToBGR(io.color);
+					rt.depthBuffer[index] = z;
+				rt.colorBuffer[index] = ToBGR(io.color);
 			}
 
 			e12 += dE12dx;
@@ -1364,12 +1407,14 @@ void cpu_engine::PixelShader(cpu_ps_io& io)
 
 void cpu_engine::Present()
 {
+	cpu_rt& rt = *GetRT();
+
 #ifdef CONFIG_GPU
 	if ( m_pRenderTarget==nullptr || m_pBitmap==nullptr )
 		return;
 	
 	m_pRenderTarget->BeginDraw();
-	m_pBitmap->CopyFromMemory(NULL, m_rt.colorBuffer.data(), m_rt.width * 4);
+	m_pBitmap->CopyFromMemory(NULL, rt.colorBuffer.data(), rt.width * 4);
 	D2D1_RECT_F destRect = D2D1::RectF(0.0f, 0.0f, (float)m_windowWidth, (float)m_windowHeight);
 	if ( m_bilinear )
 		m_pRenderTarget->DrawBitmap(m_pBitmap, destRect, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, NULL);
@@ -1385,15 +1430,15 @@ void cpu_engine::Present()
 		FixDevice();
 	}
 #else
-	if ( m_windowWidth==m_rt.width && m_windowHeight==m_rt.height )
+	if ( m_windowWidth==rt.width && m_windowHeight==rt.height )
 	{
 		// Fast
-		SetDIBitsToDevice(m_hDC, 0, 0, m_rt.width, m_rt.height, 0, 0, 0, m_rt.height, m_rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS);
+		SetDIBitsToDevice(m_hDC, 0, 0, rt.width, rt.height, 0, 0, 0, rt.height, rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS);
 	}
 	else
 	{
 		// Slow
-		StretchDIBits(m_hDC, 0, 0, m_windowWidth, m_windowHeight, 0, 0, m_rt.width, m_rt.height, m_rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS, SRCCOPY);
+		StretchDIBits(m_hDC, 0, 0, m_windowWidth, m_windowHeight, 0, 0, rt.width, rt.height, rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS, SRCCOPY);
 	}
 #endif
 }
