@@ -60,29 +60,19 @@ void cpu_engine::Free()
 	m_hInstance = nullptr;
 }
 
-//cpu_engine* cpu_engine::GetInstance()
-//{
-//	return s_pEngine;
-//}
-//
-//cpu_engine& cpu_engine::GetInstanceRef()
-//{
-//	return *s_pEngine;
-//}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, float windowScaleAtStart, bool fullscreen, bool hardwareBilinear)
+void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen, bool hardwareBilinear)
 {
 	if ( m_hInstance )
 		return;
 
 	// Window
 	m_hInstance = hInstance;
-	m_windowWidth = (int)(renderWidth*windowScaleAtStart);
-	m_windowHeight = (int)(renderHeight*windowScaleAtStart);
+	m_windowWidth = renderWidth;
+	m_windowHeight = renderHeight;
 	m_bilinear = hardwareBilinear;
 	WNDCLASS wc = { };
 	wc.lpfnWndProc = WindowProc;
@@ -266,6 +256,7 @@ void cpu_engine::FixWindow()
 		GetClientRect(m_hWnd, &rc);
 		m_windowWidth = rc.right-rc.left;
 		m_windowHeight = rc.bottom-rc.top;
+		m_rcFit = ComputeAspectFitRect(m_mainRT.width, m_mainRT.height, m_windowWidth, m_windowHeight);
 	}
 
 #ifdef CONFIG_GPU
@@ -351,10 +342,10 @@ void cpu_engine::GetCursor(XMFLOAT2& pos)
 	POINT pt;
 	GetCursorPos(&pt);
 	ScreenToClient(m_hWnd, &pt);
-	pos.x = (float)pt.x;
-	pos.y = (float)pt.y;
-	pos.x = pos.x*rt.width/m_windowWidth;
-	pos.y = pos.y*rt.height/m_windowHeight;
+	pos.x = (float)(pt.x-m_rcFit.left);
+	pos.y = (float)(pt.y-m_rcFit.top);
+	pos.x = pos.x*rt.width/(m_rcFit.right-m_rcFit.left);
+	pos.y = pos.y*rt.height/(m_rcFit.bottom-m_rcFit.top);
 }
 
 cpu_ray cpu_engine::GetCameraRay(XMFLOAT2& pt)
@@ -1436,9 +1427,6 @@ void cpu_engine::PixelShader(cpu_ps_io& io)
 void cpu_engine::Present()
 {
 	cpu_rt& rt = *GetRT();
-	RECT fit = ComputeAspectFitRect(rt.width, rt.height, m_windowWidth, m_windowHeight);
-	int width = fit.right - fit.left;
-	int height = fit.bottom - fit.top;
 
 #ifdef CONFIG_GPU
 
@@ -1448,7 +1436,7 @@ void cpu_engine::Present()
 	m_pRenderTarget->BeginDraw();
 	m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 	m_pBitmap->CopyFromMemory(nullptr, rt.colorBuffer.data(), rt.width*4);
-	D2D1_RECT_F destRect = D2D1::RectF((float)fit.left, (float)fit.top, (float)fit.right, (float)fit.bottom);	
+	D2D1_RECT_F destRect = D2D1::RectF((float)m_rcFit.left, (float)m_rcFit.top, (float)m_rcFit.right, (float)m_rcFit.bottom);	
 	if ( m_bilinear )
 		m_pRenderTarget->DrawBitmap(m_pBitmap, destRect, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, NULL);
 	else
@@ -1465,19 +1453,21 @@ void cpu_engine::Present()
 
 #else
 
+	int width = m_rcFit.right - m_rcFit.left;
+	int height = m_rcFit.bottom - m_rcFit.top;
 	if ( width==rt.width && height==rt.height )
-		SetDIBitsToDevice(m_hDC, fit.left, fit.top, rt.width, rt.height, 0, 0, 0, rt.height, rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS);
+		SetDIBitsToDevice(m_hDC, m_rcFit.left, m_rcFit.top, rt.width, rt.height, 0, 0, 0, rt.height, rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS);
 	else
 	{
-		StretchDIBits(m_hDC, fit.left, fit.top, width, height, 0, 0, rt.width, rt.height, rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS, SRCCOPY);
-		if ( fit.left )
-			PatBlt(m_hDC, 0, 0, fit.left, m_windowHeight, PATCOPY);
-		if ( fit.right<m_windowWidth )
-			PatBlt(m_hDC, fit.right, 0, m_windowWidth-fit.right, m_windowHeight, PATCOPY);
-		if ( fit.top )
-			PatBlt(m_hDC, 0, 0, m_windowWidth, fit.top, PATCOPY);
-		if ( fit.bottom<m_windowHeight )
-			PatBlt(m_hDC, 0, fit.bottom, m_windowWidth, m_windowHeight-fit.bottom, PATCOPY);
+		StretchDIBits(m_hDC, m_rcFit.left, m_rcFit.top, width, height, 0, 0, rt.width, rt.height, rt.colorBuffer.data(), &m_bi, DIB_RGB_COLORS, SRCCOPY);
+		if ( m_rcFit.left )
+			PatBlt(m_hDC, 0, 0, m_rcFit.left, m_windowHeight, PATCOPY);
+		if ( m_rcFit.right<m_windowWidth )
+			PatBlt(m_hDC, m_rcFit.right, 0, m_windowWidth-m_rcFit.right, m_windowHeight, PATCOPY);
+		if ( m_rcFit.top )
+			PatBlt(m_hDC, 0, 0, m_windowWidth, m_rcFit.top, PATCOPY);
+		if ( m_rcFit.bottom<m_windowHeight )
+			PatBlt(m_hDC, 0, m_rcFit.bottom, m_windowWidth, m_windowHeight-m_rcFit.bottom, PATCOPY);
 	}
 
 #endif

@@ -7,11 +7,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int cmdShow)
 		App application;
 		
 		// AMIGA
-		//application.Initialize(hInstance, 320, 200, 1.0f, true);		// AMIGA NTSC
-		//application.Initialize(hInstance, 320, 256, 1.0f, true);		// AMIGA PAL
+		//application.Initialize(hInstance, 320, 200, true);		// AMIGA NTSC
+		//application.Initialize(hInstance, 320, 256, true);		// AMIGA PAL
 
 		// RETRO
-		application.Initialize(hInstance, 512, 288, 1.0f, true);		// fullscreen
+		application.Initialize(hInstance, 512, 288, true);			// fullscreen
 
 		// MODERN
 		//application.Initialize(hInstance, 1024, 576);
