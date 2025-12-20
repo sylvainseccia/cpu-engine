@@ -27,9 +27,8 @@ void App::SpawnMissile()
 
 void App::SpawnMissileWithMouse()
 {
-	XMFLOAT2 pt;
-	GetCursor(pt);
-	cpu_ray ray = GetCameraRay(pt);
+	cpu_ray ray;
+	GetCursorRay(ray);
 	cpu_entity* pMissile = CreateEntity();
 	pMissile->pMesh = &m_meshMissile;
 	pMissile->transform.SetScaling(0.2f);
@@ -125,20 +124,24 @@ void App::OnUpdate()
 		m_camera.transform.Move(-dtime*1.0f);
 	}
 
-	// Fire
-	if ( input.IsKeyDown(VK_LBUTTON) || input.IsKey(VK_RBUTTON) )
-		app.SpawnMissileWithMouse();
-
 	// Move missiles
-	for ( auto it=m_missiles.begin() ; it!=m_missiles.end() ; )
+	for ( auto it=m_missiles.begin() ; it!=m_missiles.end() ; ++it )
 	{
 		cpu_entity* pMissile = *it;
 		pMissile->transform.Move(m_deltaTime*m_missileSpeed);
 		if ( pMissile->lifetime>10.0f )
-		{
-			it = m_missiles.erase(it);
 			Release(pMissile);
-		}
+	}
+
+	// Fire
+	if ( input.IsKeyDown(VK_LBUTTON) || input.IsKey(VK_RBUTTON) )
+		app.SpawnMissileWithMouse();
+
+	// Purge missiles
+	for ( auto it=m_missiles.begin() ; it!=m_missiles.end() ; )
+	{
+		if ( (*it)->dead )
+			it = m_missiles.erase(it);
 		else
 			++it;
 	}
@@ -171,6 +174,18 @@ void App::OnRender(int pass)
 	info += std::to_string(m_particleData.alive) + " particles, ";
 	info += std::to_string(m_statsThreadCount) + " threads, ";
 	info += std::to_string(m_statsTileCount) + " tiles";
+
+	// Ray cast
+	cpu_ray ray;
+	GetCursorRay(ray);
+	cpu_hit hit;
+	cpu_entity* pEntity = HitEntity(hit, ray);
+	if ( pEntity )
+	{
+		info += "\nHIT: ";
+		info += std::to_string(pEntity->index).c_str();
+	}
+
 	DrawText(&m_font, info.c_str(), (int)GetMainRT()->widthHalf, 10, CPU_TEXT_CENTER);
 }
 

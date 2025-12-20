@@ -87,6 +87,7 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Manager.h" />
+    <ClInclude Include="Math.h" />
     <ClInclude Include="Multithreading.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="png32.h" />
@@ -107,6 +108,7 @@
     <ClCompile Include="global.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Manager.cpp" />
+    <ClCompile Include="Math.cpp" />
     <ClCompile Include="Multithreading.cpp" />
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="png32.cpp" />

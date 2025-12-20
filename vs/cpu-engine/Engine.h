@@ -46,8 +46,11 @@ public:
 
 	void SetCursor(cpu_texture* pTexture);
 	void GetCursor(XMFLOAT2& pt);
-	cpu_ray GetCameraRay(XMFLOAT2& pt);
+	void GetCameraRay(cpu_ray& out, XMFLOAT2& pt);
+	void GetCursorRay(cpu_ray& out);
 	cpu_camera* GetCamera();
+
+	cpu_entity* HitEntity(cpu_hit& hit, cpu_ray& ray);
 
 	int GetTotalTriangleCount();
 
@@ -70,6 +73,7 @@ private:
 	bool Time();
 
 	void Update();
+	void Update_Reset();
 	void Update_Physics();
 	void Update_FSM();
 	void Update_Particles();
@@ -92,7 +96,7 @@ private:
 	void ClearDepth();
 	void Fill(XMFLOAT3& rgb);
 	void FillSky();
-	void DrawMesh(cpu_mesh* pMesh, XMFLOAT4X4* pMatrix, cpu_material* pMaterial, int depthMode = CPU_DEPTH_RW, cpu_tile* pTile = nullptr);
+	void DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode = CPU_DEPTH_RW, cpu_tile* pTile = nullptr);
 	void FillTriangle(cpu_drawcall& dc);
 	static void PixelShader(cpu_ps_io& io);
 

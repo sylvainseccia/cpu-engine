@@ -145,7 +145,7 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 #endif
 
 	// Tiles
-	m_tileColCount = static_cast<unsigned int>(std::ceil(std::sqrt(m_threadCount)));
+	m_tileColCount = CeilToInt(sqrtf((float)m_threadCount));
 	m_tileRowCount = (m_threadCount + m_tileColCount - 1) / m_tileColCount;
 	m_tileCount = m_tileColCount * m_tileRowCount;
 	m_statsTileCount = m_tileCount;
@@ -356,7 +356,7 @@ void cpu_engine::GetCursor(XMFLOAT2& pos)
 	pos.y = pos.y*rt.height/(m_rcFit.bottom-m_rcFit.top);
 }
 
-cpu_ray cpu_engine::GetCameraRay(XMFLOAT2& pt)
+void cpu_engine::GetCameraRay(cpu_ray& out, XMFLOAT2& pt)
 {
 	cpu_rt& rt = *GetMainRT();
 
@@ -367,20 +367,90 @@ cpu_ray cpu_engine::GetCameraRay(XMFLOAT2& pt)
 	float y = -py/m_camera.matProj._22;
 	float z = 1.0f;
 
-	cpu_ray ray;
-	ray.pos.x = m_camera.transform.world._41;
-	ray.pos.y = m_camera.transform.world._42;
-	ray.pos.z = m_camera.transform.world._43;
-	ray.dir.x = x*m_camera.transform.world._11 + y*m_camera.transform.world._21 + z*m_camera.transform.world._31;
-	ray.dir.y = x*m_camera.transform.world._12 + y*m_camera.transform.world._22 + z*m_camera.transform.world._32;
-	ray.dir.z = x*m_camera.transform.world._13 + y*m_camera.transform.world._23 + z*m_camera.transform.world._33;
-	XMStoreFloat3(&ray.dir, XMVector3Normalize(XMLoadFloat3(&ray.dir)));
-	return ray;
+	XMFLOAT4X4& world = m_camera.transform.GetWorld();
+	out.pos.x = world._41;
+	out.pos.y = world._42;
+	out.pos.z = world._43;
+	out.dir.x = x*world._11 + y*world._21 + z*world._31;
+	out.dir.y = x*world._12 + y*world._22 + z*world._32;
+	out.dir.z = x*world._13 + y*world._23 + z*world._33;
+	XMStoreFloat3(&out.dir, XMVector3Normalize(XMLoadFloat3(&out.dir)));
+}
+
+void cpu_engine::GetCursorRay(cpu_ray& out)
+{
+	XMFLOAT2 pt;
+	GetCursor(pt);
+	GetCameraRay(out, pt);
 }
 
 cpu_camera* cpu_engine::GetCamera()
 {
 	return &m_camera;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+cpu_entity* cpu_engine::HitEntity(cpu_hit& hit, cpu_ray& ray)
+{
+	cpu_entity* pBestEntity = nullptr;
+	hit.dist = 0.0f;
+	hit.pt = CPU_ZERO;
+
+	XMFLOAT3 ptL;
+	float tL;
+	XMVECTOR roW = XMLoadFloat3(&ray.pos);
+	XMVECTOR ptResult;
+	float distResult = FLT_MAX;
+
+	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
+	{
+		cpu_entity* pEntity = m_entityManager[iEntity];
+		if ( pEntity->dead )
+			continue;
+
+		float enter, exit;
+		if ( cpu_math::RayAabb(ray, pEntity->aabb, enter, exit)==false )
+			continue;
+
+		// Si même l'entrée dans l'AABB est déjà plus loin que le meilleur hit, skip
+		if ( enter>distResult )
+			continue;
+
+		XMMATRIX world = XMLoadFloat4x4(&pEntity->transform.GetWorld());
+		XMMATRIX invWorld = XMLoadFloat4x4(&pEntity->transform.GetInvWorld());
+		cpu_ray rayL;
+		ray.ToLocal(rayL, invWorld);
+
+		for ( int i=0 ; i<pEntity->pMesh->triangles.size() ; i++ )
+		{
+			cpu_triangle& tri = pEntity->pMesh->triangles[i];
+			if ( cpu_math::RayTriangle(rayL, tri, ptL, &tL) )
+			{
+				XMVECTOR pL = XMLoadFloat3(&ptL);
+                XMVECTOR pW = XMVector3TransformCoord(pL, world);
+                XMVECTOR d = XMVectorSubtract(pW, roW);
+
+                float distSq;
+                XMStoreFloat(&distSq, XMVector3Dot(d, d));
+				if ( distSq<distResult )
+				{
+					distResult = distSq;
+					ptResult = pW;
+					pBestEntity = pEntity;
+				}
+			}
+		}
+	}
+
+	if ( pBestEntity )
+	{
+		hit.dist = sqrtf(distResult);
+		XMStoreFloat3(&hit.pt, ptResult);
+	}
+	return pBestEntity;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -603,6 +673,9 @@ bool cpu_engine::Time()
 
 void cpu_engine::Update()
 {
+	// Reset
+	Update_Reset();
+
 	// Controller
 	m_input.Update();
 
@@ -620,6 +693,18 @@ void cpu_engine::Update()
 
 	// Purge
 	Update_Purge();
+}
+
+void cpu_engine::Update_Reset()
+{
+	for ( int i=0 ; i<m_entityManager.count ; i++ )
+	{
+		cpu_entity* pEntity = m_entityManager[i];
+		if ( pEntity->dead )
+			continue;
+
+		pEntity->transform.ResetFlags();
+	}
 }
 
 void cpu_engine::Update_Physics()
@@ -762,8 +847,7 @@ void cpu_engine::Render_RecalculateMatrices()
 			continue;
 
 		// World
-		pEntity->transform.Update();
-		XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.world);
+		XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.GetWorld());
 
 		// cpu_obb
 		pEntity->obb = pEntity->pMesh->aabb;
@@ -850,7 +934,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 		if ( entityHasTile==false )
 			continue;
 
-		DrawMesh(pEntity->pMesh, &pEntity->transform.world, pEntity->pMaterial, pEntity->depth, &tile);
+		DrawMesh(pEntity->pMesh, &pEntity->transform, pEntity->pMaterial, pEntity->depth, &tile);
 	}
 }
 
@@ -1134,12 +1218,12 @@ void cpu_engine::FillSky()
 	}
 }
 
-void cpu_engine::DrawMesh(cpu_mesh* pMesh, XMFLOAT4X4* pMatrix, cpu_material* pMaterial, int depthMode, cpu_tile* pTile)
+void cpu_engine::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode, cpu_tile* pTile)
 {
 	cpu_rt& rt = *GetRT();
 	cpu_material& material = pMaterial ? *pMaterial : m_defaultMaterial;
-	XMMATRIX matWorld = XMLoadFloat4x4(pMatrix);
-	XMMATRIX matNormal = XMMatrixTranspose(XMMatrixInverse(nullptr, matWorld));
+	XMMATRIX matWorld = XMLoadFloat4x4(&pTransform->GetWorld());
+	XMMATRIX matNormal = XMMatrixTranspose(XMLoadFloat4x4(&pTransform->GetInvWorld()));
 	XMMATRIX matViewProj = XMLoadFloat4x4(&m_camera.matViewProj);
 	XMVECTOR lightDir = XMLoadFloat3(&m_lightDir);
 

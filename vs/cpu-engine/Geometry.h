@@ -65,6 +65,7 @@ struct cpu_aabb
 	cpu_aabb& operator=(const cpu_obb& obb);
 	void Zero();
 	bool XM_CALLCONV ToScreen(cpu_rectangle& out, FXMMATRIX wvp, float renderWidth, float renderHeight);
+	bool Contains(const XMFLOAT3& p);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -92,6 +93,7 @@ struct cpu_ray
 
 	cpu_ray();
 	void Identity();
+	void XM_CALLCONV ToLocal(cpu_ray& out, FXMMATRIX invWorld);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,6 +113,7 @@ struct cpu_mesh
 	void Optimize();
 	void CalculateNormals();
 	void CalculateBox();
+	void CreatePlane(float width = 1.0f, float height = 1.0f, XMFLOAT3 color = CPU_WHITE);
 	void CreateCube(float halfSize = 0.5f, XMFLOAT3 color = CPU_WHITE);
 	void CreateCircle(float radius = 0.5f, int count = 6, XMFLOAT3 color = CPU_WHITE);
 	void CreateSphere(float radius = 0.5f, int stacks = 5, int slices = 5, XMFLOAT3 color1 = CPU_WHITE, XMFLOAT3 color2 = CPU_WHITE);

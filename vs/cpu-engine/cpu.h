@@ -169,6 +169,7 @@ inline XMFLOAT3 CPU_ORANGE				= { 1.0f, 0.5f, 0.0f };
 #include "UI.h"
 #include "Particle.h"
 #include "Geometry.h"
+#include "Math.h"
 #include "Shader.h"
 #include "Entity.h"
 #include "Multithreading.h"

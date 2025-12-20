@@ -2,6 +2,8 @@
 
 cpu_transform::cpu_transform()
 {
+	worldUpdated = false;
+	invWorldUpdated = false;
 	Identity();
 }
 
@@ -12,7 +14,7 @@ void cpu_transform::Identity()
 	ResetRotation();
 }
 
-void cpu_transform::Update()
+void cpu_transform::UpdateWorld()
 {
 	XMVECTOR s = XMLoadFloat3(&sca);
 	XMVECTOR p = XMLoadFloat3(&pos);
@@ -28,6 +30,31 @@ void cpu_transform::Update()
 	w.r[3] = XMVectorSetW(p, 1.0f);
 
 	XMStoreFloat4x4(&world, w);
+	worldUpdated = true;
+	invWorldUpdated = false;
+}
+
+void cpu_transform::UpdateInvWorld()
+{
+	if ( worldUpdated==false )
+		UpdateWorld();
+
+	XMStoreFloat4x4(&invWorld, XMMatrixInverse(nullptr, XMLoadFloat4x4(&GetWorld())));
+	invWorldUpdated = true;
+}
+
+XMFLOAT4X4& cpu_transform::GetWorld()
+{
+	if ( worldUpdated==false )
+		UpdateWorld();
+	return world;
+}
+
+XMFLOAT4X4& cpu_transform::GetInvWorld()
+{
+	if ( invWorldUpdated==false )
+		UpdateInvWorld();
+	return invWorld;
 }
 
 void cpu_transform::SetScaling(float scale)
@@ -35,6 +62,13 @@ void cpu_transform::SetScaling(float scale)
 	sca.x = scale;
 	sca.y = scale;
 	sca.z = scale;
+}
+
+void cpu_transform::Scale(float scale)
+{
+	sca.x *= scale;
+	sca.y *= scale;
+	sca.z *= scale;
 }
 
 void cpu_transform::SetPosition(float x, float y, float z)
@@ -251,9 +285,7 @@ void cpu_camera::UpdateProjection(float aspectRatio)
 
 void cpu_camera::Update()
 {
-	transform.Update();
-
-	XMMATRIX mat = XMMatrixInverse(nullptr, XMLoadFloat4x4(&transform.world));
+	XMMATRIX mat = XMLoadFloat4x4(&transform.GetInvWorld());
 	XMStoreFloat4x4(&matView, mat);
 	mat *= XMLoadFloat4x4(&matProj);
 	XMStoreFloat4x4(&matViewProj, mat);
