@@ -1,6 +1,6 @@
 #pragma once
 
-namespace simd
+namespace cpu_ns_img32
 {
 
 // Premultiplied alpha SRC-over DST blit with clipping.
@@ -75,12 +75,7 @@ static inline __m128i div255_epu16_sse2(__m128i x)
 }
 #endif
 
-void AlphaBlend(
-    const byte* src, int srcW, int srcH,
-    byte* dst, int dstW, int dstH,
-    int srcX, int srcY,
-    int dstX, int dstY,
-    int blitW, int blitH);
+void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH);
 
 void Premultiply(
     const byte* src, byte* dst,
@@ -89,5 +84,7 @@ void Premultiply(
 void Unpremultiply(
     const byte* src, byte* dst,
     int width, int height);
+
+bool AlphaBlendStraightOverOpaque(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH);
 
 }

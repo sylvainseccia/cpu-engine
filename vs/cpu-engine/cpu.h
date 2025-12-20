@@ -144,8 +144,8 @@ inline XMFLOAT3 ORANGE					= { 1.0f, 0.5f, 0.0f };
 #define DEPTH_WRITE						2
 
 // Core
-#include "simd.h"
 #include "png32.h"
+#include "img32.h"
 #include "global.h"
 #include "Input.h"
 #include "Thread.h"

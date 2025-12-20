@@ -92,7 +92,6 @@ private:
 	void FillSky();
 	void DrawEntity(cpu_entity* pEntity, cpu_tile& tile);
 	void FillTriangle(cpu_drawcall& dc);
-	bool Copy(byte* dst, int dstW, int dstH, int dstX, int dstY, const byte* src, int srcW, int srcH, int srcX, int srcY, int w, int h);
 	static void PixelShader(cpu_ps_io& io);
 
 	void Present();

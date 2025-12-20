@@ -59,7 +59,7 @@
     <ClInclude Include="config.h">
       <Filter>Library</Filter>
     </ClInclude>
-    <ClInclude Include="simd.h">
+    <ClInclude Include="img32.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Manager.h">
@@ -106,7 +106,7 @@
     <ClCompile Include="png32.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="simd.cpp">
+    <ClCompile Include="img32.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Manager.cpp">

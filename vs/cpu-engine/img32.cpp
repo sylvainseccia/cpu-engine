@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-namespace simd
+namespace cpu_ns_img32
 {
 
 void AlphaBlend(
@@ -579,6 +579,58 @@ void Unpremultiply(
             dst[i+2] = (byte)std::min((b * s + 0x8000u) >> 16, 255u);
         }
     }
+}
+
+bool AlphaBlendStraightOverOpaque(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH)
+{
+	if ( blitW<=0 || blitH<=0 )
+		return false;
+
+	if ( dstX<0 ) { int d = -dstX; dstX = 0; srcX += d; blitW -= d; }
+	if ( dstY<0 ) { int d = -dstY; dstY = 0; srcY += d; blitH -= d; }
+	if ( dstX+blitW>dstW ) blitW = dstW - dstX;
+	if ( dstY+blitH>dstH ) blitH = dstH - dstY;
+	if ( srcX<0 ) { int d = -srcX; srcX = 0; dstX += d; blitW -= d; }
+	if ( srcY<0 ) { int d = -srcY; srcY = 0; dstY += d; blitH -= d; }
+	if ( srcX+blitW>srcW ) blitW = srcW - srcX;
+	if ( srcY+blitH>srcH ) blitH = srcH - srcY;
+
+	if ( blitW<=0 || blitH<=0 )
+		return false;
+	
+	const int dstStride = dstW * 4;
+	const int srcStride = srcW * 4;
+	byte* drow = dst + dstY * dstStride + dstX * 4;
+	const byte* srow = src + srcY * srcStride + srcX * 4;
+	for ( int y=0 ; y<blitH ; ++y )
+	{
+		byte* d = drow;
+		const byte* s = srow;
+		for ( int x=0 ; x<blitW ; ++x )
+		{
+			const byte sa = s[3];
+			if ( sa==255 )
+			{
+				d[0] = s[2];
+				d[1] = s[1];
+				d[2] = s[0];
+			}
+			else if ( sa!=0 )
+			{
+				const byte a = sa;
+				const byte ia = 255 - a;
+				d[0] = (byte)((s[2] * a + d[0] * ia + 127) / 255);
+				d[1] = (byte)((s[1] * a + d[1] * ia + 127) / 255);
+				d[2] = (byte)((s[0] * a + d[2] * ia + 127) / 255);
+			}
+			d += 4;
+			s += 4;
+		}
+		drow += dstStride;
+		srow += srcStride;
+	}
+
+	return true;
 }
 
 }

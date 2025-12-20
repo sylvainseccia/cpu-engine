@@ -21,7 +21,7 @@ bool cpu_texture::Load(const char* path)
 		return false;
 
 	int w, h;
-	byte* buf = png_lib::parse_png_rgba(data, filesize, &w, &h);
+	byte* buf = cpu_ns_png32::parse_png_rgba(data, filesize, &w, &h);
 	delete [] data;
 	if ( buf==nullptr )
 		return false;
@@ -38,7 +38,7 @@ bool cpu_texture::Load(const char* path)
 		bgra[i] = bgra[i+2];
 		bgra[i+2] = r;
 	}
-	simd::Premultiply(bgra, bgra, width, height);
+	cpu_ns_img32::Premultiply(bgra, bgra, width, height);
 	return true;
 }
 
@@ -188,7 +188,7 @@ bool cpu_font::Create(float size, XMFLOAT3 color, const char* fontName, int cell
 		bgra[offset+3] = MAX({ bgra[offset+0], bgra[offset+1], bgra[offset+2] });
 	}
 
-	simd::Premultiply(bgra.data(), bgra.data(), width, height);
+	cpu_ns_img32::Premultiply(bgra.data(), bgra.data(), width, height);
 
 	SelectObject(hdc, oldFont);
 	DeleteObject(hFont);

@@ -421,8 +421,7 @@ void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 				penX += cw;
 				continue;
 			}
-			//Copy((byte*)rt.colorBuffer.data(), rt.width, rt.height, penX, penY, pFont->rgba.data(), pFont->width, pFont->height, g.x, g.y, g.w, g.h);
-			simd::AlphaBlend(pFont->bgra.data(), pFont->width, pFont->height, (byte*)rt.colorBuffer.data(), rt.width, rt.height, g.x, g.y, penX, penY, g.w, g.h);
+			cpu_ns_img32::AlphaBlend(pFont->bgra.data(), pFont->width, pFont->height, (byte*)rt.colorBuffer.data(), rt.width, rt.height, g.x, g.y, penX, penY, g.w, g.h);
 			penX += cw;
 		}
 	};
@@ -451,8 +450,7 @@ void cpu_engine::DrawSprite(cpu_sprite* pSprite)
 	int width = pSprite->pTexture->width;
 	int height = pSprite->pTexture->height;
 	byte* dst = (byte*)rt.colorBuffer.data();
-	//Copy(dst, rt.width, rt.height, pSprite->x, pSprite->y, pSprite->pTexture->rgba, width, height, 0, 0, width, height);
-	simd::AlphaBlend(pSprite->pTexture->bgra, width, height, dst, rt.width, rt.height, 0, 0, pSprite->x, pSprite->y, width, height);
+	cpu_ns_img32::AlphaBlend(pSprite->pTexture->bgra, width, height, dst, rt.width, rt.height, 0, 0, pSprite->x, pSprite->y, width, height);
 }
 
 void cpu_engine::DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color)
@@ -1360,58 +1358,6 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 
 	// Stats
 	dc.pTile->statsDrawnTriangleCount++;
-}
-
-bool cpu_engine::Copy(byte* dst, int dstW, int dstH, int dstX, int dstY, const byte* src, int srcW, int srcH, int srcX, int srcY, int w, int h)
-{
-	if ( w<=0 || h<=0 )
-		return false;
-
-	if ( dstX<0 ) { int d = -dstX; dstX = 0; srcX += d; w -= d; }
-	if ( dstY<0 ) { int d = -dstY; dstY = 0; srcY += d; h -= d; }
-	if ( dstX+w>dstW ) w = dstW - dstX;
-	if ( dstY+h>dstH ) h = dstH - dstY;
-	if ( srcX<0 ) { int d = -srcX; srcX = 0; dstX += d; w -= d; }
-	if ( srcY<0 ) { int d = -srcY; srcY = 0; dstY += d; h -= d; }
-	if ( srcX+w>srcW ) w = srcW - srcX;
-	if ( srcY+h>srcH ) h = srcH - srcY;
-
-	if ( w<=0 || h<=0 )
-		return false;
-	
-	const int dstStride = dstW * 4;
-	const int srcStride = srcW * 4;
-	byte* drow = dst + dstY * dstStride + dstX * 4;
-	const byte* srow = src + srcY * srcStride + srcX * 4;
-	for ( int y=0 ; y<h ; ++y )
-	{
-		byte* d = drow;
-		const byte* s = srow;
-		for ( int x=0 ; x<w ; ++x )
-		{
-			const byte sa = s[3];
-			if ( sa==255 )
-			{
-				d[0] = s[2];
-				d[1] = s[1];
-				d[2] = s[0];
-			}
-			else if ( sa!=0 )
-			{
-				const byte a = sa;
-				const byte ia = 255 - a;
-				d[0] = (byte)((s[2] * a + d[0] * ia + 127) / 255);
-				d[1] = (byte)((s[1] * a + d[1] * ia + 127) / 255);
-				d[2] = (byte)((s[0] * a + d[2] * ia + 127) / 255);
-			}
-			d += 4;
-			s += 4;
-		}
-		drow += dstStride;
-		srow += srcStride;
-	}
-
-	return true;
 }
 
 void cpu_engine::PixelShader(cpu_ps_io& io)
