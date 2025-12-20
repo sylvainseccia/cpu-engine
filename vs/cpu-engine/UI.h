@@ -66,5 +66,5 @@ struct cpu_font
 	cpu_glyph glyph[256];
 
 	cpu_font();
-	bool Create(float size = 0.04f, XMFLOAT3 color = WHITE, const char* fontName = "Consolas", int cellW = -1, int cellH = -1, int firstChar = 32, int lastChar = 255);
+	bool Create(float size = 0.04f, XMFLOAT3 color = CPU_WHITE, const char* fontName = "Consolas", int cellW = -1, int cellH = -1, int firstChar = 32, int lastChar = 255);
 };

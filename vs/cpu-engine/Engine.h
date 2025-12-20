@@ -50,7 +50,7 @@ public:
 
 	int GetTotalTriangleCount();
 
-	void DrawText(cpu_font* pFont, const char* text, int x, int y, int align = TEXT_LEFT);
+	void DrawText(cpu_font* pFont, const char* text, int x, int y, int align = CPU_TEXT_LEFT);
 	void DrawSprite(cpu_sprite* pSprite);
 	void DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color);
 	void DrawVertLine(int y1, int y2, int x, XMFLOAT3& color);
@@ -90,7 +90,7 @@ private:
 	void ClearDepth();
 	void Fill(XMFLOAT3& rgb);
 	void FillSky();
-	void DrawEntity(cpu_entity* pEntity, cpu_tile& tile);
+	void DrawMesh(cpu_mesh* pMesh, XMFLOAT4X4* pMatrix, cpu_material* pMaterial, int depthMode = CPU_DEPTH_RW, cpu_tile* pTile = nullptr);
 	void FillTriangle(cpu_drawcall& dc);
 	static void PixelShader(cpu_ps_io& io);
 

@@ -111,8 +111,8 @@ struct cpu_mesh
 	void Optimize();
 	void CalculateNormals();
 	void CalculateBox();
-	void CreateCube(float halfSize = 0.5f, XMFLOAT3 color = WHITE);
-	void CreateCircle(float radius = 0.5f, int count = 6, XMFLOAT3 color = WHITE);
-	void CreateSphere(float radius = 0.5f, int stacks = 5, int slices = 5, XMFLOAT3 color1 = WHITE, XMFLOAT3 color2 = WHITE);
+	void CreateCube(float halfSize = 0.5f, XMFLOAT3 color = CPU_WHITE);
+	void CreateCircle(float radius = 0.5f, int count = 6, XMFLOAT3 color = CPU_WHITE);
+	void CreateSphere(float radius = 0.5f, int stacks = 5, int slices = 5, XMFLOAT3 color1 = CPU_WHITE, XMFLOAT3 color2 = CPU_WHITE);
 	void CreateSpaceship();
 };

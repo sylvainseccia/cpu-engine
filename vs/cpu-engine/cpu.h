@@ -112,36 +112,38 @@ using PS_FUNC							= void(*)(cpu_ps_io& data);
 #define since(t)						(cpu_engine::GetInstance()->GetTime()-t)
 
 // Float3
-inline XMFLOAT3 RIGHT					= { 1.0f, 0.0f, 0.0f };
-inline XMFLOAT3 UP						= { 0.0f, 1.0f, 0.0f };
-inline XMFLOAT3 DIR						= { 0.0f, 0.0f, 1.0f };
-inline XMFLOAT3 ZERO					= { 0.0f, 0.0f, 0.0f };
-inline XMFLOAT3 ONE						= { 1.0f, 1.0f, 1.0f };
-inline XMFLOAT3 WHITE					= { 1.0f, 1.0f, 1.0f };
-inline XMFLOAT3 BLACK					= { 0.0f, 0.0f, 0.0f };
-inline XMFLOAT3 RED						= { 1.0f, 0.0f, 0.0f };
-inline XMFLOAT3 BLUE					= { 0.0f, 0.0f, 1.0f };
-inline XMFLOAT3 GREEN					= { 0.0f, 1.0f, 0.0f };
-inline XMFLOAT3 ORANGE					= { 1.0f, 0.5f, 0.0f };
+inline XMFLOAT3 CPU_RIGHT				= { 1.0f, 0.0f, 0.0f };
+inline XMFLOAT3 CPU_UP					= { 0.0f, 1.0f, 0.0f };
+inline XMFLOAT3 CPU_DIR					= { 0.0f, 0.0f, 1.0f };
+inline XMFLOAT3 CPU_ZERO				= { 0.0f, 0.0f, 0.0f };
+inline XMFLOAT3 CPU_ONE					= { 1.0f, 1.0f, 1.0f };
+inline XMFLOAT3 CPU_WHITE				= { 1.0f, 1.0f, 1.0f };
+inline XMFLOAT3 CPU_BLACK				= { 0.0f, 0.0f, 0.0f };
+inline XMFLOAT3 CPU_RED					= { 1.0f, 0.0f, 0.0f };
+inline XMFLOAT3 CPU_BLUE				= { 0.0f, 0.0f, 1.0f };
+inline XMFLOAT3 CPU_GREEN				= { 0.0f, 1.0f, 0.0f };
+inline XMFLOAT3 CPU_ORANGE				= { 1.0f, 0.5f, 0.0f };
 
 // Light
-#define LIGHTING_UNLIT					0
-#define LIGHTING_GOURAUD				1
-#define LIGHTING_LAMBERT				2
+#define CPU_LIGHTING_UNLIT				0
+#define CPU_LIGHTING_GOURAUD			1
+#define CPU_LIGHTING_LAMBERT			2
 
 // Text
-#define TEXT_LEFT						0
-#define TEXT_CENTER						1
-#define TEXT_RIGHT						2
+#define CPU_TEXT_LEFT					0
+#define CPU_TEXT_CENTER					1
+#define CPU_TEXT_RIGHT					2
 
 // Clear
-#define CLEAR_NONE						0
-#define CLEAR_COLOR						1
-#define CLEAR_SKY						2
+#define CPU_CLEAR_NONE					0
+#define CPU_CLEAR_COLOR					1
+#define CPU_CLEAR_SKY					2
 
 // Depth
-#define DEPTH_READ						1
-#define DEPTH_WRITE						2
+#define CPU_DEPTH_NONE					0
+#define CPU_DEPTH_READ					1
+#define CPU_DEPTH_WRITE					2
+#define CPU_DEPTH_RW					4
 
 // Core
 #include "png32.h"

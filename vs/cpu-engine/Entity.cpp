@@ -7,8 +7,8 @@ cpu_transform::cpu_transform()
 
 void cpu_transform::Identity()
 {
-	pos = ZERO;
-	sca = ONE;
+	pos = CPU_ZERO;
+	sca = CPU_ONE;
 	ResetRotation();
 }
 
@@ -180,7 +180,7 @@ cpu_entity::cpu_entity()
 	lifetime = 0.0f;
 	tile = 0;
 	radius = 0.0f;
-	depth = DEPTH_READ | DEPTH_WRITE;
+	depth = CPU_DEPTH_READ | CPU_DEPTH_WRITE;
 	visible = true;
 }
 

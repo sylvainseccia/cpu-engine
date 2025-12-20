@@ -105,7 +105,7 @@ void App::OnUpdate()
 	m_pBall->transform.AddYPR(m_deltaTime);
 
 	// Move rock
-	m_pRock->transform.OrbitAroundAxis(m_pBall->transform.pos, UP, 3.0f, m_totalTime*2.0f);
+	m_pRock->transform.OrbitAroundAxis(m_pBall->transform.pos, CPU_UP, 3.0f, m_totalTime*2.0f);
 	m_pEmitter->pos = m_pRock->transform.pos;
 	m_pEmitter->dir = m_pRock->transform.dir;
 	m_pEmitter->dir.x = -m_pEmitter->dir.x; 
@@ -173,7 +173,7 @@ void App::OnPostRender()
 	info += std::to_string(m_particleData.alive) + " particles, ";
 	info += std::to_string(m_statsThreadCount) + " threads, ";
 	info += std::to_string(m_statsTileCount) + " tiles";
-	DrawText(&m_font, info.c_str(), (int)GetMainRT()->widthHalf, 10, TEXT_CENTER);
+	DrawText(&m_font, info.c_str(), (int)GetMainRT()->widthHalf, 10, CPU_TEXT_CENTER);
 }
 
 void App::MissileShader(cpu_ps_io& io)

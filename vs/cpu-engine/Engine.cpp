@@ -118,7 +118,7 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 #endif
 
 	// Colors
-	m_clear = CLEAR_SKY;
+	m_clear = CPU_CLEAR_SKY;
 	m_clearColor = ToColor(32, 32, 64);
 	m_groundColor = ToColor(32, 64, 32);
 	m_skyColor = ToColor(32, 32, 64);
@@ -410,8 +410,8 @@ void cpu_engine::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 	auto DrawLine = [&](const char* start, int len, int penY)
 	{
 		int penX = x;
-		if ( align==TEXT_CENTER ) penX = x - (len * cw) / 2;
-		else if ( align==TEXT_RIGHT ) penX = x - (len * cw);
+		if ( align==CPU_TEXT_CENTER ) penX = x - (len * cw) / 2;
+		else if ( align==CPU_TEXT_RIGHT ) penX = x - (len * cw);
 		for ( int i=0 ; i<len ; ++i )
 		{
 			const byte c = (byte)start[i];
@@ -685,10 +685,10 @@ void cpu_engine::Render()
 	// Background
 	switch ( m_clear )
 	{
-	case CLEAR_COLOR:
+	case CPU_CLEAR_COLOR:
 		Fill(m_clearColor);
 		break;
-	case CLEAR_SKY:
+	case CPU_CLEAR_SKY:
 		FillSky();
 		break;
 	}
@@ -831,7 +831,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 		if ( entityHasTile==false )
 			continue;
 
-		DrawEntity(pEntity, tile);
+		DrawMesh(pEntity->pMesh, &pEntity->transform.world, pEntity->pMaterial, pEntity->depth, &tile);
 	}
 }
 
@@ -1105,12 +1105,12 @@ void cpu_engine::FillSky()
 	}
 }
 
-void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
+void cpu_engine::DrawMesh(cpu_mesh* pMesh, XMFLOAT4X4* pMatrix, cpu_material* pMaterial, int depthMode, cpu_tile* pTile)
 {
 	cpu_rt& rt = *GetRT();
-	cpu_material& material = pEntity->pMaterial ? *pEntity->pMaterial : m_defaultMaterial;
-	XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.world);
-	XMMATRIX normalMat = XMMatrixTranspose(XMMatrixInverse(nullptr, matWorld));
+	cpu_material& material = pMaterial ? *pMaterial : m_defaultMaterial;
+	XMMATRIX matWorld = XMLoadFloat4x4(pMatrix);
+	XMMATRIX matNormal = XMMatrixTranspose(XMMatrixInverse(nullptr, matWorld));
 	XMMATRIX matViewProj = XMLoadFloat4x4(&m_camera.matViewProj);
 	XMVECTOR lightDir = XMLoadFloat3(&m_lightDir);
 
@@ -1119,7 +1119,7 @@ void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
 	XMFLOAT3 screen[3];
 	cpu_vertex_out vo[3];
 
-	for ( const cpu_triangle& triangle : pEntity->pMesh->triangles )
+	for ( const cpu_triangle& triangle : pMesh->triangles )
 	{
 		// Verter shader
 		safe = true;
@@ -1146,7 +1146,7 @@ void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
 
 			// World normal
 			XMVECTOR localNormal = XMLoadFloat3(&in.normal);
-			XMVECTOR worldNormal = XMVector3TransformNormal(localNormal, normalMat);
+			XMVECTOR worldNormal = XMVector3TransformNormal(localNormal, matNormal);
 			worldNormal = XMVector3Normalize(worldNormal);
 			XMStoreFloat3(&vo[i].worldNormal, worldNormal);
 
@@ -1181,8 +1181,8 @@ void cpu_engine::DrawEntity(cpu_entity* pEntity, cpu_tile& tile)
 		dc.tri = screen;
 		dc.vo = vo;
 		dc.pMaterial = &material;
-		dc.pTile = &tile;
-		dc.depth = pEntity->depth;
+		dc.pTile = pTile ? pTile : &m_tiles[0];
+		dc.depth = depthMode;
 		FillTriangle(dc);
 
 		// Wireframe
@@ -1282,7 +1282,7 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 			float w3 = e12 * invArea;
 			float z = z3 + (z1 - z3) * w1 + (z2 - z3) * w2; // => z1 * w1 + z2 * w2 + z3 * w3
 			int index = y * rt.width + x;
-			if ( (dc.depth & DEPTH_READ) && z>=rt.depthBuffer[index] )
+			if ( (dc.depth & CPU_DEPTH_READ) && z>=rt.depthBuffer[index] )
 			{
 				e12 += dE12dx;
 				e23 += dE23dx;
@@ -1311,14 +1311,14 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 			io.p.albedo.z = dc.vo[2].albedo.z + (dc.vo[0].albedo.z - dc.vo[2].albedo.z) * w1 + (dc.vo[1].albedo.z - dc.vo[2].albedo.z) * w2;
 
 			// Lighting
-			if ( dc.pMaterial->lighting==LIGHTING_GOURAUD )
+			if ( dc.pMaterial->lighting==CPU_LIGHTING_GOURAUD )
 			{
 				float intensity = dc.vo[2].intensity + (dc.vo[0].intensity - dc.vo[2].intensity) * w1 + (dc.vo[1].intensity - dc.vo[2].intensity) * w2;
 				io.p.color.x = io.p.albedo.x * intensity;
 				io.p.color.y = io.p.albedo.y * intensity;
 				io.p.color.z = io.p.albedo.z * intensity;
 			}
-			else if ( dc.pMaterial->lighting==LIGHTING_LAMBERT )
+			else if ( dc.pMaterial->lighting==CPU_LIGHTING_LAMBERT )
 			{
 				XMVECTOR n = XMLoadFloat3(&io.p.normal);				
 				//n = XMVector3Normalize(n); // Expensive (better results)
@@ -1341,7 +1341,7 @@ void cpu_engine::FillTriangle(cpu_drawcall& dc)
 			func(io);
 			if ( io.discard==false )
 			{
-				if ( dc.depth & DEPTH_WRITE )
+				if ( dc.depth & CPU_DEPTH_WRITE )
 					rt.depthBuffer[index] = z;
 				rt.colorBuffer[index] = ToBGR(io.color);
 			}

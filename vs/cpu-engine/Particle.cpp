@@ -231,8 +231,8 @@ cpu_particle_emitter::cpu_particle_emitter()
 	density = 1.0f;
 	spawnRadius = 0.05f;
 
-	pos = ZERO;
-	dir = UP;
+	pos = CPU_ZERO;
+	dir = CPU_UP;
 	colorMin = { 1.0f, 1.0f, 1.0f };
 	colorMax = { 1.0f, 1.0f, 1.0f };
 	durationMin = 0.5f;

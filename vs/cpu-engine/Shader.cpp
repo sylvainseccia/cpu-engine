@@ -3,13 +3,13 @@
 cpu_material::cpu_material()
 {
 #ifdef _DEBUG
-	lighting = LIGHTING_GOURAUD;
+	lighting = CPU_LIGHTING_GOURAUD;
 #else
-	lighting = LIGHTING_LAMBERT;
+	lighting = CPU_LIGHTING_LAMBERT;
 #endif
 
 	ps = nullptr;
-	color = WHITE;
+	color = CPU_WHITE;
 	values = nullptr;
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 
 // Enable CONFIG_GPU for improved stretching when window size != render size or if you want to use V-Sync
-#define CONFIG_GPU
+//#define CONFIG_GPU
 
 // Enable CONFIG_MT if you want to use Multi-Threading
 #ifdef _DEBUG
