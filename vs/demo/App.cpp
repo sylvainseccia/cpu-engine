@@ -168,14 +168,16 @@ void App::OnRender(int pass)
 	{
 		case CPU_PASS_PARTICLE_BEGIN:
 		{
-			SetRT(m_rts[0], true);
+			// Blur particles
+			SetRT(m_rts[0]);
 			ClearColor();
 			break;
 		}
 		case CPU_PASS_PARTICLE_END:
 		{
-			Blur(10);
-			SetMainRT(true);
+			// Blur particles
+			Blur(2);
+			SetMainRT();
 			AlphaBlend(m_rts[0]);
 			break;
 		}

@@ -28,9 +28,9 @@ public:
 	cpu_particle_physics* GetParticlePhysics() { return &m_particlePhysics; }
 	int NextTile() { return m_nextTile.AddOne(); }
 
-	cpu_rt* SetMainRT(bool copyDepth = false);
+	cpu_rt* SetMainRT(bool copyDepth = true);
 	cpu_rt* GetMainRT() { return &m_mainRT; }
-	cpu_rt* SetRT(cpu_rt* pRT, bool copyDepth = false);
+	cpu_rt* SetRT(cpu_rt* pRT, bool copyDepth = true);
 	cpu_rt* GetRT() { return m_pRT; }
 	void CopyDepth(cpu_rt* pRT);
 	void AlphaBlend(cpu_rt* pRT);
