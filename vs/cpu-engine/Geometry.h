@@ -107,6 +107,7 @@ struct cpu_mesh
 	cpu_aabb aabb;
 
 	cpu_mesh();
+	~cpu_mesh() = default;
 	void Clear();
 	void AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color);
 	void AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLOAT3& color);
