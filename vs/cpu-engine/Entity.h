@@ -89,7 +89,11 @@ struct cpu_frustum
 
 struct cpu_camera
 {
-	float fov;
+	bool perspective;
+	float fov;					// perspective
+	float aspectRatio;			// perspective
+	float width;				// ortho
+	float height;				// ortho
 	float near;
 	float far;
 	XMFLOAT4X4 matView;
@@ -100,7 +104,7 @@ struct cpu_camera
 
 	cpu_camera();
 
-	void UpdateProjection(float aspectRatio);
+	void UpdateProjection();
 	void Update();
 };
 

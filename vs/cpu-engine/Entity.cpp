@@ -273,14 +273,21 @@ XMVECTOR XM_CALLCONV cpu_frustum::NormalizePlane(FXMVECTOR p)
 
 cpu_camera::cpu_camera()
 {
+	perspective = true;
 	fov = XM_PIDIV4;
+	width = 16.0f;
+	height = 9.0f;
+	aspectRatio = width/height;
 	near = 1.0f;
 	far = 100.0f;
 }
 
-void cpu_camera::UpdateProjection(float aspectRatio)
+void cpu_camera::UpdateProjection()
 {
-	XMStoreFloat4x4(&matProj, XMMatrixPerspectiveFovLH(fov, aspectRatio, near, far));
+	if ( perspective )
+		XMStoreFloat4x4(&matProj, XMMatrixPerspectiveFovLH(fov, aspectRatio, near, far));
+	else
+		XMStoreFloat4x4(&matProj, XMMatrixOrthographicLH(width, height, near, far));
 }
 
 void cpu_camera::Update()

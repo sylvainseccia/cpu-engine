@@ -69,7 +69,6 @@ void App::OnStart()
 
 	// 3D
 	m_missileSpeed = 10.0f;
-	m_camera.transform.pos.z = -5.0f;
 	m_pBall = CreateEntity();
 	m_pBall->pMesh = &m_meshSphere;
 	m_pBall->transform.pos.x = 3.0f;
@@ -92,6 +91,11 @@ void App::OnStart()
 	m_pEmitter->density = 3000.0f;
 	m_pEmitter->colorMin = ToColor(255, 0, 0);
 	m_pEmitter->colorMax = ToColor(255, 128, 0);
+
+	// Camera
+	//m_camera.perspective = false;
+	//m_camera.UpdateProjection();
+	m_camera.transform.pos.z = -5.0f;
 }
 
 void App::OnUpdate()

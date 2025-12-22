@@ -204,7 +204,9 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 void cpu_engine::Run()
 {
 	// Camera
-	m_camera.UpdateProjection(m_mainRT.aspectRatio);
+	m_camera.aspectRatio = m_mainRT.aspectRatio;
+	m_camera.height = m_camera.width / m_camera.aspectRatio;
+	m_camera.UpdateProjection();
 	FixWindow();
 
 	// Start
@@ -551,7 +553,12 @@ void cpu_engine::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			// Screen pos
 			float ndcX = vo[i].clipPos.x * vo[i].invW;			// [-1,1]
 			float ndcY = vo[i].clipPos.y * vo[i].invW;			// [-1,1]
-			float ndcZ = vo[i].clipPos.z * vo[i].invW;			// [0,1] avec XMMatrixPerspectiveFovLH
+			float ndcZ = vo[i].clipPos.z * vo[i].invW;			// [0,1]
+			//if ( ndcZ<0.0f || ndcZ>1.0f )
+			//{
+			//	safe = false;
+			//	break;
+			//}
 			screen[i].x = (ndcX + 1.0f) * rt.widthHalf;
 			screen[i].y = (1.0f - ndcY) * rt.heightHalf;
 			screen[i].z = Clamp(ndcZ);							// profondeur normalisée 0..1
@@ -658,20 +665,33 @@ void cpu_engine::GetCameraRay(cpu_ray& out, XMFLOAT2& pt)
 {
 	cpu_rt& rt = *GetMainRT();
 
-	float px = pt.x*2.0f/rt.width - 1.0f;
-	float py = pt.y*2.0f/rt.height - 1.0f;
-
-	float x = px/m_camera.matProj._11;
-	float y = -py/m_camera.matProj._22;
-	float z = 1.0f;
-
+	float ndcX = (pt.x * 2.0f / rt.width) - 1.0f;
+	float ndcY = 1.0f - (pt.y * 2.0f / rt.height);
 	XMFLOAT4X4& world = m_camera.transform.GetWorld();
-	out.pos.x = world._41;
-	out.pos.y = world._42;
-	out.pos.z = world._43;
-	out.dir.x = x*world._11 + y*world._21 + z*world._31;
-	out.dir.y = x*world._12 + y*world._22 + z*world._32;
-	out.dir.z = x*world._13 + y*world._23 + z*world._33;
+	XMFLOAT3 right = { world._11, world._12, world._13 };
+	XMFLOAT3 up = { world._21, world._22, world._23 };
+	XMFLOAT3 forward = { world._31, world._32, world._33 };
+	XMFLOAT3 camPos = { world._41, world._42, world._43 };
+
+	// Convert NDC offsets to view-space units using projection scale
+	float vx = ndcX / m_camera.matProj._11;
+	float vy = ndcY / m_camera.matProj._22;
+
+	if ( m_camera.perspective )
+	{
+		out.pos = camPos;
+		out.dir.x = vx * right.x + vy * up.x + forward.x;
+		out.dir.y = vx * right.y + vy * up.y + forward.y;
+		out.dir.z = vx * right.z + vy * up.z + forward.z;
+	}
+	else
+	{
+        out.pos.x = camPos.x + vx * right.x + vy * up.x;
+        out.pos.y = camPos.y + vx * right.y + vy * up.y;
+        out.pos.z = camPos.z + vx * right.z + vy * up.z;
+		out.dir = forward;
+	}
+
 	XMStoreFloat3(&out.dir, XMVector3Normalize(XMLoadFloat3(&out.dir)));
 }
 
@@ -728,11 +748,11 @@ cpu_entity* cpu_engine::HitEntity(cpu_hit& hit, cpu_ray& ray)
 			if ( cpu_math::RayTriangle(rayL, tri, ptL, &tL) )
 			{
 				XMVECTOR pL = XMLoadFloat3(&ptL);
-                XMVECTOR pW = XMVector3TransformCoord(pL, world);
-                XMVECTOR d = XMVectorSubtract(pW, roW);
+				XMVECTOR pW = XMVector3TransformCoord(pL, world);
+				XMVECTOR d = XMVectorSubtract(pW, roW);
 
-                float distSq;
-                XMStoreFloat(&distSq, XMVector3Dot(d, d));
+				float distSq;
+				XMStoreFloat(&distSq, XMVector3Dot(d, d));
 				if ( distSq<distResult )
 				{
 					distResult = distSq;
