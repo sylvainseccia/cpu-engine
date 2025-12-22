@@ -62,7 +62,6 @@ struct cpu_particle_data
 
 	void Create(int maxP);
 	void Destroy();
-	//void Update();
 	void UpdateAge();
 	void UpdatePhysics(int min, int max);
 	inline void ApplyBounds(float& px, float& py, float& pz, float& vx, float& vy, float& vz, const cpu_particle_physics& phys);
