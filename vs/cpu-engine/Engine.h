@@ -12,10 +12,10 @@ public:
 	virtual ~cpu_engine();
 	void Free();
 
-	static cpu_engine* GetInstance() { return s_pEngine; }
-	static cpu_engine& GetInstanceRef() { return *s_pEngine; }
+	static cpu_engine& GetInstance() { return *s_pEngine; }
 
-	void Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen = false, bool amigaStyle = false);
+	bool Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen, bool amigaStyle);
+	cpu_callback* GetCallback() { return &m_callback; }
 	void Run();
 	void Quit();
 	void FixWindow();
@@ -29,6 +29,7 @@ public:
 	cpu_particle_physics* GetParticlePhysics() { return &m_particlePhysics; }
 	int NextTile() { return m_nextTile.AddOne(); }
 	void GetParticleRange(int& min, int& max, int iTile);
+	cpu_stats* GetStats() { return &m_stats; }
 
 	cpu_rt* SetMainRT(bool copyDepth = true);
 	cpu_rt* GetMainRT() { return &m_mainRT; }
@@ -75,13 +76,6 @@ public:
 	void DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color);
 	void DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color);
 
-protected:
-	virtual void OnStart() {}
-	virtual void OnUpdate() {}
-	virtual void OnExit() {}
-	virtual void OnRender(int pass) {}
-	virtual LRESULT OnWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
 private:
 	bool Time();
 
@@ -111,52 +105,14 @@ private:
 	void Present();
 
 	static LRESULT WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-protected:
-	// Controller
-	cpu_input m_input;
-
-	// Color
-	bool m_amigaStyle;
-	int m_clear;
-	XMFLOAT3 m_clearColor;
-	XMFLOAT3 m_groundColor;
-	XMFLOAT3 m_skyColor;
-
-	// Light
-	XMFLOAT3 m_lightDir;
-	float m_ambient;
-	cpu_material m_defaultMaterial;
-	
-	// Time
-	float m_totalTime;
-	float m_deltaTime;
-	int m_fps;
-
-	// Camera
-	cpu_camera m_camera;
-
-	// Particle
-	cpu_particle_data m_particleData;
-	cpu_particle_physics m_particlePhysics;
-
-	// Stats: render
-	int m_statsClipEntityCount;
-	int m_statsThreadCount;
-	int m_statsTileCount;
-	int m_statsDrawnTriangleCount;
+	LRESULT OnWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	void OnStart() {}
+	void OnUpdate() {}
+	void OnExit() {}
+	void OnRender(int pass) {}
 
 private:
 	inline static cpu_engine* s_pEngine;
-
-	// Jobs
-	int m_threadCount;
-	std::vector<cpu_thread_job> m_threads;
-	std::vector<cpu_job_entity> m_entityJobs;
-	std::vector<cpu_job_particle_physics> m_particlePhysicsJobs;
-	std::vector<cpu_job_particle_space> m_particleSpaceJobs;
-	std::vector<cpu_job_particle_render> m_particleRenderJobs;
-	cpu_atomic<int> m_nextTile;
 
 	// Window
 	HINSTANCE m_hInstance;
@@ -164,6 +120,9 @@ private:
 	int m_windowWidth;
 	int m_windowHeight;
 	RECT m_rcFit;
+
+	// Controller
+	cpu_input m_input;
 
 	// Surface
 #ifdef CONFIG_GPU
@@ -176,6 +135,13 @@ private:
 	BITMAPINFO m_bi;
 #endif
 
+	// Color
+	bool m_amigaStyle;
+	int m_clear;
+	XMFLOAT3 m_clearColor;
+	XMFLOAT3 m_groundColor;
+	XMFLOAT3 m_skyColor;
+
 	// Buffer
 	cpu_rt m_mainRT;
 	cpu_rt* m_pRT;
@@ -183,7 +149,13 @@ private:
 	// Camera
 	bool m_cullFrontCCW = false; // DirectX default
 	float m_cullAreaEpsilon = 1e-6f;
+	cpu_camera m_camera;
 
+	// Light
+	XMFLOAT3 m_lightDir;
+	float m_ambient;
+	cpu_material m_defaultMaterial;
+	
 	// Tile
 	int m_tileWidth;
 	int m_tileHeight;
@@ -191,11 +163,26 @@ private:
 	int m_tileColCount;
 	int m_tileCount;
 	std::vector<cpu_tile> m_tiles;
+	cpu_atomic<int> m_nextTile;
+
+	// Jobs
+	int m_threadCount;
+	std::vector<cpu_thread_job> m_threads;
+	std::vector<cpu_job_entity> m_entityJobs;
+	std::vector<cpu_job_particle_physics> m_particlePhysicsJobs;
+	std::vector<cpu_job_particle_space> m_particleSpaceJobs;
+	std::vector<cpu_job_particle_render> m_particleRenderJobs;
 
 	// Time
 	DWORD m_systime;
 	DWORD m_fpsTime;
 	int m_fpsCount;
+	float m_totalTime;
+	float m_deltaTime;
+
+	// Particle
+	cpu_particle_data m_particleData;
+	cpu_particle_physics m_particlePhysics;
 
 	// Cursor
 	cpu_texture* m_pCursor;
@@ -206,6 +193,12 @@ private:
 	cpu_manager<cpu_particle_emitter> m_particleManager;
 	cpu_manager<cpu_sprite> m_spriteManager;
 	cpu_manager<cpu_rt> m_rtManager;
+
+	// Callback
+	cpu_callback m_callback;
+
+	// Stats: render
+	cpu_stats m_stats;
 };
 
 template <typename T>

@@ -65,6 +65,9 @@
     <ClInclude Include="Manager.h">
       <Filter>Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Function.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Thread.cpp">
@@ -111,6 +114,9 @@
     </ClCompile>
     <ClCompile Include="Manager.cpp">
       <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Function.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

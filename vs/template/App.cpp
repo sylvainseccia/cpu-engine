@@ -3,6 +3,10 @@
 App::App()
 {
 	s_pApp = this;
+	CPU_CALLBACK_START(OnStart);
+	CPU_CALLBACK_UPDATE(OnUpdate);
+	CPU_CALLBACK_EXIT(OnExit);
+	CPU_CALLBACK_RENDER(OnRender);
 }
 
 App::~App()

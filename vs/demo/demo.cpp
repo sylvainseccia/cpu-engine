@@ -2,25 +2,18 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int cmdShow)
 {
-	if ( cpu::InitializeEngine() )
-	{
-		App application;
-		
-		// AMIGA
-		//application.Initialize(hInstance, 320, 200, true, true);			// AMIGA NTSC
-		//application.Initialize(hInstance, 320, 256, true, true);			// AMIGA PAL
+	// AMIGA
+	//CPU_RUN(hInstance, 320, 200, true, true);		// AMIGA NTSC
+	//CPU_RUN(hInstance, 320, 256, true, true);		// AMIGA PAL
 
-		// RETRO
-		application.Initialize(hInstance, 512, 288, true, true);			// fullscreen
+	// RETRO
+	CPU_RUN(hInstance, 512, 256, true, true);			// fullscreen
 
-		// MODERN
-		//application.Initialize(hInstance, 1024, 576);
+	// MODERN
+	//CPU_RUN(hInstance, 1024, 576);
 
-		// FULL HD (please use release)
-		//application.Initialize(hInstance, 1920, 1080);
+	// FULL HD (please use release)
+	//CPU_RUN(hInstance, 1920, 1080);
 
-		application.Run();
-	}
-	cpu::UninitializeEngine();
 	return 0;
 }

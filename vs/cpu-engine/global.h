@@ -5,10 +5,36 @@ namespace cpu
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool InitializeEngine();
-void UninitializeEngine();
+//template <typename A>
+//static void Run(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen = false, bool amigaStyle = false);
 
-template <class S>
+template <typename E, typename A>
+void Run(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen = false, bool amigaStyle = false)
+{
+#ifdef _DEBUG
+	_CrtMemState memStateInit;
+	_CrtMemCheckpoint(&memStateInit);
+#endif
+
+	E* pEngine = new E;
+	if ( pEngine->Initialize(hInstance, renderWidth, renderHeight, fullscreen, amigaStyle) )
+	{
+		A* pApp = new A;
+		pEngine->Run();
+		delete pApp;
+	}
+	delete pEngine;
+
+#ifdef _DEBUG
+	_CrtMemState memState, memStateDiff;
+	_CrtMemCheckpoint(&memState);
+	if ( _CrtMemDifference(&memStateDiff, &memStateInit, &memState) )
+		MessageBox(nullptr, "Memory leaks", "ALERT", 0);
+	_CrtDumpMemoryLeaks();
+#endif
+}
+
+template <typename S>
 int& GetStateID() { static int id = -1; return id; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

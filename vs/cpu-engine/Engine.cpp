@@ -19,6 +19,11 @@ cpu_engine::cpu_engine()
 	m_bi.bmiHeader.biBitCount = 32;
 	m_bi.bmiHeader.biCompression = BI_RGB;
 #endif
+
+	m_callback.onStart.Set(this, &cpu_engine::OnStart);
+	m_callback.onUpdate.Set(this, &cpu_engine::OnUpdate);
+	m_callback.onExit.Set(this, &cpu_engine::OnExit);
+	m_callback.onRender.Set(this, &cpu_engine::OnRender);
 }
 
 cpu_engine::~cpu_engine()
@@ -68,10 +73,10 @@ void cpu_engine::Free()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen, bool amigaStyle)
+bool cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen, bool amigaStyle)
 {
 	if ( m_hInstance )
-		return;
+		return false;
 
 	// Window
 	m_hInstance = hInstance;
@@ -94,6 +99,8 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
 		m_hWnd = CreateWindow("cpu-engine", "cpu-engine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
 	}
+	if ( m_hWnd==nullptr )
+		return false;
 	SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
 
 	// Buffer
@@ -111,6 +118,8 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	// Surface
 #ifdef CONFIG_GPU
 	HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+	if ( hr==nullptr )
+		return false;
 	FixDevice();
 #else
 	m_hDC = GetDC(m_hWnd);
@@ -152,7 +161,7 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	m_tileColCount = cpu::CeilToInt(sqrtf((float)m_threadCount));
 	m_tileRowCount = (m_threadCount + m_tileColCount - 1) / m_tileColCount;
 	m_tileCount = m_tileColCount * m_tileRowCount;
-	m_statsTileCount = m_tileCount;
+	m_stats.tileCount = m_tileCount;
 	m_tileWidth = m_mainRT.width / m_tileColCount;
 	m_tileHeight = m_mainRT.height / m_tileRowCount;
 	int missingWidth = m_mainRT.width - (m_tileWidth*m_tileColCount);
@@ -179,7 +188,7 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	}
 
 	// Threads
-	m_statsThreadCount = m_threadCount;
+	m_stats.threadCount = m_threadCount;
 	m_threads.resize(m_threadCount);
 	for ( int i=0 ; i<m_threadCount ; i++ )
 		m_threads[i].Create(m_tileCount);
@@ -199,6 +208,7 @@ void cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 
 	// Window
 	ShowWindow(m_hWnd, SW_SHOW);
+	return true;
 }
 
 void cpu_engine::Run()
@@ -215,8 +225,8 @@ void cpu_engine::Run()
 	m_deltaTime = 0.0f;
 	m_fpsTime = 0;
 	m_fpsCount = 0;
-	m_fps = 0;
-	OnStart();
+	m_stats = {};
+	m_callback.onStart.Call();
 
 	// Threads
 	for ( int i=0 ; i<m_threadCount ; i++ )
@@ -251,7 +261,7 @@ void cpu_engine::Run()
 		m_threads[i].Stop();
 
 	// End
-	OnExit();
+	m_callback.onExit.Call();
 }
 
 void cpu_engine::Quit()
@@ -985,7 +995,7 @@ bool cpu_engine::Time()
 
 	if ( m_systime-m_fpsTime>=1000 )
 	{
-		m_fps = m_fpsCount;
+		m_stats.fps = m_fpsCount;
 		m_fpsCount = 0;
 		m_fpsTime = m_systime;
 	}
@@ -1017,7 +1027,7 @@ void cpu_engine::Update()
 	Update_Particles();
 
 	// Callback
-	OnUpdate();
+	m_callback.onUpdate.Call();
 
 	// Purge
 	Update_Purge();
@@ -1110,7 +1120,7 @@ void cpu_engine::Render()
 	Render_AssignEntityTile();
 
 	// Clear
-	OnRender(CPU_PASS_CLEAR_BEGIN);
+	m_callback.onRender.Call(CPU_PASS_CLEAR_BEGIN);
 	ClearDepth();
 	switch ( m_clear )
 	{
@@ -1121,32 +1131,32 @@ void cpu_engine::Render()
 		ClearSky();
 		break;
 	}
-	OnRender(CPU_PASS_CLEAR_END);
+	m_callback.onRender.Call(CPU_PASS_CLEAR_END);
 
 	// Entities
-	OnRender(CPU_PASS_ENTITY_BEGIN);
+	m_callback.onRender.Call(CPU_PASS_ENTITY_BEGIN);
 	Render_Entities();
-	OnRender(CPU_PASS_ENTITY_END);
+	m_callback.onRender.Call(CPU_PASS_ENTITY_END);
 
 	// Particles
-	OnRender(CPU_PASS_PARTICLE_BEGIN);
+	m_callback.onRender.Call(CPU_PASS_PARTICLE_BEGIN);
 	Render_Particles();
-	OnRender(CPU_PASS_PARTICLE_END);
+	m_callback.onRender.Call(CPU_PASS_PARTICLE_END);
 
 	// Stats
-	m_statsDrawnTriangleCount = 0;
+	m_stats.drawnTriangleCount = 0;
 	for ( int i=0 ; i<m_tileCount ; i++ )
-		m_statsDrawnTriangleCount += m_tiles[i].statsDrawnTriangleCount;
+		m_stats.drawnTriangleCount += m_tiles[i].statsDrawnTriangleCount;
 
 	// UI
-	OnRender(CPU_PASS_UI_BEGIN);
+	m_callback.onRender.Call(CPU_PASS_UI_BEGIN);
 	Render_UI();
-	OnRender(CPU_PASS_UI_END);
+	m_callback.onRender.Call(CPU_PASS_UI_END);
 
 	// UI
-	OnRender(CPU_PASS_CURSOR_BEGIN);
+	m_callback.onRender.Call(CPU_PASS_CURSOR_BEGIN);
 	Render_UI();
-	OnRender(CPU_PASS_CURSOR_END);
+	m_callback.onRender.Call(CPU_PASS_CURSOR_END);
 
 	// Style
 	if ( m_amigaStyle )
@@ -1210,7 +1220,7 @@ void cpu_engine::Render_RecalculateMatrices()
 
 void cpu_engine::Render_ApplyClipping()
 {
-	m_statsClipEntityCount = 0;
+	m_stats.clipEntityCount = 0;
 
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
@@ -1225,7 +1235,7 @@ void cpu_engine::Render_ApplyClipping()
 		else
 		{
 			pEntity->clipped = true;
-			m_statsClipEntityCount++;
+			m_stats.clipEntityCount++;
 		}
 	}
 }

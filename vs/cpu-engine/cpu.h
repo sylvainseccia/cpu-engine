@@ -89,6 +89,8 @@ using CPU_PS_FUNC						= void(*)(cpu_ps_io& data);
 #endif
 
 // Macro
+#define APP								App::GetInstance()
+#define CPU								cpu_engine::GetInstance()
 #define CPU_RELEASE(p)					{ if ( (p) ) { (p)->Release(); (p) = nullptr; } }
 #define CPU_DELPTR(p)					{ if ( (p) ) { delete (p); (p) = nullptr; } }
 #define CPU_DELPTRS(p)					{ if ( (p) ) { delete [] (p); (p) = nullptr; } }
@@ -105,7 +107,11 @@ using CPU_PS_FUNC						= void(*)(cpu_ps_io& data);
 #define CPU_MIN							std::min
 #define CPU_MAX							std::max
 #define CPU_SINCE(t)					(cpu_engine::GetInstance()->GetTime()-t)
-#define CPU								cpu_engine::GetInstanceRef()
+#define CPU_RUN							cpu::Run<cpu_engine, App>
+#define CPU_CALLBACK_START(method)		CPU.GetCallback()->onStart.Set(this, &App::method)
+#define CPU_CALLBACK_UPDATE(method)		CPU.GetCallback()->onUpdate.Set(this, &App::method)
+#define CPU_CALLBACK_EXIT(method)		CPU.GetCallback()->onExit.Set(this, &App::method)
+#define CPU_CALLBACK_RENDER(method)		CPU.GetCallback()->onRender.Set(this, &App::method)
 
 // Float3
 inline XMFLOAT3 CPU_RIGHT				= { 1.0f, 0.0f, 0.0f };
@@ -159,6 +165,7 @@ inline XMFLOAT3 CPU_ORANGE				= { 1.0f, 0.5f, 0.0f };
 #include "global.h"
 #include "Input.h"
 #include "Thread.h"
+#include "Function.h"
 
 // Engine
 #include "Manager.h"

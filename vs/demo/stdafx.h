@@ -9,6 +9,6 @@
 #include <SDKDDKVer.h>
 #include "../cpu-engine/cpu.h"
 
-#define app			App::GetInstanceRef()
+class Ship;
 
 #include "App.h"

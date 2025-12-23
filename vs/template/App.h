@@ -1,18 +1,17 @@
 #pragma once
 
-class App : public cpu_engine
+class App
 {
 public:
 	App();
 	virtual ~App();
 
-	static App* GetInstance() { return s_pApp; }
-	static App& GetInstanceRef() { return *s_pApp; }
+	static App& GetInstance() { return *s_pApp; }
 
-	void OnStart() override;
-	void OnUpdate() override;
-	void OnExit() override;
-	void OnRender(int pass) override;
+	void OnStart();
+	void OnUpdate();
+	void OnExit();
+	void OnRender(int pass);
 
 	static void MyPixelShader(cpu_ps_io& io);
 

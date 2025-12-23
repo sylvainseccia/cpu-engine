@@ -1,23 +1,20 @@
 #pragma once
 
-class Ship;
-
-class App : public cpu_engine
+class App
 {
 public:
 	App();
 	virtual ~App();
 
-	static App* GetInstance() { return s_pApp; }
-	static App& GetInstanceRef() { return *s_pApp; }
+	static App& GetInstance() { return *s_pApp; }
 
 	void SpawnMissile();
 	void SpawnMissileWithMouse();
 
-	void OnStart() override;
-	void OnUpdate() override;
-	void OnExit() override;
-	void OnRender(int pass) override;
+	void OnStart();
+	void OnUpdate();
+	void OnExit();
+	void OnRender(int pass);
 
 	static void MissileShader(cpu_ps_io& io);
 	static void RockShader(cpu_ps_io& io);

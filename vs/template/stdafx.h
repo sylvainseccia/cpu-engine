@@ -9,6 +9,4 @@
 #include <SDKDDKVer.h>
 #include "../cpu-engine/cpu.h"
 
-#define app			App::GetInstanceRef()
-
 #include "App.h"
