@@ -800,5 +800,71 @@ void Blur(byte* img, int width, int height, int radius)
 	}
 }
 
+void ToAmigaPalette(byte* buffer, int pixelCount)
+{
+	const int simdPixels = pixelCount & ~3; // multiple de 4
+	unsigned char* p = buffer;
+
+	const __m128i mask_alpha = _mm_set1_epi32(0xFF000000);
+	const __m128i mask_rgb   = _mm_set1_epi32(0x00FFFFFF);
+
+	const __m128i dither = _mm_load_si128(
+		reinterpret_cast<const __m128i*>(DITHER_2X2_BGRA)
+	);
+
+	for (int i = 0; i < simdPixels; i += 4)
+	{
+		// Load 4 pixels BGRA
+		__m128i px = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+
+		// Extract alpha
+		__m128i alpha = _mm_and_si128(px, mask_alpha);
+
+		// Add dithering (BGR only)
+		__m128i rgb = _mm_and_si128(px, mask_rgb);
+		rgb = _mm_adds_epu8(rgb, dither);
+
+		// 8 bits ? 4 bits
+		__m128i rgb4 = _mm_srli_epi16(rgb, 4);
+
+		// Expand 4 bits ? 8 bits (replication)
+		__m128i rgb8 = _mm_or_si128(
+			_mm_slli_epi16(rgb4, 4),
+			rgb4
+		);
+
+		// Recombine with alpha
+		__m128i out = _mm_or_si128(
+			_mm_and_si128(rgb8, mask_rgb),
+			alpha
+		);
+
+		_mm_storeu_si128(reinterpret_cast<__m128i*>(p), out);
+		p += 16;
+	}
+
+	// Reste scalaire (0–3 pixels)
+	for (int i = simdPixels; i < pixelCount; ++i)
+	{
+		unsigned char* q = buffer + i * 4;
+
+		unsigned char b = q[0];
+		unsigned char g = q[1];
+		unsigned char r = q[2];
+
+		static const unsigned char d[4] = { 0, 8, 12, 4 };
+		unsigned char dd = d[i & 3];
+
+		b = (b + dd) >> 4;
+		g = (g + dd) >> 4;
+		r = (r + dd) >> 4;
+
+		q[0] = (b << 4) | b;
+		q[1] = (g << 4) | g;
+		q[2] = (r << 4) | r;
+		// alpha inchangé
+	}
+}
+
 
 }
