@@ -88,6 +88,8 @@ bool cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	wc.lpszClassName = "cpu-engine";
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	RegisterClass(&wc);
+	MSG msg;
+	while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) );
 	if ( fullscreen )
 	{
 		RECT rect = { 0, 0, ::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN) };

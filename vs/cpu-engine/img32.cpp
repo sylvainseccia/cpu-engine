@@ -562,14 +562,13 @@ void Blur(byte* img, int width, int height, int radius)
 
 	// Precompute division table for this radius (avoids / in the hot loop)
 	const int divSum = ((div + 1) >> 1) * ((div + 1) >> 1);
-	static int dvDivSum = 0;
-	if (dvDivSum != divSum)
+	if ( g_pBlurDv==nullptr )
+		g_pBlurDv = new std::vector<int>();
+	if ( divSum!=g_pBlurDv->size() )
 	{
-		dvDivSum = divSum;
-		if ( g_pBlurDv==nullptr )
-			g_pBlurDv = new std::vector<int>();
 		g_pBlurDv->resize((size_t)256 * (size_t)divSum);
-		for (int i = 0; i < 256 * divSum; ++i) (*g_pBlurDv)[i] = i / divSum;
+		for (int i = 0; i < 256 * divSum; ++i)
+			(*g_pBlurDv)[i] = i / divSum;
 	}
 
 	// -------------------------

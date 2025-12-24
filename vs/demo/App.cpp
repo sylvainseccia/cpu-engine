@@ -179,16 +179,16 @@ void App::OnRender(int pass)
 		case CPU_PASS_PARTICLE_BEGIN:
 		{
 			// Blur particles
-			CPU.SetRT(m_rts[0]);
-			CPU.ClearColor();
+			//CPU.SetRT(m_rts[0]);
+			//CPU.ClearColor();
 			break;
 		}
 		case CPU_PASS_PARTICLE_END:
 		{
 			// Blur particles
-			CPU.Blur(10);
-			CPU.SetMainRT();
-			CPU.AlphaBlend(m_rts[0]);
+			//CPU.Blur(10);
+			//CPU.SetMainRT();
+			//CPU.AlphaBlend(m_rts[0]);
 			break;
 		}
 		case CPU_PASS_UI_END:

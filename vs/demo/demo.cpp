@@ -2,12 +2,14 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int cmdShow)
 {
-	// AMIGA
-	//CPU_RUN(hInstance, 320, 200, true, true);		// AMIGA NTSC
-	//CPU_RUN(hInstance, 320, 256, true, true);		// AMIGA PAL
+	// AMIGA NTSC FULLSCREEN
+	//CPU_RUN(hInstance, 320, 200, true, true);
 
-	// RETRO
-	CPU_RUN(hInstance, 512, 256, true, true);			// fullscreen
+	// AMIGA PAL FULLSCREEN
+	//CPU_RUN(hInstance, 320, 256, true, true);
+
+	// RETRO FULLSCREEN
+	CPU_RUN(hInstance, 512, 256, true, true);
 
 	// MODERN
 	//CPU_RUN(hInstance, 1024, 576);
