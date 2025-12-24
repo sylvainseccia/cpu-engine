@@ -26,7 +26,7 @@ void Run(HINSTANCE hInstance, int renderWidth, int renderHeight, bool fullscreen
 	_CrtMemState memState, memStateDiff;
 	_CrtMemCheckpoint(&memState);
 	if ( _CrtMemDifference(&memStateDiff, &memStateInit, &memState) )
-		MessageBox(nullptr, "Memory leaks", "ALERT", 0);
+		MessageBoxA(nullptr, "Memory leaks", "ALERT", 0);
 	_CrtDumpMemoryLeaks();
 #endif
 }

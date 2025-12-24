@@ -65,7 +65,7 @@ void cpu_engine::Free()
 		DestroyWindow(m_hWnd);
 		m_hWnd = nullptr;
 	}
-	UnregisterClass("RETRO_ENGINE", m_hInstance);
+	UnregisterClassA("RETRO_ENGINE", m_hInstance);
 	m_hInstance = nullptr;
 }
 
@@ -82,24 +82,24 @@ bool cpu_engine::Initialize(HINSTANCE hInstance, int renderWidth, int renderHeig
 	m_hInstance = hInstance;
 	m_windowWidth = renderWidth;
 	m_windowHeight = renderHeight;
-	WNDCLASS wc = {};
+	WNDCLASSA wc = {};
 	wc.lpfnWndProc = WindowProc;
 	wc.hInstance = hInstance;
 	wc.lpszClassName = "cpu-engine";
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	RegisterClass(&wc);
+	RegisterClassA(&wc);
 	MSG msg;
 	while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) );
 	if ( fullscreen )
 	{
 		RECT rect = { 0, 0, ::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN) };
-		m_hWnd = CreateWindow("cpu-engine", "cpu-engine", WS_POPUP, 0, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
+		m_hWnd = CreateWindowA("cpu-engine", "cpu-engine", WS_POPUP, 0, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
 	}
 	else
 	{
 		RECT rect = { 0, 0, m_windowWidth, m_windowHeight };
 		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
-		m_hWnd = CreateWindow("cpu-engine", "cpu-engine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
+		m_hWnd = CreateWindowA("cpu-engine", "cpu-engine", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, rect.right-rect.left, rect.bottom-rect.top, nullptr, nullptr, hInstance, nullptr);
 	}
 	if ( m_hWnd==nullptr )
 		return false;

@@ -144,7 +144,7 @@ bool cpu_font::Create(float size, XMFLOAT3 color, const char* fontName, int cell
 	HGDIOBJ oldBmp = SelectObject(hdc, hbmp);
 	std::memset(bits, 0, width*height*4);
 
-	HFONT hFont = CreateFont(-fontPx, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fontName);
+	HFONT hFont = CreateFontA(-fontPx, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fontName);
 	if ( hFont==nullptr )
 	{
 		SelectObject(hdc, oldBmp);
