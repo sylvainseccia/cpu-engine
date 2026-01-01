@@ -62,13 +62,9 @@ bool cpu_device::Create(cpu_window* pWindow, int width, int height)
 	m_bi.bmiHeader.biHeight = -m_height;
 #endif
 
-	// Camera
-	m_pCamera = &m_mainCamera;
-
-	// Light
-	m_lightDir = { 0.5f, -1.0f, 0.5f };
-	XMStoreFloat3(&m_lightDir, XMVector3Normalize(XMLoadFloat3(&m_lightDir)));
-	m_ambient = 0.2f;
+	// Defaukt
+	SetDefaultCamera();
+	SetDefaultLight();
 
 	m_created = true;
 	return true;
@@ -113,9 +109,9 @@ void cpu_device::Fix()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void cpu_device::SetMainCamera()
+void cpu_device::SetDefaultCamera()
 {
-	m_pCamera = &m_mainCamera;
+	m_pCamera = &m_defaultCamera;
 }
 
 void cpu_device::SetCamera(cpu_camera* pCamera)
@@ -133,10 +129,14 @@ void cpu_device::UpdateCamera()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void cpu_device::SetLight(XMFLOAT3& lightDir, float ambient)
+void cpu_device::SetDefaultLight()
 {
-	m_lightDir = lightDir;
-	m_ambient = ambient;
+	m_pLight = &m_defaultLight;
+}
+
+void cpu_device::SetLight(cpu_light* pLight)
+{
+	m_pLight = pLight;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -355,7 +355,7 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 	XMMATRIX matWorld = XMLoadFloat4x4(&pTransform->GetWorld());
 	XMMATRIX matNormal = XMMatrixTranspose(XMLoadFloat4x4(&pTransform->GetInvWorld()));
 	XMMATRIX matViewProj = XMLoadFloat4x4(&m_pCamera->matViewProj);
-	XMVECTOR lightDir = XMLoadFloat3(&m_lightDir);
+	XMVECTOR lightDir = XMLoadFloat3(&m_pLight->dir);
 
 	cpu_draw draw;
 	bool safe;
@@ -401,7 +401,7 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			// Intensity
 			float ndotl = XMVectorGetX(XMVector3Dot(worldNormal, lightDir));
 			ndotl = std::max(0.0f, ndotl);
-			vo[i].intensity = ndotl + m_ambient;
+			vo[i].intensity = ndotl + m_pLight->ambient;
 
 			// Screen pos
 			float ndcX = vo[i].clipPos.x * vo[i].invW;			// [-1,1]
@@ -794,11 +794,11 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			{
 				XMVECTOR n = XMLoadFloat3(&io.p.normal);				
 				//n = XMVector3Normalize(n); // Expensive (better results)
-				XMVECTOR l = XMLoadFloat3(&m_lightDir);
+				XMVECTOR l = XMLoadFloat3(&m_pLight->dir);
 				float ndotl = XMVectorGetX(XMVector3Dot(n, l));
 				if ( ndotl<0.0f )
 					ndotl = 0.0f;
-				float intensity = ndotl + m_ambient;
+				float intensity = ndotl + m_pLight->ambient;
 				io.p.color.x = io.p.albedo.x * intensity;
 				io.p.color.y = io.p.albedo.y * intensity;
 				io.p.color.z = io.p.albedo.z * intensity;

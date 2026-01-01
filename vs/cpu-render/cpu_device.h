@@ -10,11 +10,12 @@ public:
 	void Destroy();
 	void Fix();
 
-	void SetMainCamera();
+	void SetDefaultCamera();
 	void SetCamera(cpu_camera* pCamera);
 	void UpdateCamera();
 
-	void SetLight(XMFLOAT3& lightDir, float ambient);
+	void SetDefaultLight();
+	void SetLight(cpu_light* pLight);
 
 	int GetWidth() { return m_mainRT.width; }
 	int GetHeight() { return m_mainRT.height; }
@@ -73,13 +74,13 @@ private:
 	// Camera
 	bool m_cullFrontCCW = false; // DirectX default
 	float m_cullAreaEpsilon = 1e-6f;
-	cpu_camera m_mainCamera;
+	cpu_camera m_defaultCamera;
 	cpu_camera* m_pCamera;
 
 	// Material
 	cpu_material m_defaultMaterial;
 
 	// Light
-	XMFLOAT3 m_lightDir;
-	float m_ambient;
+	cpu_light m_defaultLight;
+	cpu_light* m_pLight;
 };

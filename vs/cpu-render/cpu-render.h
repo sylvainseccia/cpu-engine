@@ -16,7 +16,6 @@
 // Forward declarations
 struct cpu_camera;
 struct cpu_ps_io;
-class cpu_job;
 
 // Types
 using CPU_PS_FUNC						= void(*)(cpu_ps_io& data);
@@ -51,6 +50,7 @@ using CPU_PS_FUNC						= void(*)(cpu_ps_io& data);
 #include "cpu_texture.h"
 #include "cpu_sprite.h"
 #include "cpu_font.h"
+#include "cpu_light.h"
 #include "cpu_frustum.h"
 #include "cpu_camera.h"
 #include "cpu_particle_physics.h"

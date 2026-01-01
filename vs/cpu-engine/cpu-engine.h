@@ -14,14 +14,8 @@
 #include "../cpu-render/cpu-render.h"
 
 // Forward declarations
-struct cpu_camera;
-struct cpu_ps_io;
-struct cpu_tile;
 class cpu_engine;
 class cpu_job;
-
-// Types
-using CPU_PS_FUNC						= void(*)(cpu_ps_io& data);
 
 // Singletons
 #define cpuEngine						cpu_engine::GetInstance()

@@ -84,6 +84,9 @@
     <ClInclude Include="cpu_global_render.h">
       <Filter>main</Filter>
     </ClInclude>
+    <ClInclude Include="cpu_light.h">
+      <Filter>shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpu-render.cpp">
@@ -145,6 +148,9 @@
     </ClCompile>
     <ClCompile Include="cpu_global_render.cpp">
       <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_light.cpp">
+      <Filter>shader</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
