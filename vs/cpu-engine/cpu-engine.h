@@ -3,13 +3,6 @@
 // Sylvain Seccia
 // https://www.seccia.com
 
-// Library
-#ifdef _DEBUG
-	#pragma comment(lib, "../x64/Debug/cpu-render.lib")
-#else
-	#pragma comment(lib, "../x64/Release/cpu-render.lib")
-#endif
-
 // Include
 #include "../cpu-render/cpu-render.h"
 

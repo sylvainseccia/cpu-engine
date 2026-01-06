@@ -3,13 +3,6 @@
 // Sylvain Seccia
 // https://www.seccia.com
 
-// Library
-#ifdef _DEBUG
-	#pragma comment(lib, "../x64/Debug/cpu-core.lib")
-#else
-	#pragma comment(lib, "../x64/Release/cpu-core.lib")
-#endif
-
 // Include
 #include "../cpu-core/cpu-core.h"
 
