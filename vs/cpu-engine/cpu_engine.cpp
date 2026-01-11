@@ -26,9 +26,9 @@ bool cpu_engine::Create(int width, int height, bool fullscreen, bool amigaStyle)
 	// Style
 	m_amigaStyle = amigaStyle;
 	m_clear = CPU_CLEAR_SKY;
-	m_clearColor = cpu::ToColor(32, 32, 64);
-	m_groundColor = cpu::ToColor(32, 64, 32);
-	m_skyColor = cpu::ToColor(32, 32, 64);
+	m_clearColor = cpu::ToColor(24, 35, 50);
+	m_groundColor = cpu::ToColor(42, 63, 53);
+	m_skyColor = cpu::ToColor(24, 35, 50);
 
 	// Particles
 	m_particleData.pPhysics = &m_particlePhysics;
