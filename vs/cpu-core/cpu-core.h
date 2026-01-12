@@ -10,10 +10,12 @@
 //////////////
 
 #pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "ws2_32.lib")
 
 // Windows
 ///////////
 
+#include <winsock2.h>
 #include <windows.h>
 
 #include <stdlib.h>
@@ -35,6 +37,13 @@
 
 // DirectX
 ////////////
+
+// Enable CPU_CONFIG_GPU for improved stretching when window size != render size or if you want to use V-Sync
+#define CPU_CONFIG_GPU
+#ifdef CPU_CONFIG_GPU
+	#pragma comment(lib, "d2d1.lib")
+	#include <d2d1.h>
+#endif
 
 #include <DirectXMath.h>
 using namespace DirectX;
