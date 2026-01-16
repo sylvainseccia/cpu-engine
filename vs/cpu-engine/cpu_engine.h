@@ -26,6 +26,7 @@ public:
 	int NextTile() { return m_nextTile.Add(1); }
 	void GetParticleRange(int& min, int& max, int iTile);
 	cpu_stats* GetStats() { return &m_stats; }
+	void EnableRender(bool enabled = true) { m_renderEnabled = enabled; }
 
 	template <typename T>
 	cpu_fsm<T>* CreateFSM(T* pInstance);
@@ -78,6 +79,9 @@ private:
 
 private:
 	inline static cpu_engine* s_pEngine;
+
+	// Options
+	bool m_renderEnabled;
 
 	// Window
 	cpu_window m_window;

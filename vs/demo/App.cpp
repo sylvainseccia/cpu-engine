@@ -52,6 +52,9 @@ void App::OnStart()
 {
 	// YOUR CODE HERE
 
+	// Disable rendering
+	//cpuEngine.EnableRender(false);
+
 	// Resources
 	m_font.Create(12);
 	m_texture.Load("bird_amiga.png");

@@ -23,6 +23,9 @@ bool cpu_engine::Create(int width, int height, bool fullscreen, bool amigaStyle)
 	if ( m_device.Create(&m_window, width, height)==false )
 		return false;
 
+	// Options
+	m_renderEnabled = true;
+
 	// Style
 	m_amigaStyle = amigaStyle;
 	m_clear = CPU_CLEAR_SKY;
@@ -476,12 +479,16 @@ void cpu_engine::Update_Purge()
 
 void cpu_engine::Render()
 {
+	// Camera
+	m_device.UpdateCamera();
+
+	// Rendering disabled
+	if ( m_renderEnabled==false )
+		return;
+
 	// Tiles
 	for ( int i=0 ; i<m_tileCount ; i++ )
 		m_tiles[i].Reset();
-
-	// Camera
-	m_device.UpdateCamera();
 
 	// Prepare
 	Render_SortZ();
