@@ -525,7 +525,7 @@ void cpu_engine::Render()
 
 	// UI
 	m_callback.onRender.Call(CPU_PASS_CURSOR_BEGIN);
-	Render_UI();
+	Render_Cursor();
 	m_callback.onRender.Call(CPU_PASS_CURSOR_END);
 
 	// Style
