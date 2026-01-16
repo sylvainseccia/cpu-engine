@@ -40,11 +40,7 @@ bool cpu_engine::Create(int width, int height, bool fullscreen, bool amigaStyle)
 	m_pCursor = nullptr;
 
 	// Managers
-	m_entityManager.Clear();
-	m_spriteManager.Clear();
-	m_particleManager.Clear();
-	m_fsmManager.Clear();
-	m_rtManager.Clear();
+	ClearManagers();
 
 	// Cores
 #ifdef CPU_CONFIG_MT
@@ -147,6 +143,9 @@ void cpu_engine::Run()
 		Render();
 	}
 
+	// Managers
+	Update_Purge();
+
 	// End
 	m_callback.onExit.Call();
 
@@ -159,6 +158,9 @@ void cpu_engine::Run()
 	m_particlePhysicsJobs.clear();
 	m_particleSpaceJobs.clear();
 	m_particleRenderJobs.clear();
+
+	// Managers
+	ClearManagers();
 }
 
 void cpu_engine::Quit()
@@ -204,6 +206,15 @@ cpu_rt* cpu_engine::CreateRT(bool depth)
 	cpu_rt* pRT = m_rtManager.Create();
 	pRT->Create(m_device.GetWidth(), m_device.GetHeight(), depth);
 	return pRT;
+}
+
+void cpu_engine::ClearManagers()
+{
+	m_entityManager.Clear();
+	m_spriteManager.Clear();
+	m_particleManager.Clear();
+	m_fsmManager.Clear();
+	m_rtManager.Clear();
 }
 
 cpu_entity* cpu_engine::Release(cpu_entity* pEntity)

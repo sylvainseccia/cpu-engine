@@ -28,6 +28,7 @@ public:
 	cpu_stats* GetStats() { return &m_stats; }
 	void EnableRender(bool enabled = true) { m_renderEnabled = enabled; }
 
+	void ClearManagers();
 	template <typename T>
 	cpu_fsm<T>* CreateFSM(T* pInstance);
 	cpu_entity* CreateEntity();
