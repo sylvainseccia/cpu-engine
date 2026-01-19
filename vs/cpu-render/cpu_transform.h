@@ -39,6 +39,9 @@ public:
 	void OrbitAroundAxis(XMFLOAT3& center, XMFLOAT3& axis, float radius, float angle);
 	void ResetRotation();
 	void SetRotation(cpu_transform& transform);
+	void SetRotationFromAxes();
+	void SetRotationFromMatrix();
+	void SetRotationFromQuaternion();
 	void SetYPR(float yaw, float pitch = 0.0f, float roll = 0.0f);
 	void AddYPR(float yaw, float pitch = 0.0f, float roll = 0.0f);
 	void LookAt(float x, float y, float z);

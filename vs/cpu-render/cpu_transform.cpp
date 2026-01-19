@@ -122,6 +122,55 @@ void cpu_transform::SetRotation(cpu_transform& transform)
 	rot = transform.rot;
 }
 
+void cpu_transform::SetRotationFromAxes()
+{
+	rot._11 = right.x;
+	rot._12 = right.y;
+	rot._13 = right.z;
+	rot._14 = 0.0f;
+	rot._21 = up.x;
+	rot._22 = up.y;
+	rot._23 = up.z;
+	rot._24 = 0.0f;
+	rot._31 = dir.x;
+	rot._32 = dir.y;
+	rot._33 = dir.z;
+	rot._34 = 0.0f;
+	rot._41 = 0.0f;
+	rot._42 = 0.0f;
+	rot._43 = 0.0f;
+	rot._44 = 1.0f;
+	XMStoreFloat4(&quat, XMQuaternionNormalize(XMQuaternionRotationMatrix(XMLoadFloat4x4(&rot))));
+}
+
+void cpu_transform::SetRotationFromMatrix()
+{
+	XMStoreFloat4(&quat, XMQuaternionNormalize(XMQuaternionRotationMatrix(XMLoadFloat4x4(&rot))));
+	right.x = rot._11;
+	right.y = rot._12;
+	right.z = rot._13;
+	up.x = rot._21;
+	up.y = rot._22;
+	up.z = rot._23;
+	dir.x = rot._31;
+	dir.y = rot._32;
+	dir.z = rot._33;
+}
+
+void cpu_transform::SetRotationFromQuaternion()
+{
+	XMStoreFloat4x4(&rot, XMMatrixRotationQuaternion(XMLoadFloat4(&quat)));
+	right.x = rot._11;
+	right.y = rot._12;
+	right.z = rot._13;
+	up.x = rot._21;
+	up.y = rot._22;
+	up.z = rot._23;
+	dir.x = rot._31;
+	dir.y = rot._32;
+	dir.z = rot._33;
+}
+
 void cpu_transform::SetYPR(float yaw, float pitch, float roll)
 {
 	ResetRotation();
@@ -145,18 +194,7 @@ void cpu_transform::AddYPR(float yaw, float pitch, float roll)
 	qRot = XMQuaternionNormalize(qRot);
 	XMStoreFloat4(&quat, qRot);
 
-	XMMATRIX mRot = XMMatrixRotationQuaternion(qRot);
-	XMStoreFloat4x4(&rot, mRot);
-
-	right.x = rot._11;
-	right.y = rot._12;
-	right.z = rot._13;
-	up.x = rot._21;
-	up.y = rot._22;
-	up.z = rot._23;
-	dir.x = rot._31;
-	dir.y = rot._32;
-	dir.z = rot._33;
+	SetRotationFromQuaternion();
 }
 
 void cpu_transform::LookAt(float x, float y, float z)
@@ -166,18 +204,7 @@ void cpu_transform::LookAt(float x, float y, float z)
 	XMVECTOR vDir = XMVectorSubtract(vB, vA);
 	const XMMATRIX cam = XMMatrixTranspose(XMMatrixLookAtLH(XMVectorZero(), vDir, CPU_XMUP));
 	XMStoreFloat4x4(&rot, cam);
-
-	XMStoreFloat4(&quat, XMQuaternionNormalize(XMQuaternionRotationMatrix(cam)));
-
-	right.x = rot._11;
-	right.y = rot._12;
-	right.z = rot._13;
-	up.x = rot._21;
-	up.y = rot._22;
-	up.z = rot._23;
-	dir.x = rot._31;
-	dir.y = rot._32;
-	dir.z = rot._33;
+	SetRotationFromMatrix();
 }
 
 void cpu_transform::LookTo(float ndx, float ndy, float ndz)
@@ -185,18 +212,7 @@ void cpu_transform::LookTo(float ndx, float ndy, float ndz)
 	XMVECTOR vDir = XMVectorSet(ndx, ndy, ndz, 0.0f);
 	XMMATRIX cam = XMMatrixTranspose(XMMatrixLookToLH(XMVectorZero(), vDir, CPU_XMUP));
 	XMStoreFloat4x4(&rot, cam);
-
-	XMStoreFloat4(&quat, XMQuaternionNormalize(XMQuaternionRotationMatrix(cam)));
-
-	right.x = rot._11;
-	right.y = rot._12;
-	right.z = rot._13;
-	up.x = rot._21;
-	up.y = rot._22;
-	up.z = rot._23;
-	dir.x = rot._31;
-	dir.y = rot._32;
-	dir.z = rot._33;
+	SetRotationFromMatrix();
 }
 
 void cpu_transform::LookTo(XMFLOAT3& ndir)
