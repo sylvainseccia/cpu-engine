@@ -143,6 +143,9 @@ void cpu_engine::Run()
 		Render();
 	}
 
+	// Cursor
+	SetCursor(nullptr);
+
 	// End
 	Update_Purge();
 	m_callback.onExit.Call();
@@ -246,7 +249,30 @@ cpu_rt* cpu_engine::Release(cpu_rt* pRT)
 
 void cpu_engine::SetCursor(cpu_texture* pTexture)
 {
+	cpu_texture* pOld = m_pCursor;
 	m_pCursor = pTexture;
+	if ( m_pCursor )
+	{
+		if ( pOld==nullptr )
+			ShowCursor(FALSE);
+	}
+	else
+	{
+		if ( pOld )
+			ShowCursor(TRUE);
+	}
+}
+
+void cpu_engine::SetCursor(XMFLOAT2& pos)
+{
+	cpu_rt& rt = *m_device.GetMainRT();
+	RECT& rcFit = m_device.GetFit();
+
+	POINT pt;
+	pt.x = rcFit.left + (int)(pos.x/float(rt.width)*float(rcFit.right-rcFit.left));
+	pt.y = rcFit.top + (int)(pos.y/float(rt.height)*float(rcFit.bottom-rcFit.top));
+	ClientToScreen(m_window.GetHWND(), &pt);
+	SetCursorPos(pt.x, pt.y);
 }
 
 void cpu_engine::GetCursor(XMFLOAT2& pos)

@@ -43,6 +43,7 @@ public:
 	cpu_rt* Release(cpu_rt* pRT);
 
 	void SetCursor(cpu_texture* pTexture);
+	void SetCursor(XMFLOAT2& pt);
 	void GetCursor(XMFLOAT2& pt);
 	void GetCameraRay(cpu_ray& out, XMFLOAT2& pt);
 	void GetCursorRay(cpu_ray& out);
