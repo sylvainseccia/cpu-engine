@@ -197,25 +197,25 @@ void cpu_transform::AddYPR(float yaw, float pitch, float roll)
 	SetRotationFromQuaternion();
 }
 
-void cpu_transform::LookAt(float x, float y, float z)
+void cpu_transform::LookAt(float x, float y, float z, const XMFLOAT3& up)
 {
 	XMVECTOR vA = XMLoadFloat3(&pos);
 	XMVECTOR vB = XMVectorSet(x, y, z, 0.0f);
 	XMVECTOR vDir = XMVectorSubtract(vB, vA);
-	const XMMATRIX cam = XMMatrixTranspose(XMMatrixLookAtLH(XMVectorZero(), vDir, CPU_XMUP));
+	const XMMATRIX cam = XMMatrixTranspose(XMMatrixLookAtLH(XMVectorZero(), vDir, XMLoadFloat3(&up)));
 	XMStoreFloat4x4(&rot, cam);
 	SetRotationFromMatrix();
 }
 
-void cpu_transform::LookTo(float ndx, float ndy, float ndz)
+void cpu_transform::LookTo(float ndx, float ndy, float ndz, const XMFLOAT3& up)
 {
 	XMVECTOR vDir = XMVectorSet(ndx, ndy, ndz, 0.0f);
-	XMMATRIX cam = XMMatrixTranspose(XMMatrixLookToLH(XMVectorZero(), vDir, CPU_XMUP));
+	XMMATRIX cam = XMMatrixTranspose(XMMatrixLookToLH(XMVectorZero(), vDir, XMLoadFloat3(&up)));
 	XMStoreFloat4x4(&rot, cam);
 	SetRotationFromMatrix();
 }
 
-void cpu_transform::LookTo(XMFLOAT3& ndir)
+void cpu_transform::LookTo(XMFLOAT3& ndir, const XMFLOAT3& up)
 {
-	LookTo(ndir.x, ndir.y, ndir.z);
+	LookTo(ndir.x, ndir.y, ndir.z, up);
 }
