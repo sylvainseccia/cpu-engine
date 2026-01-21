@@ -58,9 +58,11 @@ bool SphereSphere(XMFLOAT3& c1, float r1, XMFLOAT3& c2, float r2);
 bool RaySphere(cpu_ray& ray, XMFLOAT3& center, float radius, XMFLOAT3& outHit, float* pOutT = nullptr);
 bool RayAabb(cpu_ray& ray, cpu_aabb& box, XMFLOAT3* pOutHit = nullptr, float* outT = nullptr);
 bool RayAabb(cpu_ray& ray, cpu_aabb& box, float& outTEnter, float& outTExit);
-bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* outT = nullptr, XMFLOAT3* outBary = nullptr, bool cullBackFace = false);
+bool RayObb(cpu_ray& ray, cpu_obb& box, XMFLOAT3* pOutHit = nullptr, float* pOutT = nullptr);
+bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT = nullptr, XMFLOAT3* pOutBary = nullptr, bool cullBackFace = false);
 bool AabbAabb(cpu_aabb& a, cpu_aabb& b);
 bool AabbAabbInclusive(cpu_aabb& a, cpu_aabb& b);
+bool ObbObb(cpu_obb& a, cpu_obb& b);
 
 XMFLOAT3 SphericalPoint(float r, float theta, float phi);
 RECT ComputeAspectFitRect(int contentW, int contentH, int winW, int winH);
