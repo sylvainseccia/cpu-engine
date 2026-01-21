@@ -47,7 +47,8 @@ void cpu_particle_emitter::Update(XMFLOAT4X4& matViewProj, int width, int height
 
 		XMVECTOR r = XMVectorSet(pos.x+spawnRadius, pos.y, pos.z, 1.0f);
 		XMVECTOR rClip = XMVector4Transform(r, XMLoadFloat4x4(&matViewProj));
-		XMFLOAT4 r4; XMStoreFloat4(&r4, rClip);
+		XMFLOAT4 r4;
+		XMStoreFloat4(&r4, rClip);
 		if ( r4.w>1e-6f )
 		{
 			const float invWr = 1.0f / r4.w;
@@ -66,9 +67,8 @@ void cpu_particle_emitter::Update(XMFLOAT4X4& matViewProj, int width, int height
 			const float dx = pxR - pxC;
 			const float dy = pyR - pyC;
 
-			const float r_px = sqrtf(dx * dx + dy * dy);
-
-			area_px = XM_PI * r_px * r_px;
+			const float r_px = dx * dx + dy * dy;
+			area_px = XM_PI * r_px;
 			area_px = std::min(area_px, width*height*0.25f);
 		}
 	}

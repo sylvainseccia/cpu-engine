@@ -97,6 +97,12 @@ void App::OnStart()
 	m_pEmitter->colorMin = cpu::ToColor(255, 0, 0);
 	m_pEmitter->colorMax = cpu::ToColor(255, 128, 0);
 
+	m_pEmitter2 = cpuEngine.CreateParticleEmitter();
+	m_pEmitter2->density = 300.0f;
+	m_pEmitter2->colorMin = cpu::ToColor(0, 0, 255);
+	m_pEmitter2->colorMax = cpu::ToColor(0, 128, 255);
+	m_pEmitter2->pos.x = -2.0f;
+
 	// Camera
 	cpuEngine.GetCamera()->transform.pos.z = -5.0f;
 }

@@ -764,13 +764,13 @@ void cpu_engine::Render_TileParticles(int iTile)
 			continue;
 		rt.depthBuffer[pix] = sz;
 
-		float a = 1.0f - m_particleData.age[i] * m_particleData.invDuration[i];
+		float a = 1.0f - m_particleData.age[p] * m_particleData.invDuration[p];
 		a *= a;
 
 		XMFLOAT3 dst = cpu::ToColorFromBGR(rt.colorBuffer[pix]);
-		float r = dst.x + m_particleData.r[i]*a;
-		float g = dst.y + m_particleData.g[i]*a;
-		float b = dst.z + m_particleData.b[i]*a;
+		float r = dst.x + m_particleData.r[p]*a;
+		float g = dst.y + m_particleData.g[p]*a;
+		float b = dst.z + m_particleData.b[p]*a;
 		rt.colorBuffer[pix] = cpu::ToBGR(r, g, b);
 	}
 }

@@ -106,19 +106,27 @@ void cpu_particle_data::UpdateAge()
 		if ( age[i]>=duration[i] )
 		{
 			const int last = alive - 1;
-			px[i] = px[last];
-			py[i] = py[last];
-			pz[i] = pz[last];
-			vx[i] = vx[last];
-			vy[i] = vy[last];
-			vz[i] = vz[last];
-			age[i] = age[last];
-			duration[i] = duration[last];
-			invDuration[i] = invDuration[last];
-			r[i] = r[last];
-			g[i] = g[last];
-			b[i] = b[last];
-			//seed[i] = seed[last];
+			if ( i<last )
+			{
+				px[i] = px[last];
+				py[i] = py[last];
+				pz[i] = pz[last];
+				vx[i] = vx[last];
+				vy[i] = vy[last];
+				vz[i] = vz[last];
+				age[i] = age[last];
+				duration[i] = duration[last];
+				invDuration[i] = invDuration[last];
+				r[i] = r[last];
+				g[i] = g[last];
+				b[i] = b[last];
+				tile[i] = tile[last];
+				sort[i] = sort[last];
+				sx[i] = sx[last];
+				sy[i] = sy[last];
+				sz[i] = sz[last];
+				//seed[i] = seed[last];
+			}
 			--alive;
 			continue;
 		}
