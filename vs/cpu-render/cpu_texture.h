@@ -25,5 +25,4 @@ public:
 private:
 	int WrapPow2(int i, int sizePow2);
 	int FastFloorToInt(float x);
-
 };

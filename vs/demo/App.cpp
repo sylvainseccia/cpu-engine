@@ -121,7 +121,7 @@ void App::OnUpdate()
 	m_pSprite->y = 60 + cpu::RoundToInt(sinf(time)*20.0f);
 
 	// Turn earth
-	m_pEarth->transform.AddYPR(dt);
+	m_pEarth->transform.AddYPR(-dt);
 
 	// Move rock
 	m_pMoon->transform.OrbitAroundAxis(m_pEarth->transform.pos, CPU_UP, 3.0f, time*2.0f);

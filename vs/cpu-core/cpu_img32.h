@@ -10,10 +10,7 @@ void Free();
 // Blends a rectangle from src at (srcX,srcY) onto dst at (dstX,dstY), size (w,h).
 // Clips automatically to both surfaces. In-place on dst.
 
-static inline void clip_blit_rect(
-	int srcW, int srcH, int dstW, int dstH,
-	int& srcX, int& srcY, int& dstX, int& dstY,
-	int& w, int& h)
+static inline void clip_blit_rect(int srcW, int srcH, int dstW, int dstH, int& srcX, int& srcY, int& dstX, int& dstY, int& w, int& h)
 {
 	// clip left/top by shifting both src and dst
 	if (srcX < 0) { int cut = -srcX; srcX += cut; dstX += cut; w -= cut; }
@@ -49,13 +46,9 @@ static inline __m128i div255_epu16_sse2(__m128i x)
 
 void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH);
 
-void Premultiply(
-	const byte* src, byte* dst,
-	int width, int height);
+void Premultiply(const byte* src, byte* dst, int width, int height);
 
-void Unpremultiply(
-	const byte* src, byte* dst,
-	int width, int height);
+void Unpremultiply(const byte* src, byte* dst, int width, int height);
 
 bool AlphaBlendStraightOverOpaque(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH);
 

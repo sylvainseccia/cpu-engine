@@ -566,7 +566,7 @@ void cpu_engine::Render()
 	Render_UI();
 	m_callback.onRender.Call(CPU_PASS_UI_END);
 
-	// UI
+	// Cursor
 	m_callback.onRender.Call(CPU_PASS_CURSOR_BEGIN);
 	Render_Cursor();
 	m_callback.onRender.Call(CPU_PASS_CURSOR_END);
@@ -616,7 +616,7 @@ void cpu_engine::Render_RecalculateMatrices()
 
 		// Radius
 		float scale = std::max(pEntity->transform.sca.x, std::max(pEntity->transform.sca.y, pEntity->transform.sca.z));
-		pEntity->radius = pEntity->pMesh->radius *scale;
+		pEntity->radius = pEntity->pMesh->radius * scale;
 
 		// Rectangle (screen)
 		XMMATRIX matWVP = matWorld;
@@ -634,22 +634,21 @@ void cpu_engine::Render_RecalculateMatrices()
 void cpu_engine::Render_ApplyClipping()
 {
 	m_stats.clipEntityCount = 0;
-
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager[iEntity];
 		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr )
+		{
+			pEntity->clipped = false;
 			continue;
-
+		}
 		if ( m_camera.frustum.Intersect(pEntity->transform.pos, pEntity->radius) )
 		{
 			pEntity->clipped = false;
+			continue;
 		}
-		else
-		{
-			pEntity->clipped = true;
-			m_stats.clipEntityCount++;
-		}
+		pEntity->clipped = true;
+		m_stats.clipEntityCount++;
 	}
 }
 
