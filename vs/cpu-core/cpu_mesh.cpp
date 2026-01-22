@@ -54,6 +54,12 @@ void cpu_mesh::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLO
 	AddTriangle(a, c, d, color);
 }
 
+void cpu_mesh::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLOAT2& auv, XMFLOAT2& buv, XMFLOAT2& cuv, XMFLOAT2& duv, XMFLOAT3& color)
+{
+	AddTriangle(a, b, c, auv, buv, cuv, color);
+	AddTriangle(a, c, d, auv, cuv, duv, color);
+}
+
 void cpu_mesh::Optimize()
 {
 	CalculateNormals();
@@ -140,7 +146,11 @@ void cpu_mesh::CreatePlane(float width, float height, XMFLOAT3 color)
 	XMFLOAT3 p1 = {  w, -h, 0.0f };
 	XMFLOAT3 p2 = {  w,  h, 0.0f };
 	XMFLOAT3 p3 = { -w,  h, 0.0f };
-	AddFace(p0, p1, p2, p3, color);
+	XMFLOAT2 t0 = { 0.0f, 0.0f };
+	XMFLOAT2 t1 = { 1.0f, 0.0f };
+	XMFLOAT2 t2 = { 1.0f, 1.0f };
+	XMFLOAT2 t3 = { 0.0f, 1.0f };
+	AddFace(p0, p1, p2, p3, t0, t1, t2, t3, color);
 	Optimize();
 }
 
@@ -156,12 +166,16 @@ void cpu_mesh::CreateCube(float halfSize, XMFLOAT3 color)
 	XMFLOAT3 p5 = {  s, -s,  s };
 	XMFLOAT3 p6 = {  s,  s,  s };
 	XMFLOAT3 p7 = { -s,  s,  s };
-	AddFace(p0, p1, p2, p3, color);					// -Z (back)
-	AddFace(p4, p7, p6, p5, color);					// +Z (front)
-	AddFace(p1, p5, p6, p2, color);					// +X (droite)
-	AddFace(p4, p0, p3, p7, color);					// -X (gauche)
-	AddFace(p3, p2, p6, p7, color);					// +Y (haut)
-	AddFace(p4, p5, p1, p0, color);					// -Y (bas)
+	XMFLOAT2 tl = { 0.0f, 0.0f }; // top-left
+	XMFLOAT2 tr = { 1.0f, 0.0f }; // top-right
+	XMFLOAT2 br = { 1.0f, 1.0f }; // bottom-right
+	XMFLOAT2 bl = { 0.0f, 1.0f }; // bottom-left
+	AddFace(p0, p1, p2, p3, bl, br, tr, tl, color);		// -Z (back)
+	AddFace(p4, p7, p6, p5, bl, tl, tr, br, color);		// +Z (front)
+	AddFace(p1, p5, p6, p2, bl, br, tr, tl, color);		// +X (droite)
+	AddFace(p4, p0, p3, p7, bl, br, tr, tl, color);		// -X (gauche)
+	AddFace(p3, p2, p6, p7, bl, br, tr, tl, color);		// +Y (haut)
+	AddFace(p4, p5, p1, p0, bl, br, tr, tl, color);		// -Y (bas)
 	Optimize();
 }
 
@@ -171,6 +185,7 @@ void cpu_mesh::CreateCircle(float radius, int count, XMFLOAT3 color)
 		return;
 
 	Clear();
+	float radius2 = radius * 2.0f;
 	float step = XM_2PI / count;
 	float angle = 0.0f;
 	XMFLOAT3 p1, p2, p3;
@@ -179,13 +194,20 @@ void cpu_mesh::CreateCircle(float radius, int count, XMFLOAT3 color)
 	p1.z = 0.0f;
 	p2.y = 0.0f;
 	p3.y = 0.0f;
+	XMFLOAT2 t1, t2, t3;
+	t1.x = 0.5f;
+	t1.y = 0.5f;
 	for ( int i=0 ; i<count ; i++ )
 	{
 		p2.x = cosf(angle) * radius;
 		p2.z = sinf(angle) * radius;
 		p3.x = cosf(angle+step) * radius;
 		p3.z = sinf(angle+step) * radius;
-		AddTriangle(p1, p2, p3, color);
+		t2.x = 0.5f + (p2.x / radius2);
+		t2.y = 0.5f - (p2.z / radius2);
+		t3.x = 0.5f + (p3.x / radius2);
+		t3.y = 0.5f - (p3.z / radius2);
+		AddTriangle(p1, p2, p3, t1, t2, t3, color);
 		angle += step;
 	}
 	Optimize();
