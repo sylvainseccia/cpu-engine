@@ -865,7 +865,7 @@ void cpu_device::PixelShader(cpu_ps_io& io)
 		io.color.x = io.p.color.x * texel.x;
 		io.color.y = io.p.color.y * texel.y;
 		io.color.z = io.p.color.z * texel.z;
-io.color = texel;
+		//io.color = texel;
 	}
 	else
 		io.color = io.p.color;
