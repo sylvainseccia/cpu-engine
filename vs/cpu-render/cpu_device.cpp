@@ -408,9 +408,11 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			vo[i].intensity = ndotl + m_pLight->ambient;
 
 			// UV
-			vo[i].uv = in.uv;
-			vo[i].ouv.x = in.uv.x * vo[i].invW;
-			vo[i].ouv.y = in.uv.y * vo[i].invW;
+#ifdef _DEBUG
+			vo[i].uvDebug = in.uv;
+#endif
+			vo[i].uv.x = in.uv.x * vo[i].invW;
+			vo[i].uv.y = in.uv.y * vo[i].invW;
 
 			// Screen pos
 			float ndcX = vo[i].clipPos.x * vo[i].invW;			// [-1,1]
@@ -796,8 +798,8 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			if ( draw.pMaterial->pTexture )
 			{
 				float invW = w1*draw.vo[0].invW + w2*draw.vo[1].invW + w3*draw.vo[2].invW;
-				io.p.uv.x = (w1*draw.vo[0].ouv.x + w2*draw.vo[1].ouv.x + w3*draw.vo[2].ouv.x) / invW;
-				io.p.uv.y = (w1*draw.vo[0].ouv.y + w2*draw.vo[1].ouv.y + w3*draw.vo[2].ouv.y) / invW;
+				io.p.uv.x = (w1*draw.vo[0].uv.x + w2*draw.vo[1].uv.x + w3*draw.vo[2].uv.x) / invW;
+				io.p.uv.y = (w1*draw.vo[0].uv.y + w2*draw.vo[1].uv.y + w3*draw.vo[2].uv.y) / invW;
 			}
 			else
 			{

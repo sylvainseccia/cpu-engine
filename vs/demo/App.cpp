@@ -58,7 +58,7 @@ void App::OnStart()
 	m_textureEarth.Load("earth.png");
 	m_meshShip.CreateSpaceship();
 	m_meshMissile.CreateSphere(0.5f);
-	m_meshSphere.CreateSphere(2.0f, 12, 12, cpu::ToColor(224, 224, 224));
+	m_meshSphere.CreateSphere(2.0f, 12, 12, cpu::ToColor(224, 224, 224), cpu::ToColor(224, 224, 224));
 	m_rts[0] = cpuEngine.CreateRT();
 
 	// UI
