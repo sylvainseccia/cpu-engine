@@ -445,9 +445,9 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 		DrawTriangle(draw);
 
 		// Wireframe
-		//DrawLine((int)screen[0].x, (int)screen[0].y, screen[0].z, (int)screen[1].x, (int)screen[1].y, screen[1].z, WHITE);
-		//DrawLine((int)screen[1].x, (int)screen[1].y, screen[1].z, (int)screen[2].x, (int)screen[2].y, screen[2].z, WHITE);
-		//DrawLine((int)screen[2].x, (int)screen[2].y, screen[2].z, (int)screen[0].x, (int)screen[0].y, screen[0].z, WHITE);
+		//DrawLine((int)screen[0].x, (int)screen[0].y, screen[0].z, (int)screen[1].x, (int)screen[1].y, screen[1].z, CPU_WHITE);
+		//DrawLine((int)screen[1].x, (int)screen[1].y, screen[1].z, (int)screen[2].x, (int)screen[2].y, screen[2].z, CPU_WHITE);
+		//DrawLine((int)screen[2].x, (int)screen[2].y, screen[2].z, (int)screen[0].x, (int)screen[0].y, screen[0].z, CPU_WHITE);
 	}
 }
 

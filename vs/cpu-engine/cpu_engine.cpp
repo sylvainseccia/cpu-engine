@@ -601,7 +601,7 @@ void cpu_engine::Render_RecalculateMatrices()
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->dead )
+		if ( pEntity->dead || pEntity->pMesh==nullptr )
 			continue;
 
 		// World
