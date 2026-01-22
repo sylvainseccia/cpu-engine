@@ -14,4 +14,5 @@ void cpu_vertex::Identity()
 	pos = CPU_ZERO;
 	color = CPU_WHITE;
 	normal = { 0.0f, 0.0f, 1.0f };
+	uv = { 0.0f, 0.0f };
 }

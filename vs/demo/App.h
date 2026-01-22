@@ -17,7 +17,7 @@ public:
 	void OnRender(int pass);
 
 	static void MissileShader(cpu_ps_io& io);
-	static void RockShader(cpu_ps_io& io);
+	static void MoonShader(cpu_ps_io& io);
 
 private:
 	inline static App* s_pApp = nullptr;
@@ -27,7 +27,8 @@ private:
 	cpu_mesh m_meshShip;
 	cpu_mesh m_meshMissile;
 	cpu_mesh m_meshSphere;
-	cpu_texture m_texture;
+	cpu_texture m_textureBird;
+	cpu_texture m_textureEarth;
 	cpu_rt* m_rts[1];
 
 	// UI
@@ -36,14 +37,15 @@ private:
 	// Shader
 	cpu_material m_materialShip;
 	cpu_material m_materialMissile;
-	cpu_material m_materialRock;
+	cpu_material m_materialMoon;
+	cpu_material m_materialEarth;
 
 	// 3D
 	Ship* m_pShip;
 	std::list<cpu_entity*> m_missiles;
 	float m_missileSpeed;
-	cpu_entity* m_pBall;
-	cpu_entity* m_pRock;
+	cpu_entity* m_pEarth;
+	cpu_entity* m_pMoon;
 	cpu_particle_emitter* m_pEmitter;
 	cpu_particle_emitter* m_pEmitter2;
 };

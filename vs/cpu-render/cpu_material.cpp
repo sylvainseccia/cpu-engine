@@ -10,5 +10,6 @@ cpu_material::cpu_material()
 
 	ps = nullptr;
 	color = CPU_WHITE;
+	pTexture = nullptr;
 	values = nullptr;
 }

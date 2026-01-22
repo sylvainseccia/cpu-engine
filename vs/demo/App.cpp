@@ -54,7 +54,8 @@ void App::OnStart()
 
 	// Resources
 	m_font.Create(12);
-	m_texture.Load("bird_amiga.png");
+	m_textureBird.Load("bird_amiga.png");
+	m_textureEarth.Load("earth.png");
 	m_meshShip.CreateSpaceship();
 	m_meshMissile.CreateSphere(0.5f);
 	m_meshSphere.CreateSphere(2.0f, 12, 12, cpu::ToColor(224, 224, 224));
@@ -62,7 +63,7 @@ void App::OnStart()
 
 	// UI
 	m_pSprite = cpuEngine.CreateSprite();
-	m_pSprite->pTexture = &m_texture;
+	m_pSprite->pTexture = &m_textureBird;
 	m_pSprite->CenterAnchor();
 	m_pSprite->x = 40;
 	m_pSprite->y = 0;
@@ -70,19 +71,21 @@ void App::OnStart()
 	// Shader
 	m_materialShip.color = cpu::ToColor(255, 128, 0);
 	m_materialMissile.ps = MissileShader;
-	m_materialRock.ps = RockShader;
+	m_materialMoon.ps = MoonShader;
+	m_materialEarth.pTexture = &m_textureEarth;
 
 	// 3D
 	m_missileSpeed = 10.0f;
-	m_pBall = cpuEngine.CreateEntity();
-	m_pBall->pMesh = &m_meshSphere;
-	m_pBall->transform.pos.x = 3.0f;
-	m_pBall->transform.pos.y = 3.0f;
-	m_pBall->transform.pos.z = 5.0f;
-	m_pRock = cpuEngine.CreateEntity();
-	m_pRock->pMesh = &m_meshSphere;
-	m_pRock->pMaterial = &m_materialRock;
-	m_pRock->transform.SetScaling(0.1f);
+	m_pEarth = cpuEngine.CreateEntity();
+	m_pEarth->pMesh = &m_meshSphere;
+	m_pEarth->pMaterial = &m_materialEarth;
+	m_pEarth->transform.pos.x = 3.0f;
+	m_pEarth->transform.pos.y = 3.0f;
+	m_pEarth->transform.pos.z = 5.0f;
+	m_pMoon = cpuEngine.CreateEntity();
+	m_pMoon->pMesh = &m_meshSphere;
+	m_pMoon->pMaterial = &m_materialMoon;
+	m_pMoon->transform.SetScaling(0.1f);
 
 	// Ship
 	m_pShip = new Ship;
@@ -117,13 +120,13 @@ void App::OnUpdate()
 	// Move sprite
 	m_pSprite->y = 60 + cpu::RoundToInt(sinf(time)*20.0f);
 
-	// Turn ball
-	m_pBall->transform.AddYPR(dt);
+	// Turn earth
+	m_pEarth->transform.AddYPR(dt);
 
 	// Move rock
-	m_pRock->transform.OrbitAroundAxis(m_pBall->transform.pos, CPU_UP, 3.0f, time*2.0f);
-	m_pEmitter->pos = m_pRock->transform.pos;
-	m_pEmitter->dir = m_pRock->transform.dir;
+	m_pMoon->transform.OrbitAroundAxis(m_pEarth->transform.pos, CPU_UP, 3.0f, time*2.0f);
+	m_pEmitter->pos = m_pMoon->transform.pos;
+	m_pEmitter->dir = m_pMoon->transform.dir;
 	m_pEmitter->dir.x = -m_pEmitter->dir.x; 
 	m_pEmitter->dir.y = -m_pEmitter->dir.y; 
 	m_pEmitter->dir.z = -m_pEmitter->dir.z; 
@@ -234,7 +237,7 @@ void App::MissileShader(cpu_ps_io& io)
 	io.color.x = io.p.color.x;
 }
 
-void App::RockShader(cpu_ps_io& io)
+void App::MoonShader(cpu_ps_io& io)
 {
 	float time = cpuTime.total;
 	float scale = ((sinf(time*3.0f)*0.5f)+0.5f) * 0.5f + 0.5f; 

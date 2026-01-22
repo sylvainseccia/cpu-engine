@@ -62,10 +62,14 @@ bool cpu_device::Create(cpu_window* pWindow, int width, int height)
 	m_bi.bmiHeader.biHeight = -m_height;
 #endif
 
-	// Defaukt
+	// Texture
+	cpu_texture::Init();
+
+	// Default
 	SetDefaultCamera();
 	SetDefaultLight();
 
+	// Ready
 	m_created = true;
 	return true;
 }
@@ -403,6 +407,11 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			ndotl = std::max(0.0f, ndotl);
 			vo[i].intensity = ndotl + m_pLight->ambient;
 
+			// UV
+			vo[i].uv = in.uv;
+			vo[i].ouv.x = in.uv.x * vo[i].invW;
+			vo[i].ouv.y = in.uv.y * vo[i].invW;
+
 			// Screen pos
 			float ndcX = vo[i].clipPos.x * vo[i].invW;			// [-1,1]
 			float ndcY = vo[i].clipPos.y * vo[i].invW;			// [-1,1]
@@ -721,6 +730,7 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 
 	const CPU_PS_FUNC func = draw.pMaterial->ps ? draw.pMaterial->ps : &PixelShader;
 	cpu_ps_io io;
+	io.pMaterial = draw.pMaterial;
 	for ( int y=minY ; y<maxY ; ++y )
 	{
 		float e12 = e12_row;
@@ -782,6 +792,19 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			io.p.albedo.y = draw.vo[2].albedo.y + (draw.vo[0].albedo.y - draw.vo[2].albedo.y) * w1 + (draw.vo[1].albedo.y - draw.vo[2].albedo.y) * w2;
 			io.p.albedo.z = draw.vo[2].albedo.z + (draw.vo[0].albedo.z - draw.vo[2].albedo.z) * w1 + (draw.vo[1].albedo.z - draw.vo[2].albedo.z) * w2;
 
+			// UV (lerp)
+			if ( draw.pMaterial->pTexture )
+			{
+				float invW = w1*draw.vo[0].invW + w2*draw.vo[1].invW + w3*draw.vo[2].invW;
+				io.p.uv.x = (w1*draw.vo[0].ouv.x + w2*draw.vo[1].ouv.x + w3*draw.vo[2].ouv.x) / invW;
+				io.p.uv.y = (w1*draw.vo[0].ouv.y + w2*draw.vo[1].ouv.y + w3*draw.vo[2].ouv.y) / invW;
+			}
+			else
+			{
+				io.p.uv.x = 0.0f;
+				io.p.uv.y = 0.0f;
+			}
+
 			// Lighting
 			if ( draw.pMaterial->lighting==CPU_LIGHTING_GOURAUD )
 			{
@@ -835,5 +858,15 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 
 void cpu_device::PixelShader(cpu_ps_io& io)
 {
-	io.color = io.p.color;
+	if ( io.pMaterial->pTexture )
+	{
+		XMFLOAT3 texel;
+		io.pMaterial->pTexture->Sample(texel, io.p.uv.x, io.p.uv.y);
+		io.color.x = io.p.color.x * texel.x;
+		io.color.y = io.p.color.y * texel.y;
+		io.color.z = io.p.color.z * texel.z;
+io.color = texel;
+	}
+	else
+		io.color = io.p.color;
 }

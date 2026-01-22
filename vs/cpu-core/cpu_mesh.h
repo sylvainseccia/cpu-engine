@@ -12,7 +12,9 @@ public:
 	~cpu_mesh() = default;
 
 	void Clear();
+	void AddTriangle(cpu_triangle& tri);
 	void AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color);
+	void AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT2& auv, XMFLOAT2& buv, XMFLOAT2& cuv, XMFLOAT3& color);
 	void AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLOAT3& color);
 	void Optimize();
 	void CalculateNormals();

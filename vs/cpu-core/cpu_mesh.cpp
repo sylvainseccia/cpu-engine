@@ -16,6 +16,11 @@ void cpu_mesh::Clear()
 	aabb.Zero();
 }
 
+void cpu_mesh::AddTriangle(cpu_triangle& tri)
+{
+	triangles.push_back(tri);
+}
+
 void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color)
 {
 	cpu_triangle t;
@@ -25,6 +30,21 @@ void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& colo
 	t.v[1].color = color;
 	t.v[2].pos = c;
 	t.v[2].color = color;
+	triangles.push_back(t);
+}
+
+void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT2& auv, XMFLOAT2& buv, XMFLOAT2& cuv, XMFLOAT3& color)
+{
+	cpu_triangle t;
+	t.v[0].pos = a;
+	t.v[0].color = color;
+	t.v[0].uv = auv;
+	t.v[1].pos = b;
+	t.v[1].color = color;
+	t.v[1].uv = buv;
+	t.v[2].pos = c;
+	t.v[2].color = color;
+	t.v[2].uv = cuv;
 	triangles.push_back(t);
 }
 
@@ -201,6 +221,11 @@ void cpu_mesh::CreateSphere(float radius, int stacks, int slices, XMFLOAT3 color
 			XMFLOAT3 p11 = cpu::SphericalPoint(radius, theta1, phi1);
 			XMFLOAT3& color = k==0 ? color1 : color2;
 
+			XMFLOAT2 uv00 = { u0, v0 };
+			XMFLOAT2 uv01 = { u1, v0 };
+			XMFLOAT2 uv10 = { u0, v1 };
+			XMFLOAT2 uv11 = { u1, v1 };
+
 			// Triangles dégénérés (theta = 0 ou PI)
 			const bool topBand = i==0;
 			const bool bottomBand = i==stacks-1;
@@ -209,20 +234,20 @@ void cpu_mesh::CreateSphere(float radius, int stacks, int slices, XMFLOAT3 color
 				// Au pôle nord, p00 et p01 sont quasiment identiques (theta0=0).
 				// Triangle orienté vers l'extérieur (CCW vu de l'extérieur).
 				// On utilise: p00 (sommet), p10 (bas gauche), p11 (bas droite)
-				AddTriangle(p00, p10, p11, color);
+				AddTriangle(p00, p10, p11, uv00, uv10, uv11, color);
 			}
 			else if ( bottomBand )
 			{
 				// Au pôle sud, p10 et p11 sont quasiment identiques (theta1=PI).
 				// On utilise: p10 (sommet bas), p01 (haut droite), p00 (haut gauche)
-				AddTriangle(p10, p01, p00, color);
+				AddTriangle(p10, p01, p00, uv10, uv01, uv00, color);
 			}
 			else
 			{
 				// Bande intermédiaire : 2 triangles pour le quad
 				// Winding CCW (vu depuis l'extérieur)
-				AddTriangle(p00, p10, p11, const_cast<XMFLOAT3&>(color));
-				AddTriangle(p00, p11, p01, const_cast<XMFLOAT3&>(color));
+				AddTriangle(p00, p10, p11, uv00, uv10, uv11, const_cast<XMFLOAT3&>(color));
+				AddTriangle(p00, p11, p01, uv00, uv11, uv01, const_cast<XMFLOAT3&>(color));
 			}
 
 			if ( ++k==2 )
@@ -242,6 +267,12 @@ void cpu_mesh::CreateSpaceship()
 	XMFLOAT3 wLeft = { -width*0.5f, 0.0f, -1.0f };
 	XMFLOAT3 wRight = { width*0.5f, 0.0f, -1.0f };
 
+	XMFLOAT2 noseUV		= { 0.5f, 0.0f };
+	XMFLOAT2 rTopUV		= { 0.5f, 0.4f };
+	XMFLOAT2 rBotUV		= { 0.5f, 0.8f };
+	XMFLOAT2 wLeftUV	= { 0.0f, 0.6f };
+	XMFLOAT2 wRightUV	= { 1.0f, 0.6f };
+
 	XMFLOAT3 c1 = cpu::ToColor(208, 208, 208);
 	XMFLOAT3 c2 = cpu::ToColor(192, 192, 192);
 	XMFLOAT3 c3 = cpu::ToColor(112, 112, 112);
@@ -249,11 +280,11 @@ void cpu_mesh::CreateSpaceship()
 	XMFLOAT3 c5 = cpu::ToColor(255, 255, 255);
 	XMFLOAT3 c6 = cpu::ToColor(255, 255, 255);
 
-	AddTriangle(nose, wLeft, rTop, c1);		// Avant gauche haut
-	AddTriangle(nose, rTop, wRight, c2);	// Avant droit haut
-	AddTriangle(nose, rBot, wLeft, c3);		// Avant gauche bas
-	AddTriangle(nose, wRight, rBot, c4);	// Avant droit bas
-	AddTriangle(wLeft, rBot, rTop, c5);		// Moteur gauche
-	AddTriangle(wRight, rTop, rBot, c6);	// Moteur droit
+	AddTriangle(nose, wLeft, rTop, noseUV, wLeftUV, rTopUV, c1);		// Avant gauche haut
+	AddTriangle(nose, rTop, wRight, noseUV, rTopUV, wRightUV, c2);		// Avant droit haut
+	AddTriangle(nose, rBot, wLeft, noseUV, rBotUV, wLeftUV, c3);		// Avant gauche bas
+	AddTriangle(nose, wRight, rBot, noseUV, wRightUV, rBotUV, c4);		// Avant droit bas
+	AddTriangle(wLeft, rBot, rTop, wLeftUV, rBotUV, rTopUV, c5);		// Moteur gauche
+	AddTriangle(wRight, rTop, rBot, wRightUV, rTopUV, rBotUV, c6);		// Moteur droit
 	Optimize();
 }

@@ -10,4 +10,6 @@ public:
 
 	XMFLOAT3 albedo;
 	float intensity;
+	XMFLOAT2 uv;		// original uv
+	XMFLOAT2 ouv;		// over uv (uv * invW)
 };

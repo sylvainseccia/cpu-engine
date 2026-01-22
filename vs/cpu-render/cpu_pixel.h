@@ -8,6 +8,7 @@ public:
 
 	XMFLOAT3 albedo;	// unlit
 	XMFLOAT3 color;		// lit
+	XMFLOAT2 uv;
 
 	XMFLOAT3 normal;
 	XMFLOAT3 pos;
