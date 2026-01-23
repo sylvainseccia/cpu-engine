@@ -52,6 +52,9 @@ void App::OnStart()
 {
 	// YOUR CODE HERE
 
+	// Render
+	//cpuEngine.EnableBoxRender();
+
 	// Resources
 	m_font.Create(12);
 	m_textureBird.Load("bird_amiga.png");
@@ -99,7 +102,6 @@ void App::OnStart()
 	m_pEmitter->density = 3000.0f;
 	m_pEmitter->colorMin = cpu::ToColor(255, 0, 0);
 	m_pEmitter->colorMax = cpu::ToColor(255, 128, 0);
-
 	m_pEmitter2 = cpuEngine.CreateParticleEmitter();
 	m_pEmitter2->density = 300.0f;
 	m_pEmitter2->colorMin = cpu::ToColor(0, 0, 255);

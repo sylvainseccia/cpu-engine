@@ -35,6 +35,7 @@ public:
 	void ClearDepth();
 
 	void DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode = CPU_DEPTH_RW, cpu_tile* pTile = nullptr);
+	void XM_CALLCONV DrawWireframeMesh(cpu_mesh* pMesh, FXMMATRIX matrix, cpu_tile* pTile = nullptr);
 	void DrawText(cpu_font* pFont, const char* text, int x, int y, int align = CPU_TEXT_LEFT);
 	void DrawTexture(cpu_texture* pTexture, int x, int y);
 	void DrawSprite(cpu_sprite* pSprite);
@@ -47,7 +48,13 @@ public:
 
 private:
 	void OnWindowCallback(UINT message, WPARAM wParam, LPARAM lParam);
+	bool ClipToScreen(cpu_draw& draw);
 	void DrawTriangle(cpu_draw& draw);
+	bool WireframeClipLineNearPlane(XMFLOAT4& a, XMFLOAT4& b);
+	bool WireframeClipToScreen(const XMFLOAT4& c, float widthHalf, float heightHalf, XMFLOAT3& out);
+	inline float PlaneEval(const XMFLOAT4& p, const XMFLOAT4& c);
+	int ClipPolyAgainstPlane(const cpu_vertex_out* pInV, int inCount, cpu_vertex_out* pOutV, const XMFLOAT4& plane);
+	int ClipTriangleFrustum(const cpu_vertex_out tri[3], cpu_vertex_out outV[8]);
 	static void PixelShader(cpu_ps_io& io);
 
 private:

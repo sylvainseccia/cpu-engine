@@ -28,6 +28,11 @@ XMFLOAT3 ToColor(int r, int g, int b);
 XMFLOAT3 ToColorFromRGB(ui32 rgb);
 XMFLOAT3 ToColorFromBGR(ui32 bgr);
 
+float Lerp(float a, float b, float s);
+void Lerp(float& out, float a, float b, float t);
+void Lerp(XMFLOAT2& out, const XMFLOAT2& a, const XMFLOAT2& b, float t);
+void Lerp(XMFLOAT3& out, const XMFLOAT3& a, const XMFLOAT3& b, float t);
+void Lerp(XMFLOAT4& out, const XMFLOAT4& a, const XMFLOAT4& b, float t);
 ui32 LerpColor(ui32 c0, ui32 c1, float t);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

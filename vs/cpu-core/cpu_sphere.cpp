@@ -19,30 +19,15 @@ cpu_sphere& cpu_sphere::operator=(const cpu_aabb& aabb)
 	center.y = aabb.min.y + sy;
 	center.z = aabb.min.z + sz;
 
-	radius = std::sqrt(sx*sx + sy*sy + sz*sz);
+	radius = sqrtf(sx*sx + sy*sy + sz*sz);
 
 	return *this;
 }
 
 cpu_sphere& cpu_sphere::operator=(const cpu_obb& obb)
 {
-	XMVECTOR c = XMVectorZero();
-	for ( int i=0 ; i<8 ; ++i )
-		c = XMVectorAdd(c, XMLoadFloat3(&obb.pts[i]));
-	c = XMVectorScale(c, 1.0f / 8.0f);
-	XMStoreFloat3(&center, c);
-
-	float r2 = 0.0f;
-	for ( int i=0 ; i<8 ; ++i )
-	{
-		XMVECTOR p = XMLoadFloat3(&obb.pts[i]);
-		XMVECTOR d = XMVectorSubtract(p, c);
-		float dist2 = XMVectorGetX(XMVector3LengthSq(d));
-		if ( dist2>r2 )
-			r2 = dist2;
-	}
-	radius = std::sqrt(r2);
-
+	center = obb.center;
+	radius = sqrtf(obb.half.x*obb.half.x + obb.half.y*obb.half.y + obb.half.z*obb.half.z);
 	return *this;
 }
 

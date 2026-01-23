@@ -354,6 +354,82 @@ void cpu_device::ClearSky(XMFLOAT3& groundColor, XMFLOAT3& skyColor)
 
 void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode, cpu_tile* pTile)
 {
+	const float eps = 1e-8f;
+
+	cpu_rt& rt = *GetRT();
+	cpu_material& material = pMaterial ? *pMaterial : m_defaultMaterial;
+	XMMATRIX matWorld = XMLoadFloat4x4(&pTransform->GetWorld());
+	XMMATRIX matNormal = XMMatrixTranspose(XMLoadFloat4x4(&pTransform->GetInvWorld()));
+	XMMATRIX matViewProj = XMLoadFloat4x4(&m_pCamera->matViewProj);
+	XMVECTOR lightDir = XMLoadFloat3(&m_pLight->dir);
+
+	cpu_draw draw;
+	draw.pMaterial = &material;
+	draw.pTile = pTile;
+	draw.depth = depthMode;
+
+	cpu_vertex_out vo[3];
+	cpu_vertex_out clipped[8];
+	for ( const cpu_triangle& triangle : pMesh->triangles )
+	{
+		for ( int i=0 ; i<3 ; ++i )
+		{
+			// Vertex
+			const cpu_vertex& in = triangle.v[i];
+
+			// World pos
+			XMVECTOR loc = XMLoadFloat3(&in.pos);
+			loc = XMVectorSetW(loc, 1.0f);
+			XMVECTOR world = XMVector4Transform(loc, matWorld);
+			XMStoreFloat3(&vo[i].worldPos, world);
+
+			// Clip pos
+			XMVECTOR clip = XMVector4Transform(world, matViewProj);
+			XMStoreFloat4(&vo[i].clipPos, clip);
+			float w = vo[i].clipPos.w;
+			vo[i].invW = fabsf(w)>eps ? (1.0f/w) : 0.0f;
+
+			// World normal
+			XMVECTOR localNormal = XMLoadFloat3(&in.normal);
+			XMVECTOR worldNormal = XMVector3TransformNormal(localNormal, matNormal);
+			worldNormal = XMVector3Normalize(worldNormal);
+			XMStoreFloat3(&vo[i].worldNormal, worldNormal);
+
+			// Albedo
+			vo[i].albedo.x = cpu::Clamp(in.color.x * material.color.x);
+			vo[i].albedo.y = cpu::Clamp(in.color.y * material.color.y);
+			vo[i].albedo.z = cpu::Clamp(in.color.z * material.color.z);
+
+			// Intensity
+			float ndotl = XMVectorGetX(XMVector3Dot(worldNormal, lightDir));
+			ndotl = std::max(0.0f, ndotl);
+			vo[i].intensity = ndotl + m_pLight->ambient;
+
+			// UV
+			vo[i].uv.x = in.uv.x * vo[i].invW;
+			vo[i].uv.y = in.uv.y * vo[i].invW;
+		}
+
+		// Clipping
+		int count = ClipTriangleFrustum(vo, clipped);
+		if ( count==0 )
+			continue;
+
+		// Triangulation fan: (0, i, i+1)
+		for ( int i=1 ; i+1<count ; ++i )
+		{
+			draw.vo[0] = &clipped[0];
+			draw.vo[1] = &clipped[i];
+			draw.vo[2] = &clipped[i+1];
+			if ( ClipToScreen(draw) )
+				DrawTriangle(draw);
+		}
+	}
+}
+
+/*
+void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode, cpu_tile* pTile)
+{
 	cpu_rt& rt = *GetRT();
 	cpu_material& material = pMaterial ? *pMaterial : m_defaultMaterial;
 	XMMATRIX matWorld = XMLoadFloat4x4(&pTransform->GetWorld());
@@ -384,12 +460,6 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			// Clip pos
 			XMVECTOR clip = XMVector4Transform(world, matViewProj);
 			XMStoreFloat4(&vo[i].clipPos, clip);
-			if ( vo[i].clipPos.w<=0.0f )
-			{
-				safe = false;
-				break;
-			}
-			vo[i].invW = 1.0f / vo[i].clipPos.w;
 
 			// World normal
 			XMVECTOR localNormal = XMLoadFloat3(&in.normal);
@@ -411,9 +481,31 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 #ifdef _DEBUG
 			vo[i].uvDebug = in.uv;
 #endif
-			vo[i].uv.x = in.uv.x * vo[i].invW;
-			vo[i].uv.y = in.uv.y * vo[i].invW;
+			vo[i].uv.x = in.uv.x;
+			vo[i].uv.y = in.uv.y;
+		}
+		//if ( safe==false )
+		//	continue;
 
+
+		for ( int i=0 ; i<3 ; ++i )
+		{
+			if ( vo[i].clipPos.w<=0.0f )
+			{
+				// QUE FAIRE ?
+			}
+
+			vo[i].invW = 1.0f / vo[i].clipPos.w;
+
+			// UV
+			vo[i].uv.x *= vo[i].invW;
+			vo[i].uv.y *= vo[i].invW;
+
+		}
+
+		// Screen-space
+		for ( int i=0 ; i<3 ; i++ )
+		{
 			// Screen pos
 			float ndcX = vo[i].clipPos.x * vo[i].invW;			// [-1,1]
 			float ndcY = vo[i].clipPos.y * vo[i].invW;			// [-1,1]
@@ -425,10 +517,8 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			//}
 			screen[i].x = (ndcX + 1.0f) * rt.widthHalf;
 			screen[i].y = (1.0f - ndcY) * rt.heightHalf;
-			screen[i].z = cpu::Clamp(ndcZ);							// profondeur normalisée 0..1
+			screen[i].z = cpu::Clamp(ndcZ);						// profondeur normalisée 0..1
 		}
-		if ( safe==false )
-			continue;
 
 		// Culling
 		float area = (screen[1].x-screen[0].x) * (screen[2].y-screen[0].y) - (screen[1].y-screen[0].y) * (screen[2].x-screen[0].x);
@@ -443,11 +533,43 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 		draw.pTile = pTile;
 		draw.depth = depthMode;
 		DrawTriangle(draw);
+	}
+}*/
 
-		// Wireframe
-		//DrawLine((int)screen[0].x, (int)screen[0].y, screen[0].z, (int)screen[1].x, (int)screen[1].y, screen[1].z, CPU_WHITE);
-		//DrawLine((int)screen[1].x, (int)screen[1].y, screen[1].z, (int)screen[2].x, (int)screen[2].y, screen[2].z, CPU_WHITE);
-		//DrawLine((int)screen[2].x, (int)screen[2].y, screen[2].z, (int)screen[0].x, (int)screen[0].y, screen[0].z, CPU_WHITE);
+void cpu_device::DrawWireframeMesh(cpu_mesh* pMesh, FXMMATRIX matrix, cpu_tile* pTile)
+{
+	cpu_rt& rt = *GetRT();
+	XMMATRIX matViewProj = XMLoadFloat4x4(&m_pCamera->matViewProj);
+
+	XMFLOAT4 clip[3];
+	for ( const cpu_triangle& triangle : pMesh->triangles )
+	{
+		for ( int i=0 ; i<3 ; ++i )
+		{
+			const cpu_vertex& in = triangle.v[i];
+			XMVECTOR loc = XMLoadFloat3(&in.pos);
+			loc = XMVectorSetW(loc, 1.0f);
+			XMVECTOR world = XMVector4Transform(loc, matrix);
+			XMVECTOR c = XMVector4Transform(world, matViewProj);
+			XMStoreFloat4(&clip[i], c);
+		}
+		
+		const int edges[3][2] = { {0,1}, {1,2}, {2,0} };
+		for ( int e=0 ; e<3 ; ++e )
+		{
+			XMFLOAT4 a = clip[edges[e][0]];
+			XMFLOAT4 b = clip[edges[e][1]];
+			if ( WireframeClipLineNearPlane(a, b)==false )
+				continue;
+
+			XMFLOAT3 sa, sb;
+			if ( WireframeClipToScreen(a, rt.widthHalf, rt.heightHalf, sa)==false )
+				continue;
+			if ( WireframeClipToScreen(b, rt.widthHalf, rt.heightHalf, sb)==false )
+				continue;
+
+			DrawLine((int)sa.x, (int)sa.y, sa.z, (int)sb.x, (int)sb.y, sb.z, CPU_WHITE);
+		}
 	}
 }
 
@@ -674,6 +796,44 @@ void cpu_device::OnWindowCallback(UINT message, WPARAM wParam, LPARAM lParam)
 	}
 }
 
+bool cpu_device::ClipToScreen(cpu_draw& draw)
+{
+	cpu_rt& rt = *GetRT();
+	for ( int i=0 ; i<3 ; ++i )
+	{
+		if ( draw.vo[i]->invW==0.0f )
+			return false;
+
+		//float nx = draw.vo[i]->worldNormal.x;
+		//float ny = draw.vo[i]->worldNormal.y;
+		//float nz = draw.vo[i]->worldNormal.z;
+		//float l2 = nx*nx + ny*ny + nz*nz;
+		//if ( l2>1e-12f )
+		//{
+		//	float invL = 1.0f / sqrtf(l2);
+		//	draw.vo[i]->worldNormal = { nx*invL, ny*invL, nz*invL };
+		//}
+
+		// NDC (DirectX: z in [0..1])
+		float ndcX = draw.vo[i]->clipPos.x * draw.vo[i]->invW; // [-1,1]
+		float ndcY = draw.vo[i]->clipPos.y * draw.vo[i]->invW; // [-1,1]
+		float ndcZ = draw.vo[i]->clipPos.z * draw.vo[i]->invW; // [0,1]
+
+		draw.tri[i].x = (ndcX + 1.0f) * rt.widthHalf;
+		draw.tri[i].y = (1.0f - ndcY) * rt.heightHalf;
+		draw.tri[i].z = cpu::Clamp(ndcZ);
+	}
+
+	// Culling
+	float area = (draw.tri[1].x-draw.tri[0].x) * (draw.tri[2].y-draw.tri[0].y);
+	area -= (draw.tri[1].y-draw.tri[0].y) * (draw.tri[2].x-draw.tri[0].x);
+	bool isFront = m_cullFrontCCW ? (area>m_cullAreaEpsilon) : (area<-m_cullAreaEpsilon);
+	if ( isFront==false )
+		return false;
+
+	return true;
+}
+
 void cpu_device::DrawTriangle(cpu_draw& draw)
 {
 	cpu_rt& rt = *GetRT();
@@ -780,26 +940,26 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			io.p.depth = z;
 
 			// Position (lerp)
-			io.p.pos.x = draw.vo[2].worldPos.x + (draw.vo[0].worldPos.x - draw.vo[2].worldPos.x) * w1 + (draw.vo[1].worldPos.x - draw.vo[2].worldPos.x) * w2;
-			io.p.pos.y = draw.vo[2].worldPos.y + (draw.vo[0].worldPos.y - draw.vo[2].worldPos.y) * w1 + (draw.vo[1].worldPos.y - draw.vo[2].worldPos.y) * w2;
-			io.p.pos.z = draw.vo[2].worldPos.z + (draw.vo[0].worldPos.z - draw.vo[2].worldPos.z) * w1 + (draw.vo[1].worldPos.z - draw.vo[2].worldPos.z) * w2;
+			io.p.pos.x = draw.vo[2]->worldPos.x + (draw.vo[0]->worldPos.x - draw.vo[2]->worldPos.x) * w1 + (draw.vo[1]->worldPos.x - draw.vo[2]->worldPos.x) * w2;
+			io.p.pos.y = draw.vo[2]->worldPos.y + (draw.vo[0]->worldPos.y - draw.vo[2]->worldPos.y) * w1 + (draw.vo[1]->worldPos.y - draw.vo[2]->worldPos.y) * w2;
+			io.p.pos.z = draw.vo[2]->worldPos.z + (draw.vo[0]->worldPos.z - draw.vo[2]->worldPos.z) * w1 + (draw.vo[1]->worldPos.z - draw.vo[2]->worldPos.z) * w2;
 
 			// Normal (lerp)
-			io.p.normal.x = draw.vo[2].worldNormal.x + (draw.vo[0].worldNormal.x - draw.vo[2].worldNormal.x) * w1 + (draw.vo[1].worldNormal.x - draw.vo[2].worldNormal.x) * w2;
-			io.p.normal.y = draw.vo[2].worldNormal.y + (draw.vo[0].worldNormal.y - draw.vo[2].worldNormal.y) * w1 + (draw.vo[1].worldNormal.y - draw.vo[2].worldNormal.y) * w2;
-			io.p.normal.z = draw.vo[2].worldNormal.z + (draw.vo[0].worldNormal.z - draw.vo[2].worldNormal.z) * w1 + (draw.vo[1].worldNormal.z - draw.vo[2].worldNormal.z) * w2;
+			io.p.normal.x = draw.vo[2]->worldNormal.x + (draw.vo[0]->worldNormal.x - draw.vo[2]->worldNormal.x) * w1 + (draw.vo[1]->worldNormal.x - draw.vo[2]->worldNormal.x) * w2;
+			io.p.normal.y = draw.vo[2]->worldNormal.y + (draw.vo[0]->worldNormal.y - draw.vo[2]->worldNormal.y) * w1 + (draw.vo[1]->worldNormal.y - draw.vo[2]->worldNormal.y) * w2;
+			io.p.normal.z = draw.vo[2]->worldNormal.z + (draw.vo[0]->worldNormal.z - draw.vo[2]->worldNormal.z) * w1 + (draw.vo[1]->worldNormal.z - draw.vo[2]->worldNormal.z) * w2;
 
 			// Color (lerp)
-			io.p.albedo.x = draw.vo[2].albedo.x + (draw.vo[0].albedo.x - draw.vo[2].albedo.x) * w1 + (draw.vo[1].albedo.x - draw.vo[2].albedo.x) * w2;
-			io.p.albedo.y = draw.vo[2].albedo.y + (draw.vo[0].albedo.y - draw.vo[2].albedo.y) * w1 + (draw.vo[1].albedo.y - draw.vo[2].albedo.y) * w2;
-			io.p.albedo.z = draw.vo[2].albedo.z + (draw.vo[0].albedo.z - draw.vo[2].albedo.z) * w1 + (draw.vo[1].albedo.z - draw.vo[2].albedo.z) * w2;
+			io.p.albedo.x = draw.vo[2]->albedo.x + (draw.vo[0]->albedo.x - draw.vo[2]->albedo.x) * w1 + (draw.vo[1]->albedo.x - draw.vo[2]->albedo.x) * w2;
+			io.p.albedo.y = draw.vo[2]->albedo.y + (draw.vo[0]->albedo.y - draw.vo[2]->albedo.y) * w1 + (draw.vo[1]->albedo.y - draw.vo[2]->albedo.y) * w2;
+			io.p.albedo.z = draw.vo[2]->albedo.z + (draw.vo[0]->albedo.z - draw.vo[2]->albedo.z) * w1 + (draw.vo[1]->albedo.z - draw.vo[2]->albedo.z) * w2;
 
 			// UV (lerp)
 			if ( draw.pMaterial->pTexture )
 			{
-				float invW = w1*draw.vo[0].invW + w2*draw.vo[1].invW + w3*draw.vo[2].invW;
-				io.p.uv.x = (w1*draw.vo[0].uv.x + w2*draw.vo[1].uv.x + w3*draw.vo[2].uv.x) / invW;
-				io.p.uv.y = (w1*draw.vo[0].uv.y + w2*draw.vo[1].uv.y + w3*draw.vo[2].uv.y) / invW;
+				float invW = w1*draw.vo[0]->invW + w2*draw.vo[1]->invW + w3*draw.vo[2]->invW;
+				io.p.uv.x = (w1*draw.vo[0]->uv.x + w2*draw.vo[1]->uv.x + w3*draw.vo[2]->uv.x) / invW;
+				io.p.uv.y = (w1*draw.vo[0]->uv.y + w2*draw.vo[1]->uv.y + w3*draw.vo[2]->uv.y) / invW;
 			}
 			else
 			{
@@ -810,7 +970,7 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			// Lighting
 			if ( draw.pMaterial->lighting==CPU_LIGHTING_GOURAUD )
 			{
-				float intensity = draw.vo[2].intensity + (draw.vo[0].intensity - draw.vo[2].intensity) * w1 + (draw.vo[1].intensity - draw.vo[2].intensity) * w2;
+				float intensity = draw.vo[2]->intensity + (draw.vo[0]->intensity - draw.vo[2]->intensity) * w1 + (draw.vo[1]->intensity - draw.vo[2]->intensity) * w2;
 				io.p.color.x = io.p.albedo.x * intensity;
 				io.p.color.y = io.p.albedo.y * intensity;
 				io.p.color.z = io.p.albedo.z * intensity;
@@ -856,6 +1016,158 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 	// Stats
 	if ( draw.pTile )
 		draw.pTile->statsDrawnTriangleCount++;
+}
+
+bool cpu_device::WireframeClipLineNearPlane(XMFLOAT4& a, XMFLOAT4& b)
+{
+	// Plan near D3D en clip-space : z >= 0
+	const float da = a.z;
+	const float db = b.z;
+
+	// Si les deux sont derrière
+	if ( da<0.0f && db<0.0f )
+		return false;
+
+	// Si un seul est derrière, on intersecte
+	if ( da<0.0f || db<0.0f )
+	{
+		// t tel que z(t)=0 entre a et b
+		float t = da / (da - db); // da + t*(db-da) = 0
+		XMFLOAT4 p;
+		p.x = a.x + (b.x - a.x) * t;
+		p.y = a.y + (b.y - a.y) * t;
+		p.z = a.z + (b.z - a.z) * t; // ~0
+		p.w = a.w + (b.w - a.w) * t;
+
+		if ( da<0.0f )
+			a = p;
+		else
+			b = p;
+	}
+
+	// Encore une sécurité : éviter w trop petit
+	if ( a.w<=1e-6f && b.w<=1e-6f )
+		return false;
+
+	return true;
+}
+
+bool cpu_device::WireframeClipToScreen(const XMFLOAT4& c, float widthHalf, float heightHalf, XMFLOAT3& out)
+{
+	if ( c.w<=1e-6f )
+		return false;
+
+	float invW = 1.0f / c.w;
+	float ndcX = c.x * invW;
+	float ndcY = c.y * invW;
+	float ndcZ = c.z * invW;
+	out.x = (ndcX + 1.0f) * widthHalf;
+	out.y = (1.0f - ndcY) * heightHalf;
+	out.z = cpu::Clamp(ndcZ);
+	return true;
+}
+
+float cpu_device::PlaneEval(const XMFLOAT4& p, const XMFLOAT4& c)
+{
+	return p.x * c.x + p.y * c.y + p.z * c.z + p.w * c.w;
+}
+
+int cpu_device::ClipPolyAgainstPlane(const cpu_vertex_out* pInV, int inCount, cpu_vertex_out* pOutV, const XMFLOAT4& plane)
+{
+	if ( inCount<=0 )
+		return 0;
+
+	int outCount = 0;
+
+	const cpu_vertex_out* pA = &pInV[inCount-1];
+	float dA = PlaneEval(plane, pA->clipPos);
+
+	for ( int i=0 ; i<inCount ; ++i )
+	{
+		const cpu_vertex_out* pB = &pInV[i];
+		float dB = PlaneEval(plane, pB->clipPos);
+
+		const bool ain = dA>=0.0f;
+		const bool bin = dB>=0.0f;
+
+		if ( ain && bin )
+		{
+			pOutV[outCount++] = *pB;
+		}
+		else if ( ain && bin==false )
+		{
+			float denom = dA - dB;
+			if ( fabsf(denom)>1e-12f )
+			{
+				float t = dA / denom; // A + t(B-A) est sur le plan
+				pOutV[outCount++].Lerp(*pA, *pB, t);
+			}
+		}
+		else if ( ain==false && bin )
+		{
+			float denom = dA - dB;
+			if ( fabsf(denom)>1e-12f )
+			{
+				float t = dA / denom;
+				pOutV[outCount++].Lerp(*pA, *pB, t);
+			}
+			pOutV[outCount++] = *pB;
+		}
+
+		pA = pB;
+		dA = dB;
+		if ( outCount>=8 )
+			break;
+	}
+
+	return outCount;
+}
+
+int cpu_device::ClipTriangleFrustum(const cpu_vertex_out tri[3], cpu_vertex_out outV[8])
+{
+	cpu_vertex_out bufA[8];
+	cpu_vertex_out bufB[8];
+
+	int n = 3;
+	bufA[0] = tri[0];
+	bufA[1] = tri[1];
+	bufA[2] = tri[2];
+
+	// Plans D3D: dot(plane, clip) >= 0
+	// Left   : x + w >= 0  => ( 1, 0, 0, 1)
+	// Right  : -x + w >= 0 => (-1, 0, 0, 1)
+	// Bottom : y + w >= 0  => ( 0, 1, 0, 1)
+	// Top    : -y + w >= 0 => ( 0,-1, 0, 1)
+	// Near   : z >= 0      => ( 0, 0, 1, 0)
+	// Far    : -z + w >= 0 => ( 0, 0,-1, 1)  <=> z <= w
+	const XMFLOAT4 planes[6] =
+	{
+		{  1.f,  0.f,  0.f,  1.f },
+		{ -1.f,  0.f,  0.f,  1.f },
+		{  0.f,  1.f,  0.f,  1.f },
+		{  0.f, -1.f,  0.f,  1.f },
+		{  0.f,  0.f,  1.f,  0.f },
+		{  0.f,  0.f, -1.f,  1.f },
+	};
+
+	const cpu_vertex_out* inBuf = bufA;
+	cpu_vertex_out* outBuf = bufB;
+
+	for ( int p=0 ; p<6 ; ++p )
+	{
+		n = ClipPolyAgainstPlane(inBuf, n, outBuf, planes[p]);
+		if ( n==0 )
+			return 0;
+
+		// swap buffers
+		const cpu_vertex_out* tmp = inBuf;
+		inBuf = outBuf;
+		outBuf = tmp==bufA ? bufA : bufB;
+	}
+
+	for ( int i=0 ; i<n ; ++i )
+		outV[i] = inBuf[i];
+	return n; // 3..7
 }
 
 void cpu_device::PixelShader(cpu_ps_io& io)

@@ -27,6 +27,7 @@ public:
 	void GetParticleRange(int& min, int& max, int iTile);
 	cpu_stats* GetStats() { return &m_stats; }
 	void EnableRender(bool enabled = true) { m_renderEnabled = enabled; }
+	void EnableBoxRender(bool enabled = true) { m_renderBoxEnabled = enabled; }
 
 	void ClearManagers();
 	template <typename T>
@@ -79,11 +80,20 @@ private:
 	void OnExit() {}
 	void OnRender(int pass) {}
 
+public:
+	// Style
+	bool m_amigaStyle;
+	int m_clear;
+	XMFLOAT3 m_clearColor;
+	XMFLOAT3 m_groundColor;
+	XMFLOAT3 m_skyColor;	
+
 private:
 	inline static cpu_engine* s_pEngine;
 
 	// Options
 	bool m_renderEnabled;
+	bool m_renderBoxEnabled;
 
 	// Window
 	cpu_window m_window;
@@ -94,13 +104,6 @@ private:
 	// Camera
 	cpu_camera m_camera;
 	
-	// Style
-	bool m_amigaStyle;
-	int m_clear;
-	XMFLOAT3 m_clearColor;
-	XMFLOAT3 m_groundColor;
-	XMFLOAT3 m_skyColor;
-
 	// Tile
 	int m_tileWidth;
 	int m_tileHeight;
@@ -109,6 +112,9 @@ private:
 	int m_tileCount;
 	std::vector<cpu_tile> m_tiles;
 	cpu_atomic<int> m_nextTile;
+
+	// Mesh
+	cpu_mesh m_meshBox;
 
 	// Jobs
 	int m_threadCount;

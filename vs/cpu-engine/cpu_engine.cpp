@@ -25,6 +25,7 @@ bool cpu_engine::Create(int width, int height, bool fullscreen, bool amigaStyle)
 
 	// Options
 	m_renderEnabled = true;
+	m_renderBoxEnabled = false;
 
 	// Style
 	m_amigaStyle = amigaStyle;
@@ -32,6 +33,9 @@ bool cpu_engine::Create(int width, int height, bool fullscreen, bool amigaStyle)
 	m_clearColor = cpu::ToColor(24, 35, 50);
 	m_groundColor = cpu::ToColor(42, 63, 53);
 	m_skyColor = cpu::ToColor(24, 35, 50);
+
+	// Mesh
+	m_meshBox.CreateCube();
 
 	// Particles
 	m_particleData.pPhysics = &m_particlePhysics;
@@ -639,7 +643,6 @@ void cpu_engine::Render_ApplyClipping()
 		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr )
 		{
 			pEntity->clipped = true;
-			m_stats.clipEntityCount++;
 			continue;
 		}
 		if ( m_camera.frustum.Intersect(pEntity->sphere) )
@@ -691,6 +694,14 @@ void cpu_engine::Render_TileEntities(int iTile)
 		if ( entityHasTile==false )
 			continue;
 
+		// OBB
+		if ( m_renderBoxEnabled )
+		{
+			XMMATRIX matrix = pEntity->obb.GetMatrix();
+			m_device.DrawWireframeMesh(&m_meshBox, matrix, &tile);
+		}
+
+		// Mesh
 		m_device.DrawMesh(pEntity->pMesh, &pEntity->transform, pEntity->pMaterial, pEntity->depth, &tile);
 	}
 }

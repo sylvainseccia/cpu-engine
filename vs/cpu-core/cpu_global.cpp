@@ -77,6 +77,37 @@ XMFLOAT3 ToColorFromBGR(ui32 bgr)
 	return color;
 }
 
+float Lerp(float a, float b, float s)
+{
+	return a + (b-a) * s;
+}
+
+void Lerp(float& out, float a, float b, float s)
+{
+	out = a + (b-a) * s;
+}
+
+void Lerp(XMFLOAT2& out, const XMFLOAT2& a, const XMFLOAT2& b, float t)
+{
+	out.x = Lerp(a.x, b.x, t);
+	out.y = Lerp(a.y, b.y, t);
+}
+
+void Lerp(XMFLOAT3& out, const XMFLOAT3& a, const XMFLOAT3& b, float t)
+{
+	out.x = Lerp(a.x, b.x, t);
+	out.y = Lerp(a.y, b.y, t);
+	out.z = Lerp(a.z, b.z, t);
+}
+
+void Lerp(XMFLOAT4& out, const XMFLOAT4& a, const XMFLOAT4& b, float t)
+{
+	out.x = Lerp(a.x, b.x, t);
+	out.y = Lerp(a.y, b.y, t);
+	out.z = Lerp(a.z, b.z, t);
+	out.w = Lerp(a.w, b.w, t);
+}
+
 ui32 LerpColor(ui32 c0, ui32 c1, float t)
 {
 	int r0 = (int)( c0        & 255);
@@ -286,120 +317,68 @@ bool RayAabb(cpu_ray& ray, cpu_aabb& box, float& outTEnter, float& outTExit)
 
 bool RayObb(cpu_ray& ray, cpu_obb& box, XMFLOAT3* pOutHit, float* pOutT)
 {
-	auto f_abs = [](float x) -> float { return x < 0.f ? -x : x; };
-	auto f_max = [](float a, float b) -> float { return a > b ? a : b; };
-	auto f_min = [](float a, float b) -> float { return a < b ? a : b; };
-
-	// 1) Centre = moyenne des 8 sommets
-	XMVECTOR C = XMVectorZero();
-	for (int i = 0; i < 8; ++i) C += XMLoadFloat3(&box.pts[i]);
-	C *= (1.0f / 8.0f);
-
-	// 2) Choisir un axe U: direction du sommet le plus éloigné du centre
-	int farI = 0;
-	float farD2 = -1.0f;
-	for ( int i=0 ; i<8 ; ++i )
-	{
-		XMVECTOR d = XMLoadFloat3(&box.pts[i]) - C;
-		float d2;
-		XMStoreFloat(&d2, XMVector3Dot(d, d));
-		if ( d2>farD2 ) { farD2 = d2; farI = i; }
-	}
-
-	XMVECTOR d0 = XMLoadFloat3(&box.pts[farI]) - C;
-	float lenD0;
-	XMStoreFloat(&lenD0, XMVector3Length(d0));
-	if ( lenD0<1e-6f )
-		return false;
-
-	XMVECTOR U = XMVector3Normalize(d0);
-
-	// 3) Construire V: prendre le vecteur le plus orthogonal à U depuis le centre
-	XMVECTOR Vcand = XMVectorZero();
-	float best = -1.0f;
-	for ( int i=0 ; i<8 ; ++i )
-	{
-		XMVECTOR d = XMLoadFloat3(&box.pts[i]) - C;
-		XMVECTOR ortho = d - XMVector3Dot(d, U) * U;
-		float l;
-		XMStoreFloat(&l, XMVector3Length(ortho));
-		if (l > best) { best = l; Vcand = ortho; }
-	}
-	if ( best<1e-6f )
-		return false;
-
-	XMVECTOR V = XMVector3Normalize(Vcand);
-
-	// 4) W = U x V, puis ré-orthonormaliser V = W x U
-	XMVECTOR W = XMVector3Normalize(XMVector3Cross(U, V));
-	V = XMVector3Normalize(XMVector3Cross(W, U));
-
-	// 5) Demi-tailles = max des projections absolues sur chaque axe
-	float eU = 0.f, eV = 0.f, eW = 0.f;
-	for ( int i=0 ; i<8 ; ++i )
-	{
-		XMVECTOR d = XMLoadFloat3(&box.pts[i]) - C;
-		float pu, pv, pw;
-		XMStoreFloat(&pu, XMVector3Dot(d, U));
-		XMStoreFloat(&pv, XMVector3Dot(d, V));
-		XMStoreFloat(&pw, XMVector3Dot(d, W));
-		pu = f_abs(pu); pv = f_abs(pv); pw = f_abs(pw);
-		if ( pu>eU ) eU = pu;
-		if ( pv>eV ) eV = pv;
-		if ( pw>eW ) eW = pw;
-	}
-	if ( eU<1e-6f || eV<1e-6f || eW<1e-6f )
-		return false;
-
-	// 6) Transformer le rayon en coords locales OBB
-	XMVECTOR O = XMLoadFloat3(&ray.pos);
-	XMVECTOR D = XMLoadFloat3(&ray.dir);
-	XMVECTOR OC = O - C;
-
-	float oX, oY, oZ;
-	float dX, dY, dZ;
-	XMStoreFloat(&oX, XMVector3Dot(OC, U));
-	XMStoreFloat(&oY, XMVector3Dot(OC, V));
-	XMStoreFloat(&oZ, XMVector3Dot(OC, W));
-	XMStoreFloat(&dX, XMVector3Dot(D,  U));
-	XMStoreFloat(&dY, XMVector3Dot(D,  V));
-	XMStoreFloat(&dZ, XMVector3Dot(D,  W));
-
-	// 7) Slab sur AABB local [-eU,eU] x [-eV,eV] x [-eW,eW]
-	float tmin = 0.0f;
-	float tmax = 1e30f;
 	const float eps = 1e-8f;
 
-	auto slab = [&](float o, float d, float e) -> int
+	XMVECTOR C = XMLoadFloat3(&box.center);
+	XMVECTOR U = XMLoadFloat3(&box.axis[0]);
+	XMVECTOR V = XMLoadFloat3(&box.axis[1]);
+	XMVECTOR W = XMLoadFloat3(&box.axis[2]);
+
+	// U = XMVector3Normalize(U); V = XMVector3Normalize(V); W = XMVector3Normalize(W);
+
+	XMVECTOR O  = XMLoadFloat3(&ray.pos);
+	XMVECTOR D  = XMLoadFloat3(&ray.dir);
+	XMVECTOR OC = XMVectorSubtract(O, C);
+
+	// Projection du rayon dans l'espace local OBB
+	float oX = XMVectorGetX(XMVector3Dot(OC, U));
+	float oY = XMVectorGetX(XMVector3Dot(OC, V));
+	float oZ = XMVectorGetX(XMVector3Dot(OC, W));
+	float dX = XMVectorGetX(XMVector3Dot(D, U));
+	float dY = XMVectorGetX(XMVector3Dot(D, V));
+	float dZ = XMVectorGetX(XMVector3Dot(D, W));
+
+	// Slab sur AABB local [-half.x,half.x] x [-half.y,half.y] x [-half.z,half.z]
+	float tmin = 0.0f;
+	float tmax = 1e30f;
+
+	auto slab = [&](float o, float d, float e) -> bool
 	{
-		if (f_abs(d) < eps)
-		{
-			return (o >= -e && o <= e) ? 1 : 0;
-		}
+		if ( fabsf(d)<eps )
+			return o>=-e && o<=e;
+
 		float invD = 1.0f / d;
 		float t1 = (-e - o) * invD;
 		float t2 = ( e - o) * invD;
-		if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
-
-		tmin = f_max(tmin, t1);
-		tmax = f_min(tmax, t2);
-		return tmin<=tmax;
+		if ( t1>t2 )
+		{
+			float tmp = t1;
+			t1 = t2;
+			t2 = tmp;
+		}
+		tmin = std::max(tmin, t1);
+		tmax = std::min(tmax, t2);
+		return (tmin <= tmax);
 	};
 
-	if ( slab(oX, dX, eU)==false ) return false;
-	if ( slab(oY, dY, eV)==false ) return false;
-	if ( slab(oZ, dZ, eW)==false ) return false;
-	if ( tmax<0.0f ) return false;
+	if ( slab(oX, dX, box.half.x)==false )
+		return false;
+	if ( slab(oY, dY, box.half.y)==false )
+		return false;
+	if ( slab(oZ, dZ, box.half.z)==false )
+		return false;
+	if ( tmax<0.0f )
+		return false;
 
-	// 8) Point le plus proche : entrée si devant, sinon origine si déjà dedans
 	float tHit = tmin>=0.0f ? tmin : 0.0f;
 	if ( pOutHit )
 	{
-		XMVECTOR pt = O + D * tHit;
-		XMStoreFloat3(pOutHit, pt);
+		XMVECTOR P = XMVectorAdd(O, XMVectorScale(D, tHit));
+		XMStoreFloat3(pOutHit, P);
 	}
 	if ( pOutT )
 		*pOutT = tHit;
+
 	return true;
 }
 
@@ -564,191 +543,107 @@ bool AabbAabbInclusive(cpu_aabb& a, cpu_aabb& b)
 
 bool ObbObb(cpu_obb& a, cpu_obb& b)
 {
-	auto f_abs = [](float x) -> float { return x < 0.f ? -x : x; };
-	auto f_max = [](float x, float y) -> float { return x > y ? x : y; };
+	constexpr float EPS = 1e-6f;
 
-	// --------- Build frame (C, axes U/V/W, extents eU/eV/eW) from pts[8] ----------
-	auto build_frame = [&](const cpu_obb& obb, XMVECTOR& C, XMVECTOR& U, XMVECTOR& V, XMVECTOR& W, float& eU, float& eV, float& eW) -> int
-	{
-		// Centre = moyenne des sommets
-		C = XMVectorZero();
-		for ( int i=0 ; i<8 ; ++i )
-			C += XMLoadFloat3(&obb.pts[i]);
-		C *= (1.0f / 8.0f);
-
-		// Axe U = direction du point le plus éloigné du centre
-		int farI = 0;
-		float farD2 = -1.0f;
-		for ( int i=0 ; i<8 ; ++i )
-		{
-			XMVECTOR d = XMLoadFloat3(&obb.pts[i]) - C;
-			float d2; XMStoreFloat(&d2, XMVector3Dot(d, d));
-			if ( d2>farD2 ) { farD2 = d2; farI = i; }
-		}
-
-		XMVECTOR d0 = XMLoadFloat3(&obb.pts[farI]) - C;
-		float lenD0; XMStoreFloat(&lenD0, XMVector3Length(d0));
-		if ( lenD0<1e-6f ) return false;
-		U = XMVector3Normalize(d0);
-
-		// Axe V = composante la plus orthogonale à U
-		XMVECTOR Vcand = XMVectorZero();
-		float best = -1.0f;
-		for ( int i=0 ; i<8 ; ++i )
-		{
-			XMVECTOR d = XMLoadFloat3(&obb.pts[i]) - C;
-			XMVECTOR ortho = d - XMVector3Dot(d, U) * U;
-			float l;
-			XMStoreFloat(&l, XMVector3Length(ortho));
-			if ( l>best ) { best = l; Vcand = ortho; }
-		}
-		if ( best<1e-6f ) return false;
-		V = XMVector3Normalize(Vcand);
-
-		// W = U x V, puis re-orthonormalisation
-		W = XMVector3Normalize(XMVector3Cross(U, V));
-		V = XMVector3Normalize(XMVector3Cross(W, U));
-
-		// Demi-tailles = max des projections absolues sur U/V/W
-		eU = eV = eW = 0.0f;
-		for (int i = 0; i < 8; ++i)
-		{
-			XMVECTOR d = XMLoadFloat3(&obb.pts[i]) - C;
-			float pu, pv, pw;
-			XMStoreFloat(&pu, XMVector3Dot(d, U));
-			XMStoreFloat(&pv, XMVector3Dot(d, V));
-			XMStoreFloat(&pw, XMVector3Dot(d, W));
-			pu = f_abs(pu); pv = f_abs(pv); pw = f_abs(pw);
-			if ( pu>eU ) eU = pu;
-			if ( pv>eV ) eV = pv;
-			if ( pw>eW ) eW = pw;
-		}
-
-		if ( eU<1e-6f || eV<1e-6f || eW<1e-6f ) return false;
-		return true;
-	};
-
-	XMVECTOR Ac, A0, A1, A2;
-	XMVECTOR Bc, B0, B1, B2;
-	float Ae0, Ae1, Ae2;
-	float Be0, Be1, Be2;
-
-	if ( build_frame(a, Ac, A0, A1, A2, Ae0, Ae1, Ae2)==false ) return false;
-	if ( build_frame(b, Bc, B0, B1, B2, Be0, Be1, Be2)==false ) return false;
-
-	// --------- SAT (Ericson / OBB-OBB) ----------
-	// R[i][j] = dot(Ai, Bj)
+	// R[i][j] = dot(A.axis[i], B.axis[j])
 	float R[3][3], AbsR[3][3];
 
-	float r00, r01, r02, r10, r11, r12, r20, r21, r22;
-	XMStoreFloat(&r00, XMVector3Dot(A0, B0));
-	XMStoreFloat(&r01, XMVector3Dot(A0, B1));
-	XMStoreFloat(&r02, XMVector3Dot(A0, B2));
-	XMStoreFloat(&r10, XMVector3Dot(A1, B0));
-	XMStoreFloat(&r11, XMVector3Dot(A1, B1));
-	XMStoreFloat(&r12, XMVector3Dot(A1, B2));
-	XMStoreFloat(&r20, XMVector3Dot(A2, B0));
-	XMStoreFloat(&r21, XMVector3Dot(A2, B1));
-	XMStoreFloat(&r22, XMVector3Dot(A2, B2));
-
-	R[0][0]=r00; R[0][1]=r01; R[0][2]=r02;
-	R[1][0]=r10; R[1][1]=r11; R[1][2]=r12;
-	R[2][0]=r20; R[2][1]=r21; R[2][2]=r22;
-
-	// petit epsilon pour la stabilité numérique (axes presque parallèles)
-	const float eps = 1e-6f;
 	for ( int i=0 ; i<3 ; ++i )
 	{
 		for ( int j=0 ; j<3 ; ++j )
-			AbsR[i][j] = f_abs(R[i][j]) + eps;
+		{
+			R[i][j] = a.axis[i].x * b.axis[j].x + a.axis[i].y * b.axis[j].y + a.axis[i].z * b.axis[j].z;
+			AbsR[i][j] = fabsf(R[i][j]) + EPS;
+		}
 	}
 
-	// t = Bc - Ac exprimé dans la base A : t[i] = dot(tworld, Ai)
-	XMVECTOR tw = Bc - Ac;
-	float t0, t1, t2;
-	XMStoreFloat(&t0, XMVector3Dot(tw, A0));
-	XMStoreFloat(&t1, XMVector3Dot(tw, A1));
-	XMStoreFloat(&t2, XMVector3Dot(tw, A2));
+	// t = centreB - centreA (world)
+	float tW[3] =
+	{
+		b.center.x - a.center.x,
+		b.center.y - a.center.y,
+		b.center.z - a.center.z
+	};
+
+	// t exprimé dans la base de A
+	float t[3] =
+	{
+		tW[0]*a.axis[0].x + tW[1]*a.axis[0].y + tW[2]*a.axis[0].z,
+		tW[0]*a.axis[1].x + tW[1]*a.axis[1].y + tW[2]*a.axis[1].z,
+		tW[0]*a.axis[2].x + tW[1]*a.axis[2].y + tW[2]*a.axis[2].z
+	};
+
+	const float aa[3] = { a.half.x, a.half.y, a.half.z };
+	const float bb[3] = { b.half.x, b.half.y, b.half.z };
 
 	float ra, rb;
 
-	// ---- 1) Axes A0, A1, A2
-	ra = Ae0;
-	rb = Be0*AbsR[0][0] + Be1*AbsR[0][1] + Be2*AbsR[0][2];
-	if ( f_abs(t0)>ra+rb ) return false;
+	// 1) Axes de A
+	for ( int i=0 ; i<3 ; ++i  )
+	{
+		ra = aa[i];
+		rb = bb[0]*AbsR[i][0] + bb[1]*AbsR[i][1] + bb[2]*AbsR[i][2];
+		if ( fabsf(t[i])>ra+rb )
+			return false;
+	}
 
-	ra = Ae1;
-	rb = Be0*AbsR[1][0] + Be1*AbsR[1][1] + Be2*AbsR[1][2];
-	if ( f_abs(t1)>ra+rb ) return false;
+	// 2) Axes de B
+	for ( int j=0 ; j<3 ; ++j )
+	{
+		ra = aa[0]*AbsR[0][j] + aa[1]*AbsR[1][j] + aa[2]*AbsR[2][j];
+		rb = bb[j];
 
-	ra = Ae2;
-	rb = Be0*AbsR[2][0] + Be1*AbsR[2][1] + Be2*AbsR[2][2];
-	if ( f_abs(t2)>ra+rb ) return false;
+		float tOnBj = t[0]*R[0][j] + t[1]*R[1][j] + t[2]*R[2][j];
+		if ( fabsf(tOnBj)>ra+rb )
+			return false;
+	}
 
-	// ---- 2) Axes B0, B1, B2  (en utilisant t projeté sur Bj)
-	float tB0 = t0*R[0][0] + t1*R[1][0] + t2*R[2][0];
-	float tB1 = t0*R[0][1] + t1*R[1][1] + t2*R[2][1];
-	float tB2 = t0*R[0][2] + t1*R[1][2] + t2*R[2][2];
+	// 3) Axes croisés Ai x Bj (9 tests)
+	ra = aa[1]*AbsR[2][0] + aa[2]*AbsR[1][0];
+	rb = bb[1]*AbsR[0][2] + bb[2]*AbsR[0][1];
+	if ( fabsf(t[2]*R[1][0]-t[1]*R[2][0])>ra+rb )
+		return false;
 
-	ra = Ae0*AbsR[0][0] + Ae1*AbsR[1][0] + Ae2*AbsR[2][0];
-	rb = Be0;
-	if ( f_abs(tB0)>ra+rb ) return false;
+	ra = aa[1]*AbsR[2][1] + aa[2]*AbsR[1][1];
+	rb = bb[0]*AbsR[0][2] + bb[2]*AbsR[0][0];
+	if ( fabsf(t[2]*R[1][1]-t[1]*R[2][1])>ra+rb )
+		return false;
 
-	ra = Ae0*AbsR[0][1] + Ae1*AbsR[1][1] + Ae2*AbsR[2][1];
-	rb = Be1;
-	if ( f_abs(tB1)>ra+rb ) return false;
+	ra = aa[1]*AbsR[2][2] + aa[2]*AbsR[1][2];
+	rb = bb[0]*AbsR[0][1] + bb[1]*AbsR[0][0];
+	if ( fabsf(t[2]*R[1][2]-t[1]*R[2][2])>ra+rb )
+		return false;
 
-	ra = Ae0*AbsR[0][2] + Ae1*AbsR[1][2] + Ae2*AbsR[2][2];
-	rb = Be2;
-	if ( f_abs(tB2)>ra+rb ) return false;
+	ra = aa[0]*AbsR[2][0] + aa[2]*AbsR[0][0];
+	rb = bb[1]*AbsR[1][2] + bb[2]*AbsR[1][1];
+	if ( fabsf(t[0]*R[2][0]-t[2]*R[0][0])>ra+rb )
+		return false;
 
-	// ---- 3) Axes Ai x Bj (9 tests)
-	// A0 x B0
-	ra = Ae1*AbsR[2][0] + Ae2*AbsR[1][0];
-	rb = Be1*AbsR[0][2] + Be2*AbsR[0][1];
-	if ( f_abs(t2*R[1][0] - t1*R[2][0]) > ra+rb ) return false;
+	ra = aa[0]*AbsR[2][1] + aa[2]*AbsR[0][1];
+	rb = bb[0]*AbsR[1][2] + bb[2]*AbsR[1][0];
+	if ( fabsf(t[0]*R[2][1]-t[2]*R[0][1])>ra+rb )
+		return false;
 
-	// A0 x B1
-	ra = Ae1*AbsR[2][1] + Ae2*AbsR[1][1];
-	rb = Be0*AbsR[0][2] + Be2*AbsR[0][0];
-	if ( f_abs(t2*R[1][1] - t1*R[2][1]) > ra+rb ) return false;
+	ra = aa[0]*AbsR[2][2] + aa[2]*AbsR[0][2];
+	rb = bb[0]*AbsR[1][1] + bb[1]*AbsR[1][0];
+	if ( fabsf(t[0]*R[2][2]-t[2]*R[0][2])>ra+rb )
+		return false;
 
-	// A0 x B2
-	ra = Ae1*AbsR[2][2] + Ae2*AbsR[1][2];
-	rb = Be0*AbsR[0][1] + Be1*AbsR[0][0];
-	if ( f_abs(t2*R[1][2] - t1*R[2][2]) > ra+rb ) return false;
+	ra = aa[0]*AbsR[1][0] + aa[1]*AbsR[0][0];
+	rb = bb[1]*AbsR[2][2] + bb[2]*AbsR[2][1];
+	if ( fabsf(t[1]*R[0][0]-t[0]*R[1][0])>ra+rb )
+		return false;
 
-	// A1 x B0
-	ra = Ae0*AbsR[2][0] + Ae2*AbsR[0][0];
-	rb = Be1*AbsR[1][2] + Be2*AbsR[1][1];
-	if ( f_abs(t0*R[2][0] - t2*R[0][0]) > ra+rb ) return false;
+	ra = aa[0]*AbsR[1][1] + aa[1]*AbsR[0][1];
+	rb = bb[0]*AbsR[2][2] + bb[2]*AbsR[2][0];
+	if ( fabsf(t[1]*R[0][1]-t[0]*R[1][1])>ra+rb )
+		return false;
 
-	// A1 x B1
-	ra = Ae0*AbsR[2][1] + Ae2*AbsR[0][1];
-	rb = Be0*AbsR[1][2] + Be2*AbsR[1][0];
-	if ( f_abs(t0*R[2][1] - t2*R[0][1]) > ra+rb ) return false;
+	ra = aa[0]*AbsR[1][2] + aa[1]*AbsR[0][2];
+	rb = bb[0]*AbsR[2][1] + bb[1]*AbsR[2][0];
+	if ( fabsf(t[1]*R[0][2]-t[0]*R[1][2])>ra+rb )
+		return false;
 
-	// A1 x B2
-	ra = Ae0*AbsR[2][2] + Ae2*AbsR[0][2];
-	rb = Be0*AbsR[1][1] + Be1*AbsR[1][0];
-	if ( f_abs(t0*R[2][2] - t2*R[0][2]) > ra+rb ) return false;
-
-	// A2 x B0
-	ra = Ae0*AbsR[1][0] + Ae1*AbsR[0][0];
-	rb = Be1*AbsR[2][2] + Be2*AbsR[2][1];
-	if ( f_abs(t1*R[0][0] - t0*R[1][0]) > ra+rb ) return false;
-
-	// A2 x B1
-	ra = Ae0*AbsR[1][1] + Ae1*AbsR[0][1];
-	rb = Be0*AbsR[2][2] + Be2*AbsR[2][0];
-	if ( f_abs(t1*R[0][1] - t0*R[1][1]) > ra+rb ) return false;
-
-	// A2 x B2
-	ra = Ae0*AbsR[1][2] + Ae1*AbsR[0][2];
-	rb = Be0*AbsR[2][1] + Be1*AbsR[2][0];
-	if ( f_abs(t1*R[0][2] - t0*R[1][2]) > ra+rb ) return false;
-
-	// Aucun axe séparateur trouvé => intersection
 	return true;
 }
 

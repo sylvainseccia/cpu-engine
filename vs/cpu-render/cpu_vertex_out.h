@@ -11,7 +11,7 @@ public:
 	XMFLOAT3 albedo;
 	float intensity;
 	XMFLOAT2 uv;
-#ifdef _DEBUG
-	XMFLOAT2 uvDebug;
-#endif
+
+public:
+	void Lerp(const cpu_vertex_out& a, const cpu_vertex_out& b, float t);
 };

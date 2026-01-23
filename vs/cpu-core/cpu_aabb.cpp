@@ -11,27 +11,21 @@ cpu_aabb::cpu_aabb()
 
 cpu_aabb& cpu_aabb::operator=(const cpu_obb& obb)
 {
-	min = {  FLT_MAX,  FLT_MAX,  FLT_MAX };
-	max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+	XMVECTOR c  = XMLoadFloat3(&obb.center);
 
-	for ( int i=0 ; i<8 ; ++i )
-	{
-		const auto& p = obb.pts[i];
+	// mask pour abs sur float: 0x7fffffff
+	const XMVECTOR signMask = XMVectorReplicateInt(0x7fffffff);
+	XMVECTOR a0 = XMVectorAndInt(XMLoadFloat3(&obb.axis[0]), signMask);
+	XMVECTOR a1 = XMVectorAndInt(XMLoadFloat3(&obb.axis[1]), signMask);
+	XMVECTOR a2 = XMVectorAndInt(XMLoadFloat3(&obb.axis[2]), signMask);
 
-		if ( p.x<min.x )
-			min.x = p.x;
-		if ( p.y<min.y )
-			min.y = p.y;
-		if ( p.z<min.z )
-			min.z = p.z;
+	// extents = |axis0|*half.x + |axis1|*half.y + |axis2|*half.z
+	XMVECTOR e = XMVectorAdd(XMVectorAdd(XMVectorScale(a0, obb.half.x), XMVectorScale(a1, obb.half.y)), XMVectorScale(a2, obb.half.z));
+	XMVECTOR vmin = XMVectorSubtract(c, e);
+	XMVECTOR vmax = XMVectorAdd(c, e);
 
-		if ( p.x>max.x )
-			max.x = p.x;
-		if ( p.y>max.y )
-			max.y = p.y;
-		if ( p.z>max.z )
-			max.z = p.z;
-	}
+	XMStoreFloat3(&min, vmin);
+	XMStoreFloat3(&max, vmax);
 	return *this;
 }
 
