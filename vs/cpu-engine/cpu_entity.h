@@ -9,7 +9,7 @@ public:
 	cpu_material* pMaterial;
 	float lifetime;
 	ui32 tile;
-	float radius;
+	cpu_sphere sphere;
 	cpu_aabb aabb;
 	cpu_obb obb;
 	cpu_rectangle box;

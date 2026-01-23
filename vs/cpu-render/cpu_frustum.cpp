@@ -28,10 +28,10 @@ void cpu_frustum::FromViewProj(const XMFLOAT4X4& viewProj)
 	XMStoreFloat4(&planes[5], NormalizePlane(farP));
 }
 
-bool cpu_frustum::Intersect(const XMFLOAT3& center, float radius)
+bool cpu_frustum::Intersect(const cpu_sphere& sphere)
 {
-	XMVECTOR c = XMVectorSet(center.x, center.y, center.z, 1.0f);
-	XMVECTOR r = XMVectorReplicate(radius);
+	XMVECTOR c = XMVectorSet(sphere.center.x, sphere.center.y, sphere.center.z, 1.0f);
+	XMVECTOR r = XMVectorReplicate(sphere.radius);
 	for ( int i=0 ; i<6 ; ++i )
 	{
 		XMVECTOR dist = XMVector4Dot(XMLoadFloat4(&planes[i]), c);

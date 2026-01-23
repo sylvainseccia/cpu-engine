@@ -76,6 +76,9 @@
     <ClInclude Include="cpu_window.h">
       <Filter>system</Filter>
     </ClInclude>
+    <ClInclude Include="cpu_sphere.h">
+      <Filter>geometry</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpu-core.cpp">
@@ -137,6 +140,9 @@
     </ClCompile>
     <ClCompile Include="cpu_window.cpp">
       <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_sphere.cpp">
+      <Filter>geometry</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

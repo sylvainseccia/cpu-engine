@@ -614,9 +614,8 @@ void cpu_engine::Render_RecalculateMatrices()
 		// cpu_aabb
 		pEntity->aabb = pEntity->obb;
 
-		// Radius
-		float scale = std::max(pEntity->transform.sca.x, std::max(pEntity->transform.sca.y, pEntity->transform.sca.z));
-		pEntity->radius = pEntity->pMesh->radius * scale;
+		// cpu_sphere
+		pEntity->sphere = pEntity->obb;
 
 		// Rectangle (screen)
 		XMMATRIX matWVP = matWorld;
@@ -639,10 +638,11 @@ void cpu_engine::Render_ApplyClipping()
 		cpu_entity* pEntity = m_entityManager[iEntity];
 		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr )
 		{
-			pEntity->clipped = false;
+			pEntity->clipped = true;
+			m_stats.clipEntityCount++;
 			continue;
 		}
-		if ( m_camera.frustum.Intersect(pEntity->transform.pos, pEntity->radius) )
+		if ( m_camera.frustum.Intersect(pEntity->sphere) )
 		{
 			pEntity->clipped = false;
 			continue;
@@ -657,7 +657,7 @@ void cpu_engine::Render_AssignEntityTile()
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr || pEntity->clipped )
+		if ( pEntity->clipped )
 			continue;
 
 		int minX = cpu::Clamp(int(pEntity->box.min.x) / m_tileWidth, 0, m_tileColCount-1);
@@ -684,7 +684,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager.sortedList[iEntity];
-		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr || pEntity->clipped )
+		if ( pEntity->clipped )
 			continue;
 	
 		bool entityHasTile = (pEntity->tile>>tile.index) & 1 ? true : false;

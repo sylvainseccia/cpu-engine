@@ -9,6 +9,6 @@ public:
 	cpu_frustum();
 
 	void FromViewProj(const XMFLOAT4X4& viewProj);
-	bool Intersect(const XMFLOAT3& center, float radius);
+	bool Intersect(const cpu_sphere& sphere);
 	XMVECTOR XM_CALLCONV NormalizePlane(FXMVECTOR p);
 };

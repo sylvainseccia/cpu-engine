@@ -88,6 +88,7 @@
     <ClInclude Include="cpu_object.h" />
     <ClInclude Include="cpu_ray.h" />
     <ClInclude Include="cpu_rectangle.h" />
+    <ClInclude Include="cpu_sphere.h" />
     <ClInclude Include="cpu_triangle.h" />
     <ClInclude Include="cpu_vertex.h" />
     <ClInclude Include="cpu_function.h" />
@@ -110,6 +111,7 @@
     <ClCompile Include="cpu_object.cpp" />
     <ClCompile Include="cpu_ray.cpp" />
     <ClCompile Include="cpu_rectangle.cpp" />
+    <ClCompile Include="cpu_sphere.cpp" />
     <ClCompile Include="cpu_triangle.cpp" />
     <ClCompile Include="cpu_vertex.cpp" />
     <ClCompile Include="cpu_function.cpp" />
