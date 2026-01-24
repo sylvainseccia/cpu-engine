@@ -96,7 +96,7 @@ void App::OnStart()
 	m_pShip->GetFSM()->ToState(CPU_ID(StateShipIdle));
 
 	// Particle
-	cpuEngine.GetParticleData()->Create(1000000);
+	cpuEngine.GetParticleData()->Create(2000000);
 	cpuEngine.GetParticlePhysics()->gy = -0.5f;
 	m_pEmitter = cpuEngine.CreateParticleEmitter();
 	m_pEmitter->density = 3000.0f;
