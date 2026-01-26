@@ -38,7 +38,7 @@ void cpu_entity::UpdateWorld(cpu_camera* pCamera, int width, int height)
 		// Rectangle (screen)
 		XMMATRIX matWVP = matWorld;
 		matWVP *= XMLoadFloat4x4(&pCamera->matViewProj);
-		pMesh->aabb.ToScreen(box, matWVP, width, height);
+		pMesh->aabb.ToScreen(box, matWVP, (float)width, (float)height);
 	}
 
 	// View

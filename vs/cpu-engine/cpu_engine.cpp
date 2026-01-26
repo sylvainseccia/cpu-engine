@@ -599,12 +599,10 @@ void cpu_engine::Render_SortZ()
 void cpu_engine::Render_RecalculateMatrices()
 {
 	cpu_rt& rt = *m_device.GetRT();
-	float width = (float)rt.width;
-	float height = (float)rt.height;
 	for ( int i=0 ; i<m_entityManager.count ; i++ )
 	{
 		cpu_entity* pEntity = m_entityManager[i];
-		pEntity->UpdateWorld(&m_camera, width, height);
+		pEntity->UpdateWorld(&m_camera, rt.width, rt.height);
 	}
 }
 
