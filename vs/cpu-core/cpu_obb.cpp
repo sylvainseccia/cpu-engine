@@ -77,15 +77,36 @@ void XM_CALLCONV cpu_obb::Transform(FXMMATRIX m)
 
 XMMATRIX cpu_obb::GetMatrix()
 {
-	XMMATRIX r =
-		XMMATRIX(
-			axis[0].x, axis[0].y, axis[0].z, 0.0f,
-			axis[1].x, axis[1].y, axis[1].z, 0.0f,
-			axis[2].x, axis[2].y, axis[2].z, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		);
+	XMVECTOR s = XMVectorSet(2.0f * half.x, 2.0f * half.y, 2.0f * half.z, 0.0f);
+	XMVECTOR sx = XMVectorSplatX(s);
+	XMVECTOR sy = XMVectorSplatY(s);
+	XMVECTOR sz = XMVectorSplatZ(s);
 
-	XMMATRIX s = XMMatrixScaling(2.0f*half.x, 2.0f*half.y, 2.0f*half.z);
-	XMMATRIX t = XMMatrixTranslation(center.x, center.y, center.z);
-	return s * r * t;
+	XMMATRIX w;
+	w.r[0] = XMVectorSet(axis[0].x, axis[0].y, axis[0].z, 0.0f);
+	w.r[1] = XMVectorSet(axis[1].x, axis[1].y, axis[1].z, 0.0f);
+	w.r[2] = XMVectorSet(axis[2].x, axis[2].y, axis[2].z, 0.0f);
+
+	w.r[0] = XMVectorMultiply(w.r[0], sx);
+	w.r[1] = XMVectorMultiply(w.r[1], sy);
+	w.r[2] = XMVectorMultiply(w.r[2], sz);
+
+	XMVECTOR p = XMLoadFloat3(&center);
+	w.r[3] = XMVectorSetW(p, 1.0f);
+	return w;
 }
+
+//XMMATRIX cpu_obb::GetMatrix()
+//{
+//	XMMATRIX r =
+//		XMMATRIX(
+//			axis[0].x, axis[0].y, axis[0].z, 0.0f,
+//			axis[1].x, axis[1].y, axis[1].z, 0.0f,
+//			axis[2].x, axis[2].y, axis[2].z, 0.0f,
+//			0.0f, 0.0f, 0.0f, 1.0f
+//		);
+//
+//	XMMATRIX s = XMMatrixScaling(2.0f*half.x, 2.0f*half.y, 2.0f*half.z);
+//	XMMATRIX t = XMMatrixTranslation(center.x, center.y, center.z);
+//	return s * r * t;
+//}

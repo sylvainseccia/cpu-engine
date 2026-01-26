@@ -107,6 +107,9 @@ using ui64								= unsigned __int64;
 #define CPU_B(rgba)						(((rgba)>>16)&0xFF)
 #define CPU_A(rgba)						(((rgba)>>24)&0xFF)
 
+// Constants
+#define CPU_EPSILON						1e-20f
+
 // Float3
 inline XMFLOAT3 CPU_RIGHT				= { 1.0f, 0.0f, 0.0f };
 inline XMFLOAT3 CPU_UP					= { 0.0f, 1.0f, 0.0f };

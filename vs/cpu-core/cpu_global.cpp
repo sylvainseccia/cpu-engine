@@ -428,9 +428,7 @@ bool RaySphere(cpu_ray& ray, XMFLOAT3& center, float radius, XMFLOAT3& outHit, f
 	}
 	else if ( t1>=0.0f )
 	{
-		// Le rayon démarre dans la sphère ou l'entrée est derrière :
-		// si tu veux "premier point forward" strict, tu peux choisir t1.
-		// MAIS tu as demandé "point le plus proche" : c'est l'origine (t=0).
+		// si "premier point forward" strict, choisir t1
 		t = 0.0f;
 	}
 	else
@@ -501,7 +499,7 @@ bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT
 	else
 	{
 		if ( fabsf(det)<=eps )
-			return false; // parallèle
+			return false; // parallel
 		const float invDet = 1.0f / det;
 
 		const XMFLOAT3 tvec = Sub3(ray.pos, v0);
@@ -543,7 +541,7 @@ bool AabbAabbInclusive(cpu_aabb& a, cpu_aabb& b)
 
 bool ObbObb(cpu_obb& a, cpu_obb& b)
 {
-	constexpr float EPS = 1e-6f;
+	const float eps = 1e-6f;
 
 	// R[i][j] = dot(A.axis[i], B.axis[j])
 	float R[3][3], AbsR[3][3];
@@ -553,7 +551,7 @@ bool ObbObb(cpu_obb& a, cpu_obb& b)
 		for ( int j=0 ; j<3 ; ++j )
 		{
 			R[i][j] = a.axis[i].x * b.axis[j].x + a.axis[i].y * b.axis[j].y + a.axis[i].z * b.axis[j].z;
-			AbsR[i][j] = fabsf(R[i][j]) + EPS;
+			AbsR[i][j] = fabsf(R[i][j]) + eps;
 		}
 	}
 
@@ -653,7 +651,7 @@ XMFLOAT3 SphericalPoint(float r, float theta, float phi)
 	float ct = cosf(theta);
 	float sp = sinf(phi);
 	float cp = cosf(phi);
-	return XMFLOAT3(r * st * cp, r * ct, r * st * sp);
+	return XMFLOAT3(r*st*cp, r*ct, r*st*sp);
 }
 
 RECT ComputeAspectFitRect(int contentW, int contentH, int winW, int winH)
