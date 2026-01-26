@@ -295,14 +295,14 @@ void cpu_device::ClearSky(XMFLOAT3& groundColor, XMFLOAT3& skyColor)
 		return;
 
 	float grad = sqrtf(a*a + b*b);
-	if ( grad<1e-8f )
+	if ( grad<CPU_EPSILON )
 		return;
 
 	const float invGrad = 1.0f / grad;
 	const float invBand = 1.0f / bandPx;
 	const float limit   = bandPx * grad;
 
-	if ( fabsf(a)<1e-6f )
+	if ( fabsf(a)<CPU_EPSILON )
 	{
 		for ( int y=0 ; y<rt.height ; ++y )
 		{
@@ -354,8 +354,6 @@ void cpu_device::ClearSky(XMFLOAT3& groundColor, XMFLOAT3& skyColor)
 
 void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode, cpu_tile* pTile)
 {
-	const float eps = 1e-8f;
-
 	cpu_rt& rt = *GetRT();
 	cpu_material& material = pMaterial ? *pMaterial : m_defaultMaterial;
 	XMMATRIX matWorld = XMLoadFloat4x4(&pTransform->GetWorld());
@@ -387,7 +385,7 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			XMVECTOR clip = XMVector4Transform(world, matViewProj);
 			XMStoreFloat4(&vo[i].clipPos, clip);
 			float w = vo[i].clipPos.w;
-			float invW = fabsf(w)>eps ? (1.0f/w) : 0.0f;
+			float invW = fabsf(w)>CPU_EPSILON ? (1.0f/w) : 0.0f;
 
 			// World normal
 			XMVECTOR localNormal = XMLoadFloat3(&in.normal);
@@ -690,11 +688,10 @@ void cpu_device::OnWindowCallback(UINT message, WPARAM wParam, LPARAM lParam)
 bool cpu_device::ClipToScreen(cpu_draw& draw)
 {
 	cpu_rt& rt = *GetRT();
-	const float eps = 1e-8f;
 	for ( int i=0 ; i<3 ; ++i )
 	{
 		float w = draw.vo[i]->clipPos.w;
-		if ( w<eps )
+		if ( w<CPU_EPSILON )
 			return false;
 
 		// NDC (DirectX: z in [0..1])
@@ -757,7 +754,7 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 	float b31 = x1 - x3;
 	float c31 = x3 * y1 - x1 * y3;
 	float area = a12 * x3 + b12 * y3 + c12;
-	if ( fabsf(area)<1e-6f )
+	if ( fabsf(area)<CPU_EPSILON )
 		return;
 
 	float invArea = 1.0f / area;
@@ -939,8 +936,7 @@ bool cpu_device::WireframeClipLineNearPlane(XMFLOAT4& a, XMFLOAT4& b)
 			b = p;
 	}
 
-	// Encore une sécurité : éviter w trop petit
-	if ( a.w<=1e-6f && b.w<=1e-6f )
+	if ( a.w<CPU_EPSILON && b.w<CPU_EPSILON )
 		return false;
 
 	return true;
@@ -948,7 +944,7 @@ bool cpu_device::WireframeClipLineNearPlane(XMFLOAT4& a, XMFLOAT4& b)
 
 bool cpu_device::WireframeClipToScreen(const XMFLOAT4& c, float widthHalf, float heightHalf, XMFLOAT3& out)
 {
-	if ( c.w<=1e-6f )
+	if ( c.w<CPU_EPSILON )
 		return false;
 
 	float invW = 1.0f / c.w;

@@ -80,7 +80,7 @@ private:
 
 	// Camera
 	bool m_cullFrontCCW = false; // DirectX default
-	float m_cullAreaEpsilon = 1e-6f;
+	float m_cullAreaEpsilon = CPU_EPSILON;
 	cpu_camera m_defaultCamera;
 	cpu_camera* m_pCamera;
 

@@ -126,7 +126,7 @@ void App::OnUpdate()
 	m_pEarth->transform.AddYPR(-dt);
 
 	// Move rock
-	m_pMoon->transform.OrbitAroundAxis(m_pEarth->transform.pos, CPU_UP, 3.0f, time*2.0f);
+	m_pMoon->transform.OrbitAroundAxis(m_pEarth->transform.pos, CPU_VEC3_UP, 3.0f, time*2.0f);
 	m_pEmitter->pos = m_pMoon->transform.pos;
 	m_pEmitter->dir = m_pMoon->transform.dir;
 	m_pEmitter->dir.x = -m_pEmitter->dir.x; 

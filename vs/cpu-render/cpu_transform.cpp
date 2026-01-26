@@ -13,8 +13,8 @@ cpu_transform::cpu_transform()
 
 void cpu_transform::Identity()
 {
-	pos = CPU_ZERO;
-	sca = CPU_ONE;
+	pos = CPU_VEC3_ZERO;
+	sca = CPU_VEC3_ONE;
 	ResetRotation();
 }
 
@@ -202,7 +202,7 @@ void cpu_transform::LookAt(float x, float y, float z, const XMFLOAT3& up)
 	XMVECTOR vA = XMLoadFloat3(&pos);
 	XMVECTOR vB = XMVectorSet(x, y, z, 1.0f);
 	XMVECTOR vDir = XMVectorSubtract(vB, vA);
-	if ( XMVectorGetX(XMVector3LengthSq(vDir))<=CPU_EPSILON )
+	if ( XMVectorGetX(XMVector3LengthSq(vDir))<=CPU_ZERO )
 		return;
 	const XMMATRIX cam = XMMatrixTranspose(XMMatrixLookAtLH(XMVectorZero(), vDir, XMLoadFloat3(&up)));
 	XMStoreFloat4x4(&rot, cam);
@@ -212,7 +212,7 @@ void cpu_transform::LookAt(float x, float y, float z, const XMFLOAT3& up)
 void cpu_transform::LookTo(float ndx, float ndy, float ndz, const XMFLOAT3& up)
 {
 	XMVECTOR vDir = XMVectorSet(ndx, ndy, ndz, 0.0f);
-	if ( XMVectorGetX(XMVector3LengthSq(vDir))<=CPU_EPSILON )
+	if ( XMVectorGetX(XMVector3LengthSq(vDir))<=CPU_ZERO )
 		return;
 	XMMATRIX cam = XMMatrixTranspose(XMMatrixLookToLH(XMVectorZero(), vDir, XMLoadFloat3(&up)));
 	XMStoreFloat4x4(&rot, cam);

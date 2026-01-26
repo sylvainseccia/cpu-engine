@@ -11,8 +11,8 @@ cpu_particle_emitter::cpu_particle_emitter()
 	density = 1.0f;
 	spawnRadius = 0.05f;
 
-	pos = CPU_ZERO;
-	dir = CPU_UP;
+	pos = CPU_VEC3_ZERO;
+	dir = CPU_VEC3_UP;
 	colorMin = { 1.0f, 1.0f, 1.0f };
 	colorMax = { 1.0f, 1.0f, 1.0f };
 	durationMin = 0.5f;
@@ -39,7 +39,7 @@ void cpu_particle_emitter::Update(XMFLOAT4X4& matViewProj, int width, int height
 	XMStoreFloat4(&c4, cClip);
 
 	float area_px = 0.0f;
-	if ( c4.w>1e-6f )
+	if ( c4.w>CPU_EPSILON )
 	{
 		const float invWc = 1.0f / c4.w;
 		const float ndcCx = c4.x * invWc;
@@ -49,7 +49,7 @@ void cpu_particle_emitter::Update(XMFLOAT4X4& matViewProj, int width, int height
 		XMVECTOR rClip = XMVector4Transform(r, XMLoadFloat4x4(&matViewProj));
 		XMFLOAT4 r4;
 		XMStoreFloat4(&r4, rClip);
-		if ( r4.w>1e-6f )
+		if ( r4.w>CPU_EPSILON )
 		{
 			const float invWr = 1.0f / r4.w;
 			const float ndcRx = r4.x * invWr;

@@ -317,8 +317,6 @@ bool RayAabb(cpu_ray& ray, cpu_aabb& box, float& outTEnter, float& outTExit)
 
 bool RayObb(cpu_ray& ray, cpu_obb& box, XMFLOAT3* pOutHit, float* pOutT)
 {
-	const float eps = 1e-8f;
-
 	XMVECTOR C = XMLoadFloat3(&box.center);
 	XMVECTOR U = XMLoadFloat3(&box.axis[0]);
 	XMVECTOR V = XMLoadFloat3(&box.axis[1]);
@@ -344,7 +342,7 @@ bool RayObb(cpu_ray& ray, cpu_obb& box, XMFLOAT3* pOutHit, float* pOutT)
 
 	auto slab = [&](float o, float d, float e) -> bool
 	{
-		if ( fabsf(d)<eps )
+		if ( fabsf(d)<CPU_EPSILON )
 			return o>=-e && o<=e;
 
 		float invD = 1.0f / d;
@@ -460,12 +458,9 @@ bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT
 	const XMFLOAT3 pvec = Cross3(ray.dir, e2);
 	const float det = Dot3(e1, pvec);
 
-	// Culling / parallel check
-	const float eps = 1e-8f;
-
 	if ( cullBackFace )
 	{
-		if ( det<=eps )
+		if ( det<CPU_EPSILON )
 			return false; // backface ou parallèle
 		const XMFLOAT3 tvec = Sub3(ray.pos, v0);
 		const float u = Dot3(tvec, pvec);
@@ -498,7 +493,7 @@ bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT
 	}
 	else
 	{
-		if ( fabsf(det)<=eps )
+		if ( fabsf(det)<CPU_EPSILON )
 			return false; // parallel
 		const float invDet = 1.0f / det;
 
@@ -541,8 +536,6 @@ bool AabbAabbInclusive(cpu_aabb& a, cpu_aabb& b)
 
 bool ObbObb(cpu_obb& a, cpu_obb& b)
 {
-	const float eps = 1e-6f;
-
 	// R[i][j] = dot(A.axis[i], B.axis[j])
 	float R[3][3], AbsR[3][3];
 
@@ -551,7 +544,7 @@ bool ObbObb(cpu_obb& a, cpu_obb& b)
 		for ( int j=0 ; j<3 ; ++j )
 		{
 			R[i][j] = a.axis[i].x * b.axis[j].x + a.axis[i].y * b.axis[j].y + a.axis[i].z * b.axis[j].z;
-			AbsR[i][j] = fabsf(R[i][j]) + eps;
+			AbsR[i][j] = fabsf(R[i][j]) + CPU_EPSILON;
 		}
 	}
 

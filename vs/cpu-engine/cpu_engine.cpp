@@ -347,7 +347,7 @@ cpu_entity* cpu_engine::HitEntity(cpu_hit& hit, cpu_ray& ray)
 {
 	cpu_entity* pBestEntity = nullptr;
 	hit.dist = 0.0f;
-	hit.pt = CPU_ZERO;
+	hit.pt = CPU_VEC3_ZERO;
 
 	XMFLOAT3 ptL;
 	float tL;
@@ -680,32 +680,40 @@ void cpu_engine::Render_AssignParticleTile(int iTileForAssign)
 		float x = m_particleData.px[i];
 		float y = m_particleData.py[i];
 		float z = m_particleData.pz[i];
+
 		float cw = x*vp._14 + y*vp._24 + z*vp._34 + vp._44;
-		if ( cw<=1e-6f )
+		if ( cw<CPU_EPSILON )
 			continue;
-		float cx = x*vp._11 + y*vp._21 + z*vp._31 + vp._41;
-		float cy = x*vp._12 + y*vp._22 + z*vp._32 + vp._42;
-		float cz = x*vp._13 + y*vp._23 + z*vp._33 + vp._43;
 
 		const float invW = 1.0f / cw;
+
+		float cx = x*vp._11 + y*vp._21 + z*vp._31 + vp._41;
 		const float ndcX = cx * invW;
 		if ( ndcX<-1.0f || ndcX>1.0f )
 			continue;
+
+		float cy = x*vp._12 + y*vp._22 + z*vp._32 + vp._42;
 		const float ndcY = cy * invW;
 		if ( ndcY<-1.0f || ndcY>1.0f )
 			continue;
+
+		float cz = x*vp._13 + y*vp._23 + z*vp._33 + vp._43;
 		const float ndcZ = cz * invW;
 		if ( ndcZ<0.0f || ndcZ>1.0f )
 			continue;
 
 		const int sx = (int)((ndcX + 1.0f) * rt.widthHalf);
+		if ( sx<0 || sx>=rt.width )
+			continue;
+
 		const int sy = (int)((1.0f - ndcY) * rt.heightHalf);
-		if ( sx<0 || sy<0 || sx>=rt.width || sy>=rt.height )
+		if ( sy<0 || sy>=rt.height )
 			continue;
 
 		int iTile = (sy/m_tileHeight)*m_tileColCount + sx/m_tileWidth;
 		if ( iTile>=m_tileCount )
 			iTile = m_tileCount - 1;
+
 		m_particleData.tile[i] = iTile + 1;
 		m_particleData.sx[i] = (ui16)sx;
 		m_particleData.sy[i] = (ui16)sy;

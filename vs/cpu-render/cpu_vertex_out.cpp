@@ -27,8 +27,7 @@ void cpu_vertex_out::Lerp(const cpu_vertex_out& a, const cpu_vertex_out& b, floa
 	float u = uA + (uB - uA) * t;
 	float v = vA + (vB - vA) * t;
 	float w = clipPos.w;
-	const float eps = 1e-8f;
-	float invW = fabsf(w)>eps ? (1.0f/w) : 0.0f;
+	float invW = fabsf(w)>CPU_EPSILON ? (1.0f/w) : 0.0f;
 	uv.x = u * invW;
 	uv.y = v * invW;
 }

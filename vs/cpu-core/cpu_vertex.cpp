@@ -11,7 +11,7 @@ cpu_vertex::cpu_vertex()
 
 void cpu_vertex::Identity()
 {
-	pos = CPU_ZERO;
+	pos = CPU_VEC3_ZERO;
 	color = CPU_WHITE;
 	normal = { 0.0f, 0.0f, 1.0f };
 	uv = { 0.0f, 0.0f };
