@@ -56,13 +56,12 @@ void App::OnStart()
 	//cpuEngine.EnableBoxRender();
 
 	// Resources
-	m_font.Create(12);
+	m_font.Create(cpuDevice.GetHeight()<=512 ? 14 : 28);
 	m_textureBird.Load("bird_amiga.png");
 	m_textureEarth.Load("earth.png");
 	m_meshShip.CreateSpaceship();
 	m_meshMissile.CreateSphere(0.5f);
 	m_meshSphere.CreateSphere(2.0f, 12, 12);
-	//m_meshSphere.CreateSkyBox(5.0f);
 	m_rts[0] = cpuEngine.CreateRT();
 
 	// UI
