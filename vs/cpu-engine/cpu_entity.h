@@ -19,4 +19,7 @@ public:
 
 public:
 	cpu_entity();
+
+	void UpdateWorld(cpu_camera* pCamera, int width, int height);
+	void Clip(cpu_camera* pCamera, int* pStats = nullptr);
 };

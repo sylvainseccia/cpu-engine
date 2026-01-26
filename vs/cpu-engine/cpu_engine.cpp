@@ -601,57 +601,20 @@ void cpu_engine::Render_RecalculateMatrices()
 	cpu_rt& rt = *m_device.GetRT();
 	float width = (float)rt.width;
 	float height = (float)rt.height;
-
-	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
+	for ( int i=0 ; i<m_entityManager.count ; i++ )
 	{
-		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->dead || pEntity->pMesh==nullptr )
-			continue;
-
-		// World
-		XMMATRIX matWorld = XMLoadFloat4x4(&pEntity->transform.GetWorld());
-
-		// cpu_obb
-		pEntity->obb = pEntity->pMesh->aabb;
-		pEntity->obb.Transform(matWorld);
-
-		// cpu_aabb
-		pEntity->aabb = pEntity->obb;
-
-		// cpu_sphere
-		pEntity->sphere = pEntity->obb;
-
-		// Rectangle (screen)
-		XMMATRIX matWVP = matWorld;
-		matWVP *= XMLoadFloat4x4(&m_camera.matViewProj);
-		pEntity->pMesh->aabb.ToScreen(pEntity->box, matWVP, width, height);
-
-		// View
-		XMMATRIX matView = XMLoadFloat4x4(&m_camera.matView);
-		XMVECTOR pos = XMLoadFloat3(&pEntity->transform.pos);
-		pos = XMVector3TransformCoord(pos, matView);
-		XMStoreFloat3(&pEntity->view, pos);
+		cpu_entity* pEntity = m_entityManager[i];
+		pEntity->UpdateWorld(&m_camera, width, height);
 	}
 }
 
 void cpu_engine::Render_ApplyClipping()
 {
 	m_stats.clipEntityCount = 0;
-	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
+	for ( int i=0 ; i<m_entityManager.count ; i++ )
 	{
-		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->dead || pEntity->visible==false || pEntity->pMesh==nullptr )
-		{
-			pEntity->clipped = true;
-			continue;
-		}
-		if ( m_camera.frustum.Intersect(pEntity->sphere) )
-		{
-			pEntity->clipped = false;
-			continue;
-		}
-		pEntity->clipped = true;
-		m_stats.clipEntityCount++;
+		cpu_entity* pEntity = m_entityManager[i];
+		pEntity->Clip(&m_camera, &m_stats.clipEntityCount);
 	}
 }
 
