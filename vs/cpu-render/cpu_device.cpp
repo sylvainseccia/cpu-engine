@@ -387,7 +387,7 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			XMVECTOR clip = XMVector4Transform(world, matViewProj);
 			XMStoreFloat4(&vo[i].clipPos, clip);
 			float w = vo[i].clipPos.w;
-			vo[i].invW = fabsf(w)>eps ? (1.0f/w) : 0.0f;
+			float invW = fabsf(w)>eps ? (1.0f/w) : 0.0f;
 
 			// World normal
 			XMVECTOR localNormal = XMLoadFloat3(&in.normal);
@@ -406,8 +406,8 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			vo[i].intensity = ndotl + m_pLight->ambient;
 
 			// UV
-			vo[i].uv.x = in.uv.x * vo[i].invW;
-			vo[i].uv.y = in.uv.y * vo[i].invW;
+			vo[i].uv.x = in.uv.x * invW;
+			vo[i].uv.y = in.uv.y * invW;
 		}
 
 		// Clipping
@@ -426,115 +426,6 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 		}
 	}
 }
-
-/*
-void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode, cpu_tile* pTile)
-{
-	cpu_rt& rt = *GetRT();
-	cpu_material& material = pMaterial ? *pMaterial : m_defaultMaterial;
-	XMMATRIX matWorld = XMLoadFloat4x4(&pTransform->GetWorld());
-	XMMATRIX matNormal = XMMatrixTranspose(XMLoadFloat4x4(&pTransform->GetInvWorld()));
-	XMMATRIX matViewProj = XMLoadFloat4x4(&m_pCamera->matViewProj);
-	XMVECTOR lightDir = XMLoadFloat3(&m_pLight->dir);
-
-	cpu_draw draw;
-	bool safe;
-	XMFLOAT3 screen[3];
-	cpu_vertex_out vo[3];
-
-	for ( const cpu_triangle& triangle : pMesh->triangles )
-	{
-		// Verter shader
-		safe = true;
-		for ( int i=0 ; i<3 ; ++i )
-		{
-			// Vertex
-			const cpu_vertex& in = triangle.v[i];
-
-			// World pos
-			XMVECTOR loc = XMLoadFloat3(&in.pos);
-			loc = XMVectorSetW(loc, 1.0f);
-			XMVECTOR world = XMVector4Transform(loc, matWorld);
-			XMStoreFloat3(&vo[i].worldPos, world);
-
-			// Clip pos
-			XMVECTOR clip = XMVector4Transform(world, matViewProj);
-			XMStoreFloat4(&vo[i].clipPos, clip);
-
-			// World normal
-			XMVECTOR localNormal = XMLoadFloat3(&in.normal);
-			XMVECTOR worldNormal = XMVector3TransformNormal(localNormal, matNormal);
-			worldNormal = XMVector3Normalize(worldNormal);
-			XMStoreFloat3(&vo[i].worldNormal, worldNormal);
-
-			// Albedo
-			vo[i].albedo.x = cpu::Clamp(in.color.x * material.color.x);
-			vo[i].albedo.y = cpu::Clamp(in.color.y * material.color.y);
-			vo[i].albedo.z = cpu::Clamp(in.color.z * material.color.z);
-
-			// Intensity
-			float ndotl = XMVectorGetX(XMVector3Dot(worldNormal, lightDir));
-			ndotl = std::max(0.0f, ndotl);
-			vo[i].intensity = ndotl + m_pLight->ambient;
-
-			// UV
-#ifdef _DEBUG
-			vo[i].uvDebug = in.uv;
-#endif
-			vo[i].uv.x = in.uv.x;
-			vo[i].uv.y = in.uv.y;
-		}
-		//if ( safe==false )
-		//	continue;
-
-
-		for ( int i=0 ; i<3 ; ++i )
-		{
-			if ( vo[i].clipPos.w<=0.0f )
-			{
-				// QUE FAIRE ?
-			}
-
-			vo[i].invW = 1.0f / vo[i].clipPos.w;
-
-			// UV
-			vo[i].uv.x *= vo[i].invW;
-			vo[i].uv.y *= vo[i].invW;
-
-		}
-
-		// Screen-space
-		for ( int i=0 ; i<3 ; i++ )
-		{
-			// Screen pos
-			float ndcX = vo[i].clipPos.x * vo[i].invW;			// [-1,1]
-			float ndcY = vo[i].clipPos.y * vo[i].invW;			// [-1,1]
-			float ndcZ = vo[i].clipPos.z * vo[i].invW;			// [0,1]
-			//if ( ndcZ<0.0f || ndcZ>1.0f )
-			//{
-			//	safe = false;
-			//	break;
-			//}
-			screen[i].x = (ndcX + 1.0f) * rt.widthHalf;
-			screen[i].y = (1.0f - ndcY) * rt.heightHalf;
-			screen[i].z = cpu::Clamp(ndcZ);						// profondeur normalisée 0..1
-		}
-
-		// Culling
-		float area = (screen[1].x-screen[0].x) * (screen[2].y-screen[0].y) - (screen[1].y-screen[0].y) * (screen[2].x-screen[0].x);
-		bool isFront = m_cullFrontCCW ? (area>m_cullAreaEpsilon) : (area<-m_cullAreaEpsilon);
-		if ( isFront==false )
-			continue; // back-face or degenerated
-
-		// Pixel shader
-		draw.tri = screen;
-		draw.vo = vo;
-		draw.pMaterial = &material;
-		draw.pTile = pTile;
-		draw.depth = depthMode;
-		DrawTriangle(draw);
-	}
-}*/
 
 void cpu_device::DrawWireframeMesh(cpu_mesh* pMesh, FXMMATRIX matrix, cpu_tile* pTile)
 {
@@ -799,25 +690,18 @@ void cpu_device::OnWindowCallback(UINT message, WPARAM wParam, LPARAM lParam)
 bool cpu_device::ClipToScreen(cpu_draw& draw)
 {
 	cpu_rt& rt = *GetRT();
+	const float eps = 1e-8f;
 	for ( int i=0 ; i<3 ; ++i )
 	{
-		if ( draw.vo[i]->invW==0.0f )
+		float w = draw.vo[i]->clipPos.w;
+		if ( w<eps )
 			return false;
 
-		//float nx = draw.vo[i]->worldNormal.x;
-		//float ny = draw.vo[i]->worldNormal.y;
-		//float nz = draw.vo[i]->worldNormal.z;
-		//float l2 = nx*nx + ny*ny + nz*nz;
-		//if ( l2>1e-12f )
-		//{
-		//	float invL = 1.0f / sqrtf(l2);
-		//	draw.vo[i]->worldNormal = { nx*invL, ny*invL, nz*invL };
-		//}
-
 		// NDC (DirectX: z in [0..1])
-		float ndcX = draw.vo[i]->clipPos.x * draw.vo[i]->invW; // [-1,1]
-		float ndcY = draw.vo[i]->clipPos.y * draw.vo[i]->invW; // [-1,1]
-		float ndcZ = draw.vo[i]->clipPos.z * draw.vo[i]->invW; // [0,1]
+		float invW = 1.0f / w;
+		float ndcX = draw.vo[i]->clipPos.x * invW; // [-1,1]
+		float ndcY = draw.vo[i]->clipPos.y * invW; // [-1,1]
+		float ndcZ = draw.vo[i]->clipPos.z * invW; // [0,1]
 
 		draw.tri[i].x = (ndcX + 1.0f) * rt.widthHalf;
 		draw.tri[i].y = (1.0f - ndcY) * rt.heightHalf;
@@ -890,6 +774,16 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 	const float dE31dx = a31;
 	const float dE31dy = b31;
 
+	float invW0 = 0.0f;
+	float invW1 = 0.0f;
+	float invW2 = 0.0f;
+	if ( draw.pMaterial->pTexture )
+	{
+		invW0 = 1.0f / draw.vo[0]->clipPos.w;
+		invW1 = 1.0f / draw.vo[1]->clipPos.w;
+		invW2 = 1.0f / draw.vo[2]->clipPos.w;
+	}
+
 	const CPU_PS_FUNC func = draw.pMaterial->ps ? draw.pMaterial->ps : &PixelShader;
 	cpu_ps_io io;
 	io.pMaterial = draw.pMaterial;
@@ -957,7 +851,7 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			// UV (lerp)
 			if ( draw.pMaterial->pTexture )
 			{
-				float invW = w1*draw.vo[0]->invW + w2*draw.vo[1]->invW + w3*draw.vo[2]->invW;
+				float invW = w1*invW0 + w2*invW1 + w3*invW2;
 				io.p.uv.x = (w1*draw.vo[0]->uv.x + w2*draw.vo[1]->uv.x + w3*draw.vo[2]->uv.x) / invW;
 				io.p.uv.y = (w1*draw.vo[0]->uv.y + w2*draw.vo[1]->uv.y + w3*draw.vo[2]->uv.y) / invW;
 			}

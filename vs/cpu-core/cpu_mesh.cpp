@@ -16,6 +16,12 @@ void cpu_mesh::Clear()
 	aabb.Zero();
 }
 
+void cpu_mesh::AddMesh(cpu_mesh& mesh)
+{
+	for ( cpu_triangle& tri : mesh.triangles )
+		triangles.push_back(tri);
+}
+
 void cpu_mesh::AddTriangle(cpu_triangle& tri)
 {
 	triangles.push_back(tri);
@@ -59,6 +65,10 @@ void cpu_mesh::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLO
 	AddTriangle(a, b, c, auv, buv, cuv, color);
 	AddTriangle(a, c, d, auv, cuv, duv, color);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void cpu_mesh::Optimize()
 {
@@ -137,6 +147,10 @@ void cpu_mesh::CalculateBox()
 	radius = sqrtf(r2);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void cpu_mesh::CreatePlane(float width, float height, XMFLOAT3 color)
 {
 	Clear();
@@ -166,16 +180,41 @@ void cpu_mesh::CreateCube(float halfSize, XMFLOAT3 color)
 	XMFLOAT3 p5 = {  s, -s,  s };
 	XMFLOAT3 p6 = {  s,  s,  s };
 	XMFLOAT3 p7 = { -s,  s,  s };
-	XMFLOAT2 tl = { 0.0f, 0.0f }; // top-left
-	XMFLOAT2 tr = { 1.0f, 0.0f }; // top-right
-	XMFLOAT2 br = { 1.0f, 1.0f }; // bottom-right
-	XMFLOAT2 bl = { 0.0f, 1.0f }; // bottom-left
-	AddFace(p0, p1, p2, p3, bl, br, tr, tl, color);		// -Z (back)
-	AddFace(p4, p7, p6, p5, bl, tl, tr, br, color);		// +Z (front)
-	AddFace(p1, p5, p6, p2, bl, br, tr, tl, color);		// +X (droite)
-	AddFace(p4, p0, p3, p7, bl, br, tr, tl, color);		// -X (gauche)
-	AddFace(p3, p2, p6, p7, bl, br, tr, tl, color);		// +Y (haut)
-	AddFace(p4, p5, p1, p0, bl, br, tr, tl, color);		// -Y (bas)
+	XMFLOAT2 tl = { 0.0f, 0.0f };					// top-left
+	XMFLOAT2 tr = { 1.0f, 0.0f };					// top-right
+	XMFLOAT2 br = { 1.0f, 1.0f };					// bottom-right
+	XMFLOAT2 bl = { 0.0f, 1.0f };					// bottom-left
+	AddFace(p0, p1, p2, p3, bl, br, tr, tl, color);	// -Z (back)
+	AddFace(p4, p7, p6, p5, bl, tl, tr, br, color);	// +Z (front)
+	AddFace(p1, p5, p6, p2, bl, br, tr, tl, color);	// +X (droite)
+	AddFace(p4, p0, p3, p7, bl, br, tr, tl, color);	// -X (gauche)
+	AddFace(p3, p2, p6, p7, bl, br, tr, tl, color);	// +Y (haut)
+	AddFace(p4, p5, p1, p0, bl, br, tr, tl, color);	// -Y (bas)
+	Optimize();
+}
+
+void cpu_mesh::CreateSkyBox(float halfSize, XMFLOAT3 color)
+{
+	Clear();
+	const float s = halfSize;
+	XMFLOAT3 p0 = { -s, -s, -s };
+	XMFLOAT3 p1 = {  s, -s, -s };
+	XMFLOAT3 p2 = {  s,  s, -s };
+	XMFLOAT3 p3 = { -s,  s, -s };
+	XMFLOAT3 p4 = { -s, -s,  s };
+	XMFLOAT3 p5 = {  s, -s,  s };
+	XMFLOAT3 p6 = {  s,  s,  s };
+	XMFLOAT3 p7 = { -s,  s,  s };
+	XMFLOAT2 tl = { 0.0f, 0.0f };					// top-left
+	XMFLOAT2 tr = { 1.0f, 0.0f };					// top-right
+	XMFLOAT2 br = { 1.0f, 1.0f };					// bottom-right
+	XMFLOAT2 bl = { 0.0f, 1.0f };					// bottom-left
+	AddFace(p3, p2, p1, p0, tl, tr, br, bl, color); // -Z
+	AddFace(p5, p6, p7, p4, br, tr, tl, bl, color); // +Z
+	AddFace(p2, p6, p5, p1, tl, tr, br, bl, color); // +X
+	AddFace(p7, p3, p0, p4, tl, tr, br, bl, color); // -X
+	AddFace(p7, p6, p2, p3, tl, tr, br, bl, color); // +Y
+	AddFace(p0, p1, p5, p4, tl, tr, br, bl, color); // -Y
 	Optimize();
 }
 

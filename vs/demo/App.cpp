@@ -62,6 +62,7 @@ void App::OnStart()
 	m_meshShip.CreateSpaceship();
 	m_meshMissile.CreateSphere(0.5f);
 	m_meshSphere.CreateSphere(2.0f, 12, 12);
+	//m_meshSphere.CreateSkyBox(5.0f);
 	m_rts[0] = cpuEngine.CreateRT();
 
 	// UI

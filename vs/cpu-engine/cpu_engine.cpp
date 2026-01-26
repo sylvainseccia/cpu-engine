@@ -374,9 +374,8 @@ cpu_entity* cpu_engine::HitEntity(cpu_hit& hit, cpu_ray& ray)
 		cpu_ray rayL;
 		ray.ToLocal(rayL, invWorld);
 
-		for ( int i=0 ; i<pEntity->pMesh->triangles.size() ; i++ )
+		for ( cpu_triangle& tri : pEntity->pMesh->triangles )
 		{
-			cpu_triangle& tri = pEntity->pMesh->triangles[i];
 			if ( cpu::RayTriangle(rayL, tri, ptL, &tL) )
 			{
 				XMVECTOR pL = XMLoadFloat3(&ptL);
