@@ -252,6 +252,56 @@ void cpu_mesh::CreateCircle(float radius, int count, XMFLOAT3 color)
 	Optimize();
 }
 
+void cpu_mesh::CreateCylinder(float halfHeight, float radius, int count, bool top, bool bottom, XMFLOAT3 color)
+{
+	if ( count<3 )
+		return;
+
+	Clear();
+	float radius2 = radius * 2.0f;
+	float step = XM_2PI / count;
+	float angle = 0.0f;
+	XMFLOAT3 a1, b1, c1, a2, b2, c2;
+	a1 = b1 = c1 = a2 = b2 = c2 = {};
+	a1.y = b1.y = c1.y = halfHeight;
+	a2.y = b2.y = c2.y = -halfHeight;
+	XMFLOAT2 at, bt, ct;
+	at.x = 0.5f;
+	at.y = 0.5f;
+	for ( int i=0 ; i<count ; i++ )
+	{
+		b1.x = cosf(angle) * radius;
+		b1.z = sinf(angle) * radius;
+		c1.x = cosf(angle+step) * radius;
+		c1.z = sinf(angle+step) * radius;
+		bt.x = 0.5f + (b1.x / radius2);
+		bt.y = 0.5f - (b1.z / radius2);
+		ct.x = 0.5f + (c1.x / radius2);
+		ct.y = 0.5f - (c1.z / radius2);
+		if ( top )
+			AddTriangle(a1, b1, c1, at, bt, ct, color);
+		
+		b2.x = cosf(angle) * radius;
+		b2.z = sinf(angle) * radius;
+		c2.x = cosf(angle+step) * radius;
+		c2.z = sinf(angle+step) * radius;
+		bt.x = 0.5f + (b2.x / radius2);
+		bt.y = 0.5f - (b2.z / radius2);
+		ct.x = 0.5f + (c2.x / radius2);
+		ct.y = 0.5f - (c2.z / radius2);
+		if ( bottom )
+			AddTriangle(a2, c2, b2, at, ct, bt, color);
+
+		XMFLOAT2 bt2 = { bt.x, 1.0f };
+		XMFLOAT2 ct2 = { ct.x, 1.0f };
+		AddTriangle(b1, b2, c1, bt, bt2, ct, color);
+		AddTriangle(c1, b2, c2, ct, bt2, ct2, color);
+
+		angle += step;
+	}
+	Optimize();
+}
+
 void cpu_mesh::CreateSphere(float radius, int stacks, int slices, XMFLOAT3 color1, XMFLOAT3 color2)
 {
 	Clear();
