@@ -12,20 +12,18 @@ void Free()
 	CPU_DELPTR(g_pBlurDv);
 }
 
-void AlphaBlend(
-	const byte* src, int srcW, int srcH,
-	byte* dst, int dstW, int dstH,
-	int srcX, int srcY,
-	int dstX, int dstY,
-	int blitW, int blitH)
+void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH)
 {
-	if ( src==nullptr || dst==nullptr || srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) return;
-	if ( blitW <= 0 || blitH <= 0 ) return;
+	if ( src==nullptr || dst==nullptr || srcW<=0 || srcH<=0 || dstW<=0 || dstH<=0 )
+		return;
+	if ( blitW<=0 || blitH<=0 )
+		return;
 
 	// Clip
 	int w = blitW, h = blitH;
 	clip_blit_rect(srcW, srcH, dstW, dstH, srcX, srcY, dstX, dstY, w, h);
-	if (w <= 0 || h <= 0) return;
+	if ( w<=0 || h<=0 )
+		return;
 
 	const int srcPitch = srcW * 4;
 	const int dstPitch = dstW * 4;
@@ -39,7 +37,7 @@ void AlphaBlend(
 	// SSE2 path: process 4 pixels (16 bytes) per iter. We use SSSE3 shuffle if available would help,
 	// but to keep SSE2-only we do scalar alpha checks and SSE2 math on unpacked bytes.
 	// For speed, we keep it simple: SSE2 for math, scalar for alpha replication.
-	for (int y = 0; y < h; ++y)
+	for ( int y=0 ; y<h ; ++y )
 	{
 		const byte* sRow = src + (srcY + y) * srcPitch + srcX * 4;
 		byte* dRow = dst + (dstY + y) * dstPitch + dstX * 4;
@@ -55,7 +53,7 @@ void AlphaBlend(
 
 			// Quick alpha=255 fast path (scalar check 4 bytes)
 			const byte* sa = sRow + xBytes + 3;
-			if (sa[0] == 255 && sa[4] == 255 && sa[8] == 255 && sa[12] == 255)
+			if ( sa[0]==255 && sa[4]==255 && sa[8]==255 && sa[12]==255 )
 			{
 				_mm_storeu_si128((__m128i*)(dRow + xBytes), s8);
 				continue;
@@ -98,7 +96,7 @@ void AlphaBlend(
 		}
 
 		// Tail scalar
-		for (; xBytes < rowBytes; xBytes += 4)
+		for ( ; xBytes<rowBytes ; xBytes+=4 )
 		{
 			const byte* sp = sRow + xBytes;
 			byte* dp = dRow + xBytes;
@@ -119,12 +117,10 @@ void AlphaBlend(
 // Premultiply RGBA8 in-place (or src->dst) : RGB = RGB * A / 255, A unchanged.
 // Reuses helper(s): div255_epu16 / div255_epu16_sse2 / div255_u32 from previous code.
 // Format: RGBA8 tightly packed (pitch = width*4). Processes full surface (no clipping here).
-
-void Premultiply(
-	const byte* src, byte* dst,
-	int width, int height)
+void Premultiply(const byte* src, byte* dst, int width, int height)
 {
-	if (!src || !dst || width <= 0 || height <= 0) return;
+	if ( src==nullptr || dst==nullptr || width<=0 || height<=0 )
+		return;
 
 	const int bytes = width * height * 4;
 
@@ -173,17 +169,15 @@ void Premultiply(
 		__m256i premHi = div255_epu16(mulHi);
 
 		// Restore alpha lanes from original (alpha must remain unchanged)
-		premLo = _mm256_or_si256(_mm256_and_si256(alphaMask16, lo),
-								 _mm256_andnot_si256(alphaMask16, premLo));
-		premHi = _mm256_or_si256(_mm256_and_si256(alphaMask16, hi),
-								 _mm256_andnot_si256(alphaMask16, premHi));
+		premLo = _mm256_or_si256(_mm256_and_si256(alphaMask16, lo), _mm256_andnot_si256(alphaMask16, premLo));
+		premHi = _mm256_or_si256(_mm256_and_si256(alphaMask16, hi), _mm256_andnot_si256(alphaMask16, premHi));
 
 		__m256i out8 = _mm256_packus_epi16(premLo, premHi);
 		_mm256_storeu_si256((__m256i*)(dst + i), out8);
 	}
 
 	// Tail scalar
-	for (; i < bytes; i += 4)
+	for ( ; i<bytes ; i+=4 )
 	{
 		uint32_t r = src[i+0], g = src[i+1], b = src[i+2], a = src[i+3];
 		dst[i+3] = (byte)a;
@@ -210,7 +204,7 @@ void Premultiply(
 	const __m128i zero = _mm_setzero_si128();
 
 	int i = 0;
-	for (; i + 16 <= bytes; i += 16) // 4 pixels
+	for ( ; i+16<=bytes ; i+=16 ) // 4 pixels
 	{
 		__m128i s8 = _mm_loadu_si128((const __m128i*)(src + i));
 
@@ -249,7 +243,7 @@ void Premultiply(
 	}
 
 	// Tail scalar
-	for (; i < bytes; i += 4)
+	for ( ; i<bytes ; i+=4 )
 	{
 		uint32_t r = src[i+0], g = src[i+1], b = src[i+2], a = src[i+3];
 		dst[i+3] = (byte)a;
@@ -273,16 +267,16 @@ void Premultiply(
 #endif
 
 	// Scalar fallback
-	for (int i = 0; i < bytes; i += 4)
+	for ( int i=0 ; i<bytes ; i+=4 )
 	{
 		uint32_t r = src[i+0], g = src[i+1], b = src[i+2], a = src[i+3];
 		dst[i+3] = (byte)a;
 
-		if (a == 255)
+		if ( a==255 )
 		{
 			dst[i+0] = (byte)r; dst[i+1] = (byte)g; dst[i+2] = (byte)b;
 		}
-		else if (a == 0)
+		else if ( a==0 )
 		{
 			dst[i+0] = dst[i+1] = dst[i+2] = 0;
 		}
@@ -295,7 +289,6 @@ void Premultiply(
 	}
 }
 
-
 // Unpremultiply RGBA8: RGB = RGB * 255 / A, A unchanged.
 // Input must be RGBA8 *premultiplied* (RGB already multiplied by A/255).
 // Output is RGBA8 *straight alpha*.
@@ -306,11 +299,10 @@ void Premultiply(
 // This implementation is nevertheless fast in practice thanks to block fast-paths
 // (all A==255 => memcpy; all A==0 => zero) and a LUT for the division.
 
-void Unpremultiply(
-	const byte* src, byte* dst,
-	int width, int height)
+void Unpremultiply(const byte* src, byte* dst, int width, int height)
 {
-	if (!src || !dst || width <= 0 || height <= 0) return;
+	if ( src==nullptr || dst==nullptr || width<=0 || height<=0 )
+		return;
 
 	const int pixels = width * height;
 	const int bytes  = pixels * 4;
@@ -319,10 +311,10 @@ void Unpremultiply(
 	// rgb_out = (rgb_premul * scale16[a] + 0x8000) >> 16
 	static uint32_t scale16[256];
 	static bool inited = false;
-	if (!inited)
+	if ( inited==false )
 	{
 		scale16[0] = 0;
-		for (int a = 1; a < 256; ++a)
+		for ( int a=1 ; a<256 ; ++a )
 			scale16[a] = (uint32_t)(((255u << 16) + (uint32_t)a / 2u) / (uint32_t)a);
 		inited = true;
 	}
@@ -344,7 +336,7 @@ void Unpremultiply(
 		}
 
 		// Check all-0 quickly
-		if (a[0]==0 && a[4]==0 && a[8]==0 && a[12]==0 && a[16]==0 && a[20]==0 && a[24]==0 && a[28]==0)
+		if ( a[0]==0 && a[4]==0 && a[8]==0 && a[12]==0 && a[16]==0 && a[20]==0 && a[24]==0 && a[28]==0 )
 		{
 			// Fully transparent => RGB must be 0, alpha remains 0
 			// We can just zero 32 bytes.
@@ -353,7 +345,7 @@ void Unpremultiply(
 		}
 
 		// Mixed alpha: do 8 scalar pixels (still decent; LUT avoids division)
-		for (int k = 0; k < 32; k += 4)
+		for ( int k=0 ; k<32 ; k+=4 )
 		{
 			const byte* sp = src + i + k;
 			byte* dp = dst + i + k;
@@ -384,7 +376,7 @@ void Unpremultiply(
 	}
 
 	// Tail
-	for (; i < bytes; i += 4)
+	for ( ; i<bytes ; i+=4 )
 	{
 		uint32_t r = src[i+0], g = src[i+1], b = src[i+2], A = src[i+3];
 		dst[i+3] = (byte)A;
@@ -404,22 +396,22 @@ void Unpremultiply(
 
 #if BLIT_SSE2
 	int i = 0;
-	for (; i + 16 <= bytes; i += 16) // 4 pixels
+	for ( ; i+16<=bytes ; i+=16 ) // 4 pixels
 	{
 		const byte* a = src + i + 3;
 
-		if (a[0]==255 && a[4]==255 && a[8]==255 && a[12]==255)
+		if ( a[0]==255 && a[4]==255 && a[8]==255 && a[12]==255 )
 		{
 			std::memcpy(dst + i, src + i, 16);
 			continue;
 		}
-		if (a[0]==0 && a[4]==0 && a[8]==0 && a[12]==0)
+		if ( a[0]==0 && a[4]==0 && a[8]==0 && a[12]==0 )
 		{
 			std::memset(dst + i, 0, 16);
 			continue;
 		}
 
-		for (int k = 0; k < 16; k += 4)
+		for ( int k=0 ; k<16 ; k+=4 )
 		{
 			const byte* sp = src + i + k;
 			byte* dp = dst + i + k;
@@ -427,11 +419,11 @@ void Unpremultiply(
 			uint32_t r = sp[0], g = sp[1], b = sp[2], A = sp[3];
 			dp[3] = (byte)A;
 
-			if (A == 0)
+			if ( A==0 )
 			{
 				dp[0] = dp[1] = dp[2] = 0;
 			}
-			else if (A == 255)
+			else if ( A==255 )
 			{
 				dp[0] = (byte)r; dp[1] = (byte)g; dp[2] = (byte)b;
 			}
@@ -445,13 +437,13 @@ void Unpremultiply(
 		}
 	}
 
-	for (; i < bytes; i += 4)
+	for ( ; i<bytes ; i+=4 )
 	{
 		uint32_t r = src[i+0], g = src[i+1], b = src[i+2], A = src[i+3];
 		dst[i+3] = (byte)A;
 
-		if (A == 0) { dst[i+0]=dst[i+1]=dst[i+2]=0; }
-		else if (A == 255) { dst[i+0]=(byte)r; dst[i+1]=(byte)g; dst[i+2]=(byte)b; }
+		if ( A==0 ) { dst[i+0]=dst[i+1]=dst[i+2]=0; }
+		else if ( A==255 ) { dst[i+0]=(byte)r; dst[i+1]=(byte)g; dst[i+2]=(byte)b; }
 		else
 		{
 			const uint32_t s = scale16[A];
@@ -464,16 +456,16 @@ void Unpremultiply(
 #endif
 
 	// Scalar fallback
-	for (int i = 0; i < bytes; i += 4)
+	for ( int i=0 ; i<bytes ; i+=4 )
 	{
 		uint32_t r = src[i+0], g = src[i+1], b = src[i+2], A = src[i+3];
 		dst[i+3] = (byte)A;
 
-		if (A == 0)
+		if ( A==0 )
 		{
 			dst[i+0] = dst[i+1] = dst[i+2] = 0;
 		}
-		else if (A == 255)
+		else if ( A==255 )
 		{
 			dst[i+0] = (byte)r; dst[i+1] = (byte)g; dst[i+2] = (byte)b;
 		}
@@ -799,7 +791,7 @@ void ToAmigaPalette(byte* buffer, int width, int height)
             q[0] = (b4 << 4) | b4;
             q[1] = (g4 << 4) | g4;
             q[2] = (r4 << 4) | r4;
-            // alpha inchangé
+            // same alpha
         }
     }
 }

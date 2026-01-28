@@ -129,6 +129,7 @@ void cpu_engine::Run()
 	// Reset
 	cpuTime.Reset();
 	cpuInput.Reset();
+	cpuInput.SetWindow(&m_window);
 
 	// Start
 	m_callback.onStart.Call();
@@ -153,6 +154,9 @@ void cpu_engine::Run()
 	// End
 	Update_Purge();
 	m_callback.onExit.Call();
+
+	// Input
+	cpuInput.Reset();
 
 	// Threads
 	for ( int i=0 ; i<m_threadCount ; i++ )

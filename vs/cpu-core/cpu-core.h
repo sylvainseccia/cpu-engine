@@ -74,6 +74,7 @@ struct cpu_aabb;
 struct cpu_obb;
 struct cpu_triangle;
 struct cpu_ray;
+class cpu_window;
 
 // Types
 using i16								= __int16;

@@ -13,6 +13,7 @@ private:
 
 private:
 	byte keys[256];
+	cpu_window* pWindow;
 
 public:
 	static cpu_input& GetInstance();
@@ -20,6 +21,7 @@ public:
 	void Update();
 
 	void Reset();
+	void SetWindow(cpu_window* pWnd);
 	bool IsKey(int key);
 	bool IsKeyDown(int key);
 	bool IsKeyUp(int key);

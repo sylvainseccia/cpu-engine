@@ -18,6 +18,7 @@ public:
 	HWND GetHWND() { return m_hWnd; }
 	int GetWidth() { return m_width; }
 	int GetHeight() { return m_height; }
+	bool HasFocus() { return m_hWnd && GetForegroundWindow()==m_hWnd; }
 
 	void Show();
 	bool Update();
