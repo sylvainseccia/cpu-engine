@@ -227,7 +227,8 @@ void App::OnRender(int pass)
 				info += CPU_STR(pEntity->index).c_str();
 			}
 
-			cpuDevice.DrawText(&m_font, info.c_str(), (int)(cpuDevice.GetWidth()*0.5f), 10, CPU_TEXT_CENTER);
+			XMFLOAT3 tint = { 1.0f, 1.0f, 0.8f };
+			cpuDevice.DrawText(&m_font, info.c_str(), (int)(cpuDevice.GetWidth()*0.5f), 10, CPU_TEXT_CENTER, &tint);
 			break;
 		}
 	}

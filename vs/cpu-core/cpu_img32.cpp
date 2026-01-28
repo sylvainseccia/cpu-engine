@@ -12,7 +12,7 @@ void Free()
 	CPU_DELPTR(g_pBlurDv);
 }
 
-void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH)
+void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH, XMFLOAT3* pTint)
 {
 	if ( src==nullptr || dst==nullptr || srcW<=0 || srcH<=0 || dstW<=0 || dstH<=0 )
 		return;
@@ -34,6 +34,26 @@ void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int ds
 	const __m128i zero = _mm_setzero_si128();
 	const __m128i v255 = _mm_set1_epi16(255);
 
+	__m128i tintLo;
+	__m128i tintHi;
+	ui16 tr = 0;
+	ui16 tg = 0;
+	ui16 tb = 0;
+	if ( pTint )
+	{
+		auto f2u8 = [](float v) -> ui16
+		{
+			if ( v<0.0f ) v = 0.0f;
+			if ( v>1.0f ) v = 1.0f;
+			return (ui16)(v*255.f+0.5f);
+		};
+		tr = f2u8(pTint->z);
+		tg = f2u8(pTint->y);
+		tb = f2u8(pTint->x);
+		tintLo = _mm_setr_epi16((short)tr,(short)tg,(short)tb,(short)255, (short)tr,(short)tg,(short)tb,(short)255);
+		tintHi = _mm_setr_epi16((short)tr,(short)tg,(short)tb,(short)255, (short)tr,(short)tg,(short)tb,(short)255);
+	}
+
 	// SSE2 path: process 4 pixels (16 bytes) per iter. We use SSSE3 shuffle if available would help,
 	// but to keep SSE2-only we do scalar alpha checks and SSE2 math on unpacked bytes.
 	// For speed, we keep it simple: SSE2 for math, scalar for alpha replication.
@@ -45,7 +65,7 @@ void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int ds
 		const int rowBytes = w * 4;
 		int xBytes = 0;
 
-		for (; xBytes + 16 <= rowBytes; xBytes += 16)
+		for ( ; xBytes+16<=rowBytes ; xBytes+=16 )
 		{
 			// Load 4 pixels
 			__m128i s8 = _mm_loadu_si128((const __m128i*)(sRow + xBytes));
@@ -53,7 +73,7 @@ void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int ds
 
 			// Quick alpha=255 fast path (scalar check 4 bytes)
 			const byte* sa = sRow + xBytes + 3;
-			if ( sa[0]==255 && sa[4]==255 && sa[8]==255 && sa[12]==255 )
+			if ( sa[0]==255 && sa[4]==255 && sa[8]==255 && sa[12]==255 && pTint==nullptr )
 			{
 				_mm_storeu_si128((__m128i*)(dRow + xBytes), s8);
 				continue;
@@ -65,13 +85,21 @@ void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int ds
 			__m128i dLo = _mm_unpacklo_epi8(d8, zero);
 			__m128i dHi = _mm_unpackhi_epi8(d8, zero);
 
+			if ( pTint )
+			{
+				__m128i sMulLo = _mm_mullo_epi16(sLo, tintLo);
+				__m128i sMulHi = _mm_mullo_epi16(sHi, tintHi);
+				sLo = div255_epu16_sse2(sMulLo);
+				sHi = div255_epu16_sse2(sMulHi);
+			}
+
 			// Build invA vectors (u16 lanes) for 2 pixels per half (SSE2, so do scalar replication)
 			// Layout sLo lanes: [R0,G0,B0,A0,R1,G1,B1,A1]
 			// Need invA replicated to 4 lanes per pixel.
-			uint16_t a0 = (uint16_t)(sRow[xBytes + 3]);
-			uint16_t a1 = (uint16_t)(sRow[xBytes + 7]);
-			uint16_t a2 = (uint16_t)(sRow[xBytes + 11]);
-			uint16_t a3 = (uint16_t)(sRow[xBytes + 15]);
+			ui16 a0 = (ui16)(sRow[xBytes + 3]);
+			ui16 a1 = (ui16)(sRow[xBytes + 7]);
+			ui16 a2 = (ui16)(sRow[xBytes + 11]);
+			ui16 a3 = (ui16)(sRow[xBytes + 15]);
 
 			__m128i invLo = _mm_setr_epi16(
 				(short)(255 - a0),(short)(255 - a0),(short)(255 - a0),(short)(255 - a0),
@@ -101,10 +129,17 @@ void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int ds
 			const byte* sp = sRow + xBytes;
 			byte* dp = dRow + xBytes;
 
-			uint32_t sr = sp[0], sg = sp[1], sb = sp[2], sa = sp[3];
-			uint32_t dr = dp[0], dg = dp[1], db = dp[2], da = dp[3];
+			ui32 sr = sp[0], sg = sp[1], sb = sp[2], sa = sp[3];
+			ui32 dr = dp[0], dg = dp[1], db = dp[2], da = dp[3];
 
-			uint32_t invA = 255u - sa;
+			if ( pTint )
+			{
+				sr = div255_u32(sr * tr);
+				sg = div255_u32(sg * tg);
+				sb = div255_u32(sb * tb);
+			}
+
+			ui32 invA = 255u - sa;
 
 			dp[0] = (byte)std::min(255u, sr + div255_u32(dr * invA));
 			dp[1] = (byte)std::min(255u, sg + div255_u32(dg * invA));
@@ -690,110 +725,110 @@ void Blur(byte* img, int width, int height, int radius)
 
 void ToAmigaPalette(byte* buffer, int width, int height)
 {
-    if (!buffer || width <= 0 || height <= 0) return;
+	if (!buffer || width <= 0 || height <= 0) return;
 
-    // Dithers préfabriqués pour 4 pixels (16 bytes BGRA BGRA BGRA BGRA)
-    // dd appliqué à B,G,R ; A reste 0.
-    alignas(16) static const unsigned char D_EVENY_XEVEN[16] = {
-        0,0,0,0,   8,8,8,0,   0,0,0,0,   8,8,8,0
-    };
-    alignas(16) static const unsigned char D_EVENY_XODD[16] = {
-        8,8,8,0,   0,0,0,0,   8,8,8,0,   0,0,0,0
-    };
-    alignas(16) static const unsigned char D_ODDY_XEVEN[16] = {
-        12,12,12,0,  4,4,4,0,  12,12,12,0,  4,4,4,0
-    };
-    alignas(16) static const unsigned char D_ODDY_XODD[16] = {
-        4,4,4,0,   12,12,12,0,  4,4,4,0,   12,12,12,0
-    };
+	// Dithers préfabriqués pour 4 pixels (16 bytes BGRA BGRA BGRA BGRA)
+	// dd appliqué à B,G,R ; A reste 0.
+	alignas(16) static const unsigned char D_EVENY_XEVEN[16] = {
+		0,0,0,0,   8,8,8,0,   0,0,0,0,   8,8,8,0
+	};
+	alignas(16) static const unsigned char D_EVENY_XODD[16] = {
+		8,8,8,0,   0,0,0,0,   8,8,8,0,   0,0,0,0
+	};
+	alignas(16) static const unsigned char D_ODDY_XEVEN[16] = {
+		12,12,12,0,  4,4,4,0,  12,12,12,0,  4,4,4,0
+	};
+	alignas(16) static const unsigned char D_ODDY_XODD[16] = {
+		4,4,4,0,   12,12,12,0,  4,4,4,0,   12,12,12,0
+	};
 
-    const __m128i mask_alpha = _mm_set1_epi32(0xFF000000);
-    const __m128i mask_rgb   = _mm_set1_epi32(0x00FFFFFF);
-    const __m128i zero       = _mm_setzero_si128();
+	const __m128i mask_alpha = _mm_set1_epi32(0xFF000000);
+	const __m128i mask_rgb   = _mm_set1_epi32(0x00FFFFFF);
+	const __m128i zero       = _mm_setzero_si128();
 
-    const __m128i d_even_xeven = _mm_load_si128(reinterpret_cast<const __m128i*>(D_EVENY_XEVEN));
-    const __m128i d_even_xodd  = _mm_load_si128(reinterpret_cast<const __m128i*>(D_EVENY_XODD));
-    const __m128i d_odd_xeven  = _mm_load_si128(reinterpret_cast<const __m128i*>(D_ODDY_XEVEN));
-    const __m128i d_odd_xodd   = _mm_load_si128(reinterpret_cast<const __m128i*>(D_ODDY_XODD));
+	const __m128i d_even_xeven = _mm_load_si128(reinterpret_cast<const __m128i*>(D_EVENY_XEVEN));
+	const __m128i d_even_xodd  = _mm_load_si128(reinterpret_cast<const __m128i*>(D_EVENY_XODD));
+	const __m128i d_odd_xeven  = _mm_load_si128(reinterpret_cast<const __m128i*>(D_ODDY_XEVEN));
+	const __m128i d_odd_xodd   = _mm_load_si128(reinterpret_cast<const __m128i*>(D_ODDY_XODD));
 
-    const int strideBytes = width * 4;
+	const int strideBytes = width * 4;
 
-    for (int y = 0; y < height; ++y)
-    {
-        unsigned char* row = buffer + y * strideBytes;
+	for (int y = 0; y < height; ++y)
+	{
+		unsigned char* row = buffer + y * strideBytes;
 
-        // Choix des deux motifs selon la parité de y
-        const bool yOdd = (y & 1) != 0;
-        const __m128i d_xeven = yOdd ? d_odd_xeven : d_even_xeven;
-        const __m128i d_xodd  = yOdd ? d_odd_xodd  : d_even_xodd;
+		// Choix des deux motifs selon la parité de y
+		const bool yOdd = (y & 1) != 0;
+		const __m128i d_xeven = yOdd ? d_odd_xeven : d_even_xeven;
+		const __m128i d_xodd  = yOdd ? d_odd_xodd  : d_even_xodd;
 
-        int x = 0;
+		int x = 0;
 
-        // SIMD par blocs de 4 pixels
-        const int simdWidth = width & ~3; // multiple de 4
-        for (; x < simdWidth; x += 4)
-        {
-            unsigned char* p = row + x * 4;
+		// SIMD par blocs de 4 pixels
+		const int simdWidth = width & ~3; // multiple de 4
+		for (; x < simdWidth; x += 4)
+		{
+			unsigned char* p = row + x * 4;
 
-            __m128i px = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+			__m128i px = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
 
-            // Extraire alpha
-            __m128i alpha = _mm_and_si128(px, mask_alpha);
+			// Extraire alpha
+			__m128i alpha = _mm_and_si128(px, mask_alpha);
 
-            // Dither correct selon parité de x (début de bloc)
-            const __m128i d = (x & 1) ? d_xodd : d_xeven;
+			// Dither correct selon parité de x (début de bloc)
+			const __m128i d = (x & 1) ? d_xodd : d_xeven;
 
-            // Ajouter dithering uniquement sur RGB
-            __m128i rgb = _mm_and_si128(px, mask_rgb);
-            rgb = _mm_adds_epu8(rgb, d);
+			// Ajouter dithering uniquement sur RGB
+			__m128i rgb = _mm_and_si128(px, mask_rgb);
+			rgb = _mm_adds_epu8(rgb, d);
 
-            // Quantification 8->4->8 SANS mélange de canaux :
-            // unpack bytes->u16, shift, replicate, pack
-            __m128i lo = _mm_unpacklo_epi8(rgb, zero);
-            __m128i hi = _mm_unpackhi_epi8(rgb, zero);
+			// Quantification 8->4->8 SANS mélange de canaux :
+			// unpack bytes->u16, shift, replicate, pack
+			__m128i lo = _mm_unpacklo_epi8(rgb, zero);
+			__m128i hi = _mm_unpackhi_epi8(rgb, zero);
 
-            lo = _mm_srli_epi16(lo, 4);
-            hi = _mm_srli_epi16(hi, 4);
+			lo = _mm_srli_epi16(lo, 4);
+			hi = _mm_srli_epi16(hi, 4);
 
-            lo = _mm_or_si128(_mm_slli_epi16(lo, 4), lo);
-            hi = _mm_or_si128(_mm_slli_epi16(hi, 4), hi);
+			lo = _mm_or_si128(_mm_slli_epi16(lo, 4), lo);
+			hi = _mm_or_si128(_mm_slli_epi16(hi, 4), hi);
 
-            __m128i rgb8 = _mm_packus_epi16(lo, hi);
+			__m128i rgb8 = _mm_packus_epi16(lo, hi);
 
-            // Recombiner avec alpha original
-            __m128i out = _mm_or_si128(_mm_and_si128(rgb8, mask_rgb), alpha);
+			// Recombiner avec alpha original
+			__m128i out = _mm_or_si128(_mm_and_si128(rgb8, mask_rgb), alpha);
 
-            _mm_storeu_si128(reinterpret_cast<__m128i*>(p), out);
-        }
+			_mm_storeu_si128(reinterpret_cast<__m128i*>(p), out);
+		}
 
-        // Reste scalaire (0..3 pixels) en fin de ligne
-        for (; x < width; ++x)
-        {
-            unsigned char* q = row + x * 4;
+		// Reste scalaire (0..3 pixels) en fin de ligne
+		for (; x < width; ++x)
+		{
+			unsigned char* q = row + x * 4;
 
-            unsigned char b = q[0];
-            unsigned char g = q[1];
-            unsigned char r = q[2];
+			unsigned char b = q[0];
+			unsigned char g = q[1];
+			unsigned char r = q[2];
 
-            // vrai 2x2 : index = (x&1) + 2*(y&1)
-            static const unsigned char d2x2[4] = { 0, 8, 12, 4 };
-            unsigned char dd = d2x2[(x & 1) | ((y & 1) << 1)];
+			// vrai 2x2 : index = (x&1) + 2*(y&1)
+			static const unsigned char d2x2[4] = { 0, 8, 12, 4 };
+			unsigned char dd = d2x2[(x & 1) | ((y & 1) << 1)];
 
-            // (optionnel) saturer à 255 avant >>4 pour coller à _mm_adds_epu8
-            int bi = b + dd; if (bi > 255) bi = 255;
-            int gi = g + dd; if (gi > 255) gi = 255;
-            int ri = r + dd; if (ri > 255) ri = 255;
+			// (optionnel) saturer à 255 avant >>4 pour coller à _mm_adds_epu8
+			int bi = b + dd; if (bi > 255) bi = 255;
+			int gi = g + dd; if (gi > 255) gi = 255;
+			int ri = r + dd; if (ri > 255) ri = 255;
 
-            unsigned char b4 = (unsigned char)(bi >> 4);
-            unsigned char g4 = (unsigned char)(gi >> 4);
-            unsigned char r4 = (unsigned char)(ri >> 4);
+			unsigned char b4 = (unsigned char)(bi >> 4);
+			unsigned char g4 = (unsigned char)(gi >> 4);
+			unsigned char r4 = (unsigned char)(ri >> 4);
 
-            q[0] = (b4 << 4) | b4;
-            q[1] = (g4 << 4) | g4;
-            q[2] = (r4 << 4) | r4;
-            // same alpha
-        }
-    }
+			q[0] = (b4 << 4) | b4;
+			q[1] = (g4 << 4) | g4;
+			q[2] = (r4 << 4) | r4;
+			// same alpha
+		}
+	}
 }
 
 }

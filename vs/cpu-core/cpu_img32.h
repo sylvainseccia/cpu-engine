@@ -44,7 +44,7 @@ static inline __m128i div255_epu16_sse2(__m128i x)
 	return _mm_srli_epi16(u, 8);
 }
 
-void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH);
+void AlphaBlend(const byte* src, int srcW, int srcH, byte* dst, int dstW, int dstH, int srcX, int srcY, int dstX, int dstY, int blitW, int blitH, XMFLOAT3* pTint = nullptr);
 
 void Premultiply(const byte* src, byte* dst, int width, int height);
 

@@ -18,9 +18,8 @@ cpu_font::cpu_font()
 
 bool cpu_font::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cellWidth, int cellHeight, int firstChar, int lastChar)
 {
-	//int fontPx = cpu::CeilToInt(size*CPU.GetMainRT()->height);
 	if ( cellHeight==-1 )
-		cellHeight = fontPx;
+		cellHeight = fontPx + 2;
 	if ( cellWidth==-1 )
 		cellWidth = fontPx;
 	if ( fontName==nullptr || fontPx<=0 || cellWidth<=0 || cellHeight<=0 )
@@ -106,7 +105,7 @@ bool cpu_font::Create(int fontPx, XMFLOAT3 color, const char* fontName, int cell
 		bgra[offset+0] = src[offset+0];
 		bgra[offset+1] = src[offset+1];
 		bgra[offset+2] = src[offset+2];
-		// conserve l'antialias (gris -> alpha partiel);
+		// antialiasing (gris -> alpha partiel)
 		bgra[offset+3] = std::max({ bgra[offset+0], bgra[offset+1], bgra[offset+2] });
 	}
 

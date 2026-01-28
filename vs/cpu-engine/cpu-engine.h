@@ -23,6 +23,10 @@ class cpu_job;
 #define CPU_CALLBACK_UPDATE(method)		cpuEngine.GetCallback()->onUpdate.Set(this, &App::method)
 #define CPU_CALLBACK_EXIT(method)		cpuEngine.GetCallback()->onExit.Set(this, &App::method)
 #define CPU_CALLBACK_RENDER(method)		cpuEngine.GetCallback()->onRender.Set(this, &App::method)
+#define CPU_CALLBACK_START_EX(method)	cpuEngine.GetCallback()->onStart.Set(this, &method)
+#define CPU_CALLBACK_UPDATE_EX(method)	cpuEngine.GetCallback()->onUpdate.Set(this, &method)
+#define CPU_CALLBACK_EXIT_EX(method)	cpuEngine.GetCallback()->onExit.Set(this, &method)
+#define CPU_CALLBACK_RENDER_EX(method)	cpuEngine.GetCallback()->onRender.Set(this, &method)
 
 // Clear
 #define CPU_CLEAR_NONE					0

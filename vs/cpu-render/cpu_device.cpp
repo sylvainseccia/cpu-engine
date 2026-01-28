@@ -462,7 +462,7 @@ void cpu_device::DrawWireframeMesh(cpu_mesh* pMesh, FXMMATRIX matrix, cpu_tile* 
 	}
 }
 
-void cpu_device::DrawText(cpu_font* pFont, const char* text, int x, int y, int align)
+void cpu_device::DrawText(cpu_font* pFont, const char* text, int x, int y, int align, XMFLOAT3* pTint)
 {
 	if ( pFont==nullptr || pFont->bgra.size()==0 || text==nullptr )
 		return;
@@ -488,7 +488,7 @@ void cpu_device::DrawText(cpu_font* pFont, const char* text, int x, int y, int a
 				penX += cw;
 				continue;
 			}
-			cpu_img32::AlphaBlend(pFont->bgra.data(), pFont->width, pFont->height, (byte*)rt.colorBuffer.data(), rt.width, rt.height, g.x, g.y, penX, penY, g.w, g.h);
+			cpu_img32::AlphaBlend(pFont->bgra.data(), pFont->width, pFont->height, (byte*)rt.colorBuffer.data(), rt.width, rt.height, g.x, g.y, penX, penY, g.w, g.h, pTint);
 			penX += cw;
 		}
 	};

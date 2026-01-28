@@ -122,7 +122,9 @@ inline XMFLOAT3 CPU_WHITE				= { 1.0f, 1.0f, 1.0f };
 inline XMFLOAT3 CPU_BLACK				= { 0.0f, 0.0f, 0.0f };
 inline XMFLOAT3 CPU_RED					= { 1.0f, 0.0f, 0.0f };
 inline XMFLOAT3 CPU_BLUE				= { 0.0f, 0.0f, 1.0f };
+inline XMFLOAT3 CPU_GRAY				= { 0.5f, 0.5f, 0.5f };
 inline XMFLOAT3 CPU_GREEN				= { 0.0f, 1.0f, 0.0f };
+inline XMFLOAT3 CPU_MAGENTA				= { 1.0f, 0.0f, 1.0f };
 inline XMFLOAT3 CPU_ORANGE				= { 1.0f, 0.5f, 0.0f };
 
 // Core
