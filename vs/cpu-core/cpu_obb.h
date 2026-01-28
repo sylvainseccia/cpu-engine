@@ -9,6 +9,7 @@ public:
 
 public:
 	cpu_obb();
+	cpu_obb(const cpu_aabb& aabb);
 
 	cpu_obb& operator=(const cpu_aabb& aabb);
 

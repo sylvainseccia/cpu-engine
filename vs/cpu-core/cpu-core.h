@@ -145,5 +145,6 @@ inline XMFLOAT3 CPU_ORANGE				= { 1.0f, 0.5f, 0.0f };
 #include "cpu_obb.h"
 #include "cpu_sphere.h"
 #include "cpu_ray.h"
+#include "cpu_transform.h"
 #include "cpu_mesh.h"
 #include "cpu_window.h"

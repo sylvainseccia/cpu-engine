@@ -14,6 +14,7 @@ void cpu_mesh::Clear()
 	triangles.clear();
 	radius = 0.0f;
 	aabb.Zero();
+	obb.Zero();
 }
 
 void cpu_mesh::AddMesh(cpu_mesh& mesh)
@@ -73,7 +74,7 @@ void cpu_mesh::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLO
 void cpu_mesh::Optimize()
 {
 	CalculateNormals();
-	CalculateBox();
+	CalculateBoundingVolumes();
 }
 
 void cpu_mesh::CalculateNormals()
@@ -111,7 +112,7 @@ void cpu_mesh::CalculateNormals()
 	}
 }
 
-void cpu_mesh::CalculateBox()
+void cpu_mesh::CalculateBoundingVolumes()
 {
 	aabb.min.x = FLT_MAX;
 	aabb.min.y = FLT_MAX;
@@ -145,6 +146,19 @@ void cpu_mesh::CalculateBox()
 	float fz = std::max(fabsf(aabb.min.z), fabsf(aabb.max.z));
 	float r2 = fx*fx + fy*fy + fz*fz;
 	radius = sqrtf(r2);
+
+	obb = aabb;
+}
+
+void XM_CALLCONV cpu_mesh::Transform(FXMMATRIX matrix)
+{
+	for ( cpu_triangle& tri : triangles )
+		XMVector3TransformCoord(XMLoadFloat3(&tri.v->pos), matrix);
+
+	cpu_obb old = obb;
+	Optimize();
+	obb = old;
+	obb.Transform(matrix);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -296,6 +310,52 @@ void cpu_mesh::CreateCylinder(float halfHeight, float radius, int count, bool to
 		XMFLOAT2 ct2 = { ct.x, 1.0f };
 		AddTriangle(b1, b2, c1, bt, bt2, ct, color);
 		AddTriangle(c1, b2, c2, ct, bt2, ct2, color);
+
+		angle += step;
+	}
+	Optimize();
+}
+
+void cpu_mesh::CreateTube(float halfHeight, float radius, int count, XMFLOAT3 color)
+{
+	if ( count<3 )
+		return;
+
+	Clear();
+	float radius2 = radius * 2.0f;
+	float step = XM_2PI / count;
+	float angle = 0.0f;
+	XMFLOAT3 a1, b1, c1, a2, b2, c2;
+	a1 = b1 = c1 = a2 = b2 = c2 = {};
+	a1.y = b1.y = c1.y = halfHeight;
+	a2.y = b2.y = c2.y = -halfHeight;
+	XMFLOAT2 at, bt, ct;
+	at.x = 0.5f;
+	at.y = 0.5f;
+	for ( int i=0 ; i<count ; i++ )
+	{
+		b1.x = cosf(angle) * radius;
+		b1.z = sinf(angle) * radius;
+		c1.x = cosf(angle+step) * radius;
+		c1.z = sinf(angle+step) * radius;
+		bt.x = 0.5f + (b1.x / radius2);
+		bt.y = 0.5f - (b1.z / radius2);
+		ct.x = 0.5f + (c1.x / radius2);
+		ct.y = 0.5f - (c1.z / radius2);
+		
+		b2.x = cosf(angle) * radius;
+		b2.z = sinf(angle) * radius;
+		c2.x = cosf(angle+step) * radius;
+		c2.z = sinf(angle+step) * radius;
+		bt.x = 0.5f + (b2.x / radius2);
+		bt.y = 0.5f - (b2.z / radius2);
+		ct.x = 0.5f + (c2.x / radius2);
+		ct.y = 0.5f - (c2.z / radius2);
+
+		XMFLOAT2 bt2 = { bt.x, 1.0f };
+		XMFLOAT2 ct2 = { ct.x, 1.0f };
+		AddTriangle(b1, c1, b2, bt, ct, bt2, color);
+		AddTriangle(c1, c2, b2, ct, ct2, bt2, color);
 
 		angle += step;
 	}

@@ -6,6 +6,7 @@ public:
 	std::list<cpu_triangle> triangles;
 	float radius;
 	cpu_aabb aabb;
+	cpu_obb obb;
 
 public:
 	cpu_mesh();
@@ -21,13 +22,15 @@ public:
 
 	void Optimize();
 	void CalculateNormals();
-	void CalculateBox();
+	void CalculateBoundingVolumes();
+	void XM_CALLCONV Transform(FXMMATRIX matrix);
 
 	void CreatePlane(float width = 1.0f, float height = 1.0f, XMFLOAT3 color = CPU_WHITE);
 	void CreateCube(float halfSize = 0.5f, XMFLOAT3 color = CPU_WHITE);
 	void CreateSkyBox(float halfSize, XMFLOAT3 color = CPU_WHITE);
 	void CreateCircle(float radius = 0.5f, int count = 6, XMFLOAT3 color = CPU_WHITE);
 	void CreateCylinder(float halfHeight = 0.5f, float radius = 0.5f, int count = 6, bool top = true, bool bottom = true, XMFLOAT3 color = CPU_WHITE);
+	void CreateTube(float halfHeight = 0.5f, float radius = 0.5f, int count = 6, XMFLOAT3 color = CPU_WHITE);
 	void CreateSphere(float radius = 0.5f, int stacks = 5, int slices = 5, XMFLOAT3 color1 = CPU_WHITE, XMFLOAT3 color2 = CPU_WHITE);
 	void CreateSpaceship();
 };

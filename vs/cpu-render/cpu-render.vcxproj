@@ -99,7 +99,6 @@
     <ClInclude Include="cpu_vertex_out.h" />
     <ClInclude Include="cpu_tile.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="cpu_transform.h" />
     <ClInclude Include="cpu_texture.h" />
   </ItemGroup>
   <ItemGroup>
@@ -125,7 +124,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="cpu_transform.cpp" />
     <ClCompile Include="cpu_texture.cpp" />
   </ItemGroup>
   <ItemGroup>

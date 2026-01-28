@@ -6,6 +6,7 @@ struct cpu_aabb
 	XMFLOAT3 max;
 
 	cpu_aabb();
+	cpu_aabb(const cpu_obb& obb);
 
 	cpu_aabb& operator=(const cpu_obb& obb);
 

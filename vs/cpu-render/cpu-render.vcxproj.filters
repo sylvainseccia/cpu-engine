@@ -66,9 +66,6 @@
     <ClInclude Include="cpu_texture.h">
       <Filter>shader</Filter>
     </ClInclude>
-    <ClInclude Include="cpu_transform.h">
-      <Filter>shader</Filter>
-    </ClInclude>
     <ClInclude Include="cpu_rt.h">
       <Filter>shader</Filter>
     </ClInclude>
@@ -126,9 +123,6 @@
       <Filter>shader</Filter>
     </ClCompile>
     <ClCompile Include="cpu_vertex_out.cpp">
-      <Filter>shader</Filter>
-    </ClCompile>
-    <ClCompile Include="cpu_transform.cpp">
       <Filter>shader</Filter>
     </ClCompile>
     <ClCompile Include="cpu_texture.cpp">
