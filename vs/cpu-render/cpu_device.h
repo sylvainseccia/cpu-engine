@@ -42,6 +42,7 @@ public:
 	void DrawHorzLine(int x1, int x2, int y, XMFLOAT3& color);
 	void DrawVertLine(int y1, int y2, int x, XMFLOAT3& color);
 	void DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color);
+	void FillRectangle(int x, int y, int w, int h, XMFLOAT3& color);
 	void DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color);
 
 	void Present();

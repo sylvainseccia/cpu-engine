@@ -560,6 +560,20 @@ void cpu_device::DrawRectangle(int x, int y, int w, int h, XMFLOAT3& color)
 	DrawVertLine(y, y+h, x+w, color);
 }
 
+void cpu_device::FillRectangle(int x, int y, int w, int h, XMFLOAT3& color)
+{
+	cpu_rt& rt = *GetRT();
+	ui32 bgr = cpu::ToBGR(color);
+	int x2 = x + w;
+	int y2 = y + h;
+	for ( int row=y ; row<y2 ; row++ )
+	{
+		int index = row * rt.width;
+		for ( int col=x ; col<x2 ; col++ )
+			rt.colorBuffer[index+col] = bgr;
+	}
+}
+
 void cpu_device::DrawLine(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color)
 {
 	cpu_rt& rt = *GetRT();

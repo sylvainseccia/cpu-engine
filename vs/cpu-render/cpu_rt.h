@@ -7,6 +7,7 @@ public:
 	int height;
 	float aspectRatio;
 	int pixelCount;
+	int stride;
 	float widthHalf;
 	float heightHalf;
 	std::vector<ui32> colorBuffer;

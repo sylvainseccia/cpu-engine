@@ -19,6 +19,7 @@ void cpu_rt::Create(int width, int height, bool useDepth)
 	height = height;
 	aspectRatio = float(width) / float(height);
 	pixelCount = width * height;
+	stride = width * 4;
 	widthHalf = width * 0.5f;
 	heightHalf = height * 0.5f;
 	colorBuffer.resize(pixelCount);
@@ -34,6 +35,7 @@ void cpu_rt::Destroy()
 	width = 0;
 	height = 0;
 	pixelCount = 0;
+	stride = 0;
 	widthHalf = 0;
 	heightHalf = 0;
 	depth = false;
