@@ -624,7 +624,7 @@ void cpu_engine::Render_AssignEntityTile()
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->clipped )
+		if ( pEntity->dead || pEntity->clipped )
 			continue;
 
 		int minX = cpu::Clamp(int(pEntity->box.min.x) / m_tileWidth, 0, m_tileColCount-1);
@@ -651,7 +651,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager.sortedList[iEntity];
-		if ( pEntity->clipped )
+		if ( pEntity->dead || pEntity->clipped )
 			continue;
 	
 		bool entityHasTile = (pEntity->tile>>tile.index) & 1 ? true : false;
