@@ -139,7 +139,7 @@ void App::OnUpdate()
 	m_pEmitter->dir.z = -m_pEmitter->dir.z; 
 
 	// Turn camera
-	//cpuEngine.GetCamera()->transform.AddYPR(0.0f, 0.0f, dt*0.1f);
+	cpuEngine.GetCamera()->transform.AddYPR(0.0f, 0.0f, dt*0.1f);
 
 	// Move ship
 	if ( cpuInput.IsKey(VK_UP) )
