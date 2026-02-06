@@ -8,6 +8,8 @@ cpu_particle_emitter::cpu_particle_emitter()
 
 	pData = nullptr;
 
+	blend = CPU_PARTICLE_INTENSITY;
+
 	density = 1.0f;
 	spawnRadius = 0.05f;
 
@@ -97,16 +99,16 @@ void cpu_particle_emitter::Update(XMFLOAT4X4& matViewProj, int width, int height
 
 		p.age[i] = 0.0f;
 
-		float rand = cpu::Rand01(seed);
-		p.duration[i] = durationMin + (durationMax - durationMin) * rand;
+		float rndDuration = cpu::Rand01(seed);
+		p.duration[i] = durationMin + (durationMax - durationMin) * rndDuration;
 		p.invDuration[i] = 1.0f / p.duration[i];
 
-		float t = cpu::Rand01(seed);
-		float intensity = 0.8f + 0.2f * cpu::Rand01(seed);
-		p.r[i] = std::lerp(colorMin.x, colorMax.x, t) * intensity;
-		p.g[i] = std::lerp(colorMin.y, colorMax.y, t) * intensity;
-		p.b[i] = std::lerp(colorMin.z, colorMax.z, t) * intensity;
+		float rndRatio = cpu::Rand01(seed);
+		float rndIntensity = 0.8f + 0.2f * cpu::Rand01(seed);
+		p.r[i] = std::lerp(colorMin.x, colorMax.x, rndRatio) * rndIntensity;
+		p.g[i] = std::lerp(colorMin.y, colorMax.y, rndRatio) * rndIntensity;
+		p.b[i] = std::lerp(colorMin.z, colorMax.z, rndRatio) * rndIntensity;
 
-		//p.seed[i] = seed;
+		p.blend[i] = blend;
 	}
 }

@@ -108,6 +108,11 @@ void App::OnStart()
 	m_pEmitter2->colorMax = cpu::ToColor(0, 128, 255);
 	m_pEmitter2->pos.x = -2.0f;
 
+	// Test
+	//m_pEmitter->blend = CPU_PARTICLE_OPAQUE;
+	//m_pEmitter->colorMin = cpu::ToColor(0, 0, 0);
+	//m_pEmitter->colorMax = cpu::ToColor(16, 16, 16);
+
 	// Camera
 	cpuEngine.GetCamera()->transform.pos.z = -5.0f;
 }

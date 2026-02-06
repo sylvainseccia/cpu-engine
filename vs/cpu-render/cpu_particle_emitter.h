@@ -5,6 +5,8 @@ struct cpu_particle_emitter : public cpu_object
 public:
 	cpu_particle_data* pData;
 
+	byte blend;				// blending method
+
 	float density;			// particles / second / pixel²
 	float spawnRadius;		// volume d'émission
 

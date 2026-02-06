@@ -1,5 +1,7 @@
 #pragma once
 
+// AoS (Array of Structures) vs SoA (Structure of Arrays)
+
 struct cpu_particle_data
 {
 public:
@@ -22,14 +24,14 @@ public:
 	float* age;
 	float* duration;
 	float* invDuration;
-	//ui32* seed;
 
 	float* r;
 	float* g;
 	float* b;
+	byte* blend;
 
 	// Render
-	ui32* tile;
+	byte* tile;
 	ui32* sort;
 	ui16* sx;
 	ui16* sy;

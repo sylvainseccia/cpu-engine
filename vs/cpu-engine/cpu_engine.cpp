@@ -746,14 +746,26 @@ void cpu_engine::Render_TileParticles(int iTile)
 			continue;
 		rt.depthBuffer[pix] = sz;
 
-		float a = 1.0f - m_particleData.age[p] * m_particleData.invDuration[p];
-		a *= a;
+		switch ( m_particleData.blend[p] )
+		{
+			case CPU_PARTICLE_INTENSITY:
+			{
+				float a = 1.0f - m_particleData.age[p] * m_particleData.invDuration[p];
+				a *= a;
 
-		XMFLOAT3 dst = cpu::ToColorFromBGR(rt.colorBuffer[pix]);
-		float r = dst.x + m_particleData.r[p]*a;
-		float g = dst.y + m_particleData.g[p]*a;
-		float b = dst.z + m_particleData.b[p]*a;
-		rt.colorBuffer[pix] = cpu::ToBGR(r, g, b);
+				XMFLOAT3 dst = cpu::ToColorFromBGR(rt.colorBuffer[pix]);
+				float r = dst.x + m_particleData.r[p]*a;
+				float g = dst.y + m_particleData.g[p]*a;
+				float b = dst.z + m_particleData.b[p]*a;
+				rt.colorBuffer[pix] = cpu::ToBGR(r, g, b);
+				break;
+			}
+			case CPU_PARTICLE_OPAQUE:
+			{
+				rt.colorBuffer[pix] = cpu::ToBGR(m_particleData.r[p], m_particleData.g[p], m_particleData.b[p]);
+				break;
+			}
+		}
 	}
 }
 

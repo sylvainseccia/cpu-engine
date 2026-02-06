@@ -17,7 +17,6 @@ cpu_particle_data::~cpu_particle_data()
 
 void cpu_particle_data::Reset()
 {
-	//pPhys = nullptr;
 	maxCount = 0;
 	alive = 0;
 	blob = nullptr;
@@ -30,10 +29,10 @@ void cpu_particle_data::Reset()
 	vz = nullptr;
 	age = nullptr;
 	duration = nullptr;
-	//seed = nullptr;
 	r = nullptr;
 	g = nullptr;
 	b = nullptr;
+	blend = nullptr;
 	tile = nullptr;
 	sort = nullptr;
 	sx = nullptr;
@@ -46,44 +45,44 @@ void cpu_particle_data::Create(int maxP)
 	Destroy();
 	maxCount = maxP;
 
-	int countF = maxP * sizeof(float);
-	int countU = maxP * sizeof(ui32);
-	int countS = maxP * sizeof(ui16);
-	size	= 3 * countF		// px py pz
-			+ 3 * countF		// vx vy vz
-			+ 3 * countF		// age duration invDuration
-			//+ 1 * countU		// seed
-			+ 3 * countF		// r g b
-			+ 2 * countU		// tile sort
-			+ 2 * countS		// sx sy
-			+ 1 * countF;		// sz
+	int count8 = maxP;
+	int count16 = maxP * 2;
+	int count32 = maxP * 4;
+	size	= 3 * count32		// px py pz
+			+ 3 * count32		// vx vy vz
+			+ 3 * count32		// age duration invDuration
+			+ 3 * count32		// r g b
+			+ 1 * count8		// blend
+			+ 1 * count8		// tile
+			+ 1 * count32		// sort
+			+ 2 * count32		// sx sy
+			+ 1 * count32;		// sz
 
 	blob = _aligned_malloc(size, 32); // SIMD: 32 or 64
 	byte* ptr = (byte*)blob;
 
-	px = (float*)ptr; ptr += countF;
-	py = (float*)ptr; ptr += countF;
-	pz = (float*)ptr; ptr += countF;
+	px = (float*)ptr; ptr += count32;
+	py = (float*)ptr; ptr += count32;
+	pz = (float*)ptr; ptr += count32;
 
-	vx = (float*)ptr; ptr += countF;
-	vy = (float*)ptr; ptr += countF;
-	vz = (float*)ptr; ptr += countF;
+	vx = (float*)ptr; ptr += count32;
+	vy = (float*)ptr; ptr += count32;
+	vz = (float*)ptr; ptr += count32;
 
-	age = (float*)ptr; ptr += countF;
-	duration = (float*)ptr; ptr += countF;
-	invDuration = (float*)ptr; ptr += countF;
+	age = (float*)ptr; ptr += count32;
+	duration = (float*)ptr; ptr += count32;
+	invDuration = (float*)ptr; ptr += count32;
 
-	//seed = (ui32*)ptr; ptr += countU;
+	r = (float*)ptr; ptr += count32;
+	g = (float*)ptr; ptr += count32;
+	b = (float*)ptr; ptr += count32;
+	blend = (byte*)ptr; ptr += count8;
 
-	r = (float*)ptr; ptr += countF;
-	g = (float*)ptr; ptr += countF;
-	b = (float*)ptr; ptr += countF;
-
-	tile = (ui32*)ptr; ptr += countU;
-	sort = (ui32*)ptr; ptr += countU;
-	sx = (ui16*)ptr; ptr += countS;
-	sy = (ui16*)ptr; ptr += countS;
-	sz = (float*)ptr; ptr += countF;
+	tile = (byte*)ptr; ptr += count8;
+	sort = (ui32*)ptr; ptr += count32;
+	sx = (ui16*)ptr; ptr += count32;
+	sy = (ui16*)ptr; ptr += count32;
+	sz = (float*)ptr; ptr += count32;
 }
 
 void cpu_particle_data::Destroy()
@@ -120,12 +119,12 @@ void cpu_particle_data::UpdateAge()
 				r[i] = r[last];
 				g[i] = g[last];
 				b[i] = b[last];
+				blend[i] = blend[last];
 				tile[i] = tile[last];
 				sort[i] = sort[last];
 				sx[i] = sx[last];
 				sy[i] = sy[last];
 				sz[i] = sz[last];
-				//seed[i] = seed[last];
 			}
 			--alive;
 			continue;

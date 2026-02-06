@@ -34,6 +34,10 @@ using CPU_PS_FUNC						= void(*)(cpu_ps_io& data);
 #define CPU_DEPTH_WRITE					2
 #define CPU_DEPTH_RW					4
 
+// Particle
+#define CPU_PARTICLE_INTENSITY			0
+#define CPU_PARTICLE_OPAQUE				1
+
 // Engine
 #include "cpu_global.h"
 #include "cpu_tile.h"
