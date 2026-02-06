@@ -725,7 +725,8 @@ void Blur(byte* img, int width, int height, int radius)
 
 void ToAmigaPalette(byte* buffer, int width, int height)
 {
-	if (!buffer || width <= 0 || height <= 0) return;
+	if ( buffer==nullptr || width<=0 || height<=0 )
+		return;
 
 	// Dithers préfabriqués pour 4 pixels (16 bytes BGRA BGRA BGRA BGRA)
 	// dd appliqué à B,G,R ; A reste 0.
