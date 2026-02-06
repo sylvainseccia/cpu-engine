@@ -17,6 +17,19 @@ void cpu_mesh::Clear()
 	obb.Zero();
 }
 
+cpu_triangle* cpu_mesh::GetTriangle(int index)
+{
+	if ( index<0 || index>=triangles.size() )
+		return nullptr;
+	int i = 0;
+	for ( auto it=triangles.begin() ; it!=triangles.end() ; ++it, i++ )
+	{
+		if ( i==index )
+			return &*it;
+	}
+	return nullptr;
+}
+
 void cpu_mesh::AddMesh(cpu_mesh& mesh)
 {
 	for ( cpu_triangle& tri : mesh.triangles )

@@ -19,6 +19,7 @@ public:
 
 	int GetWidth() { return m_mainRT.width; }
 	int GetHeight() { return m_mainRT.height; }
+	int GetPixelCount() { return m_mainRT.pixelCount; }
 	RECT& GetFit() { return m_rcFit; }
 	cpu_rt* SetMainRT(bool copyDepth = true);
 	cpu_rt* GetMainRT() { return &m_mainRT; }

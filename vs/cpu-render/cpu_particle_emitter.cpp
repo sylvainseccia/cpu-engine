@@ -10,7 +10,7 @@ cpu_particle_emitter::cpu_particle_emitter()
 
 	blend = CPU_PARTICLE_INTENSITY;
 
-	density = 1.0f;
+	rate = 1.0f;
 	spawnRadius = 0.05f;
 
 	pos = CPU_VEC3_ZERO;
@@ -30,54 +30,12 @@ cpu_particle_emitter::cpu_particle_emitter()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void cpu_particle_emitter::Update(XMFLOAT4X4& matViewProj, int width, int height)
+void cpu_particle_emitter::Update(int pixelCount)
 {
 	float dt = cpuTime.delta;
 	cpu_particle_data& p = *pData;
 
-	XMVECTOR c = XMVectorSet(pos.x, pos.y, pos.z, 1.0f);
-	XMVECTOR cClip = XMVector4Transform(c, XMLoadFloat4x4(&matViewProj));
-	XMFLOAT4 c4; 
-	XMStoreFloat4(&c4, cClip);
-
-	float area_px = 0.0f;
-	if ( c4.w>CPU_EPSILON )
-	{
-		const float invWc = 1.0f / c4.w;
-		const float ndcCx = c4.x * invWc;
-		const float ndcCy = c4.y * invWc;
-
-		XMVECTOR r = XMVectorSet(pos.x+spawnRadius, pos.y, pos.z, 1.0f);
-		XMVECTOR rClip = XMVector4Transform(r, XMLoadFloat4x4(&matViewProj));
-		XMFLOAT4 r4;
-		XMStoreFloat4(&r4, rClip);
-		if ( r4.w>CPU_EPSILON )
-		{
-			const float invWr = 1.0f / r4.w;
-			const float ndcRx = r4.x * invWr;
-			const float ndcRy = r4.y * invWr;
-
-			const float halfW = width * 0.5f;
-			const float halfH = height * 0.5f;
-
-			const float pxC = (ndcCx + 1.0f) * halfW;
-			const float pyC = (1.0f - ndcCy) * halfH;
-
-			const float pxR = (ndcRx + 1.0f) * halfW;
-			const float pyR = (1.0f - ndcRy) * halfH;
-
-			const float dx = pxR - pxC;
-			const float dy = pyR - pyC;
-
-			const float r_px = dx * dx + dy * dy;
-			area_px = XM_PI * r_px;
-			area_px = std::min(area_px, width*height*0.25f);
-		}
-	}
-	if ( area_px<=0.0f )
-		return;
-
-	accum += density * area_px * dt;
+	accum += rate * (float)pixelCount * dt;
 	int n = (int)accum;
 	accum -= (float)n;
 	//n = MIN(n, maxEmitPerFrame);

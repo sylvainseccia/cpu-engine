@@ -184,10 +184,18 @@ void cpu_engine::Quit()
 
 void cpu_engine::GetParticleRange(int& min, int& max, int iTile)
 {
-	int count = m_particleData.alive / m_tileCount;
-	int remainder = m_particleData.alive % m_tileCount;
-	min = iTile * count + std::min(iTile, remainder);
-	max = min + count + (iTile<remainder ? 1 : 0);
+	if ( m_tileCount==1 )
+	{
+		min = 0;
+		max = m_particleData.alive;
+	}
+	else
+	{
+		int count = m_particleData.alive / m_tileCount;
+		int remainder = m_particleData.alive % m_tileCount;
+		min = iTile * count + std::min(iTile, remainder);
+		max = min + count + (iTile<remainder ? 1 : 0);
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -497,7 +505,7 @@ void cpu_engine::Update_Particles()
 		if ( pEmitter->dead )
 			continue;
 
-		pEmitter->Update(m_camera.matViewProj, m_device.GetWidth(), m_device.GetHeight());
+		pEmitter->Update(m_device.GetPixelCount());
 	}
 
 	// Particles: age
@@ -718,7 +726,7 @@ void cpu_engine::Render_AssignParticleTile(int iTileForAssign)
 		if ( iTile>=m_tileCount )
 			iTile = m_tileCount - 1;
 
-		m_particleData.tile[i] = iTile + 1;
+		m_particleData.tile[i] = (byte)(iTile+1);
 		m_particleData.sx[i] = (ui16)sx;
 		m_particleData.sy[i] = (ui16)sy;
 		m_particleData.sz[i] = ndcZ;
@@ -777,7 +785,7 @@ void cpu_engine::Render_Entities()
 void cpu_engine::Render_Particles()
 {
 	// Reset
-	memset(m_particleData.tile, 0, m_particleData.alive*sizeof(ui32));
+	memset(m_particleData.tile, 0, m_particleData.alive);
 
 	// Pre-render
 	CPU_JOBS(m_particleSpaceJobs);
@@ -793,10 +801,10 @@ void cpu_engine::Render_Particles()
 	}
 	for ( int i=0 ; i<m_particleData.alive ; i++ )
 	{
-		ui32 index = m_particleData.tile[i];
-		if ( index )
+		byte iTile = m_particleData.tile[i];
+		if ( iTile )
 		{
-			cpu_tile& tile = m_tiles[index-1];
+			cpu_tile& tile = m_tiles[iTile-1];
 			m_particleData.sort[tile.particleOffsetTemp++] = i;
 		}
 	}

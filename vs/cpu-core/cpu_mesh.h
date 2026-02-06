@@ -13,6 +13,7 @@ public:
 	~cpu_mesh() = default;
 
 	void Clear();
+	cpu_triangle* GetTriangle(int index);
 	void AddMesh(cpu_mesh& mesh);
 	void AddTriangle(cpu_triangle& tri);
 	void AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color);

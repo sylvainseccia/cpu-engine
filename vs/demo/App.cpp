@@ -99,11 +99,11 @@ void App::OnStart()
 	cpuEngine.GetParticleData()->Create(2000000);
 	cpuEngine.GetParticlePhysics()->gy = -0.5f;
 	m_pEmitter = cpuEngine.CreateParticleEmitter();
-	m_pEmitter->density = 3000.0f;
+	m_pEmitter->rate = 1.0f;
 	m_pEmitter->colorMin = cpu::ToColor(255, 0, 0);
 	m_pEmitter->colorMax = cpu::ToColor(255, 128, 0);
 	m_pEmitter2 = cpuEngine.CreateParticleEmitter();
-	m_pEmitter2->density = 300.0f;
+	m_pEmitter2->rate = 0.25f;
 	m_pEmitter2->colorMin = cpu::ToColor(0, 0, 255);
 	m_pEmitter2->colorMax = cpu::ToColor(0, 128, 255);
 	m_pEmitter2->pos.x = -2.0f;
@@ -139,17 +139,17 @@ void App::OnUpdate()
 	m_pEmitter->dir.z = -m_pEmitter->dir.z; 
 
 	// Turn camera
-	cpuEngine.GetCamera()->transform.AddYPR(0.0f, 0.0f, dt*0.1f);
+	//cpuEngine.GetCamera()->transform.AddYPR(0.0f, 0.0f, dt*0.1f);
 
 	// Move ship
 	if ( cpuInput.IsKey(VK_UP) )
-	{
-		cpuEngine.GetCamera()->transform.Move(cpuTime.delta*1.0f);
-	}
+		cpuEngine.GetCamera()->transform.Move(dt*1.0f);
 	if ( cpuInput.IsKey(VK_DOWN) )
-	{
-		cpuEngine.GetCamera()->transform.Move(-cpuTime.delta*1.0f);
-	}
+		cpuEngine.GetCamera()->transform.Move(-dt*1.0f);
+	if ( cpuInput.IsKey(VK_LEFT) )
+		cpuEngine.GetCamera()->transform.AddYPR(-dt*XM_PI);
+	if ( cpuInput.IsKey(VK_RIGHT) )
+		cpuEngine.GetCamera()->transform.AddYPR(dt*XM_PI);
 
 	// Move missiles
 	for ( auto it=m_missiles.begin() ; it!=m_missiles.end() ; ++it )

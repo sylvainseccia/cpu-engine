@@ -29,6 +29,7 @@ void cpu_particle_data::Reset()
 	vz = nullptr;
 	age = nullptr;
 	duration = nullptr;
+	invDuration = nullptr;
 	r = nullptr;
 	g = nullptr;
 	b = nullptr;
@@ -45,9 +46,9 @@ void cpu_particle_data::Create(int maxP)
 	Destroy();
 	maxCount = maxP;
 
-	int count8 = maxP;
-	int count16 = maxP * 2;
-	int count32 = maxP * 4;
+	int count8 = maxCount;
+	int count16 = maxCount * 2;
+	int count32 = maxCount * 4;
 	size	= 3 * count32		// px py pz
 			+ 3 * count32		// vx vy vz
 			+ 3 * count32		// age duration invDuration
@@ -55,7 +56,7 @@ void cpu_particle_data::Create(int maxP)
 			+ 1 * count8		// blend
 			+ 1 * count8		// tile
 			+ 1 * count32		// sort
-			+ 2 * count32		// sx sy
+			+ 2 * count16		// sx sy
 			+ 1 * count32;		// sz
 
 	blob = _aligned_malloc(size, 32); // SIMD: 32 or 64
@@ -80,8 +81,8 @@ void cpu_particle_data::Create(int maxP)
 
 	tile = (byte*)ptr; ptr += count8;
 	sort = (ui32*)ptr; ptr += count32;
-	sx = (ui16*)ptr; ptr += count32;
-	sy = (ui16*)ptr; ptr += count32;
+	sx = (ui16*)ptr; ptr += count16;
+	sy = (ui16*)ptr; ptr += count16;
 	sz = (float*)ptr; ptr += count32;
 }
 
