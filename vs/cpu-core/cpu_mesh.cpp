@@ -166,7 +166,13 @@ void cpu_mesh::CalculateBoundingVolumes()
 void XM_CALLCONV cpu_mesh::Transform(FXMMATRIX matrix)
 {
 	for ( cpu_triangle& tri : triangles )
-		XMVector3TransformCoord(XMLoadFloat3(&tri.v->pos), matrix);
+	{
+		for ( int i=0 ; i<3 ; i++ )
+		{
+			XMVECTOR v = XMVector3TransformCoord(XMLoadFloat3(&tri.v[i].pos), matrix);
+			XMStoreFloat3(&tri.v[i].pos, v);
+		}
+	}
 
 	cpu_obb old = obb;
 	Optimize();
