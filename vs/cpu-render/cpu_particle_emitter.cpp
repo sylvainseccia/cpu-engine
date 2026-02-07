@@ -32,6 +32,9 @@ cpu_particle_emitter::cpu_particle_emitter()
 
 void cpu_particle_emitter::Update(int pixelCount)
 {
+	if ( rate==0.0f )
+		return;
+
 	float dt = cpuTime.delta;
 	cpu_particle_data& p = *pData;
 

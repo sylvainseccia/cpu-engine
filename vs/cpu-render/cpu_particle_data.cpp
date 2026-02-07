@@ -140,43 +140,70 @@ void cpu_particle_data::UpdatePhysics(int min, int max)
 	const float drag = pPhysics->drag>0.0f ? pPhysics->drag : 0.0f;
 	const float dragFactor = drag>0.0f ? 1.0f/(1.0f+drag*dt) : 1.0f;
 	const float maxSpeed = pPhysics->maxSpeed;
+	const bool useMaxSpeed = maxSpeed>0.0f;
 
-	for ( int i=min ; i<max ; i++ )
+	if ( useMaxSpeed )
 	{
-		// Dissipe l'énergie
-		float x = vx[i] * dragFactor;
-		float y = vy[i] * dragFactor;
-		float z = vz[i] * dragFactor;
-
-		// Gravity
-		x += pPhysics->gx * dt;
-		y += pPhysics->gy * dt;
-		z += pPhysics->gz * dt;
-
-		// Speed
-		if ( maxSpeed>0.0f )
+		const float maxSpeed2 = maxSpeed * maxSpeed;
+		for ( int i=min ; i<max ; i++ )
 		{
+			// Dissipe l'énergie
+			float x = vx[i] * dragFactor;
+			float y = vy[i] * dragFactor;
+			float z = vz[i] * dragFactor;
+
+			// Gravity
+			x += pPhysics->gx * dt;
+			y += pPhysics->gy * dt;
+			z += pPhysics->gz * dt;
+
+			// Speed
 			const float v2 = x*x + y*y + z*z;
-			const float m2 = maxSpeed * maxSpeed;
-			if ( v2>m2 )
+			if ( v2>maxSpeed2 )
 			{
 				const float invLen = maxSpeed / sqrtf(v2);
 				x *= invLen;
 				y *= invLen;
 				z *= invLen;
 			}
+
+			// Euler (semi-implicit)
+			px[i] += x * dt;
+			py[i] += y * dt;
+			pz[i] += z * dt;
+			vx[i] = x;
+			vy[i] = y;
+			vz[i] = z;
 		}
+	}
+	else
+	{
+		for ( int i=min ; i<max ; i++ )
+		{
+			// Dissipe l'énergie
+			float x = vx[i] * dragFactor;
+			float y = vy[i] * dragFactor;
+			float z = vz[i] * dragFactor;
 
-		// Euler (semi-implicit)
-		px[i] += x * dt;
-		py[i] += y * dt;
-		pz[i] += z * dt;
-		vx[i] = x;
-		vy[i] = y;
-		vz[i] = z;
+			// Gravity
+			x += pPhysics->gx * dt;
+			y += pPhysics->gy * dt;
+			z += pPhysics->gz * dt;
 
-		// Bound
-		if ( pPhysics->useBounds )
+			// Euler (semi-implicit)
+			px[i] += x * dt;
+			py[i] += y * dt;
+			pz[i] += z * dt;
+			vx[i] = x;
+			vy[i] = y;
+			vz[i] = z;
+		}
+	}
+
+	// Bound
+	if ( pPhysics->useBounds )
+	{
+		for ( int i=min ; i<max ; i++ )
 			ApplyBounds(px[i], py[i], pz[i], vx[i], vy[i], vz[i]);
 	}
 }
