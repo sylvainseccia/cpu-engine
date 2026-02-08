@@ -113,6 +113,30 @@ void App::OnStart()
 	//m_pEmitter->colorMin = cpu::ToColor(0, 0, 0);
 	//m_pEmitter->colorMax = cpu::ToColor(16, 16, 16);
 
+	// Test
+//	float roomSize = 100.0f;
+//	static cpu_mesh meshRoom;
+//	meshRoom.CreateSkyBox(roomSize*0.5f);
+//	XMMATRIX matrix = XMMatrixTranslation(0.0f, roomSize*0.5f-1.0f, 0.0f);
+//	meshRoom.Transform(matrix);
+//	cpu_triangle* pTri = meshRoom.GetTriangle(10);
+//	pTri->v->color.x = 0.0f;
+//	pTri->v->color.y = 0.0f;
+//	pTri->v->color.z = 0.0f;
+//	pTri = meshRoom.GetTriangle(11);
+//	pTri->v->color.x = 0.0f;
+//	pTri->v->color.y = 0.0f;
+//	pTri->v->color.z = 0.0f;
+//	meshRoom.Optimize();
+//	cpu_entity* pRoom = cpuEngine.CreateEntity();
+//	pRoom->pMesh = &meshRoom;
+//	cpuEngine.m_clear = CPU_CLEAR_COLOR;
+//	cpuEngine.m_clearColor = CPU_RED;
+//	cpuEngine.GetCamera()->fov = XM_2PI * 72.0f / 360.0f;
+//	cpuEngine.GetCamera()->near = 0.1f;
+//	cpuEngine.GetCamera()->far = 1000.0f;
+//	cpuEngine.GetCamera()->UpdateProjection();
+
 	// Camera
 	cpuEngine.GetCamera()->transform.pos.z = -5.0f;
 }

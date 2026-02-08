@@ -11,6 +11,15 @@ cpu_rectangle::cpu_rectangle()
 
 void cpu_rectangle::Zero()
 {
-	min = { 0.0f, 0.0f };
-	max = { 0.0f, 0.0f };
+	minX = 0;
+	minY = 0;
+	maxX = 0;
+	maxY = 0;
+}
+
+bool cpu_rectangle::IsEmpty()
+{
+	if ( minX>=maxX || minY>=maxY )
+		return true;
+	return false;
 }

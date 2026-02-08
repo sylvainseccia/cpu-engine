@@ -17,17 +17,17 @@ public:
 	void SetCallback(const _METHOD& callback) { m_callback = callback; }
 	virtual void OnCallback() {}
 
-	DWORD GetParentID() const { return m_idThreadParent; }
-	DWORD GetID() const { return m_idThread; }
+	ui32 GetParentID() const { return m_idThreadParent; }
+	ui32 GetID() const { return m_idThread; }
 	bool IsRunning() const { return m_idThread!=0; }
 
 protected:
-	static DWORD WINAPI ThreadProc(void* pParam);
+	static ui32 WINAPI ThreadProc(void* pParam);
 
 protected:
 	HANDLE m_hThread;
-	DWORD m_idThread;
-	DWORD m_idThreadParent;
+	ui32 m_idThread;
+	ui32 m_idThreadParent;
 	_METHOD m_callback;
 	bool m_quitAsap;
 };

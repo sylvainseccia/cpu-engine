@@ -784,16 +784,9 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 	const float dE23dy = b23;
 	const float dE31dx = a31;
 	const float dE31dy = b31;
-
-	float invW0 = 0.0f;
-	float invW1 = 0.0f;
-	float invW2 = 0.0f;
-	if ( draw.pMaterial->pTexture )
-	{
-		invW0 = 1.0f / draw.vo[0]->clipPos.w;
-		invW1 = 1.0f / draw.vo[1]->clipPos.w;
-		invW2 = 1.0f / draw.vo[2]->clipPos.w;
-	}
+	float invW0 = 1.0f / draw.vo[0]->clipPos.w;
+	float invW1 = 1.0f / draw.vo[1]->clipPos.w;
+	float invW2 = 1.0f / draw.vo[2]->clipPos.w;
 
 	const CPU_PS_FUNC func = draw.pMaterial->ps ? draw.pMaterial->ps : &PixelShader;
 	cpu_ps_io io;
@@ -826,10 +819,18 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 				}
 			}
 
-			float w1 = e23 * invArea;
-			float w2 = e31 * invArea;
-			float w3 = e12 * invArea;
-			float z = z3 + (z1 - z3) * w1 + (z2 - z3) * w2; // => z1 * w1 + z2 * w2 + z3 * w3
+			float w0 = e23 * invArea;
+			float w1 = e31 * invArea;
+			float w2 = e12 * invArea;
+			float z = z1*w0 + z2*w1 + z3*w2;
+			if ( z<CPU_EPSILON )
+			{
+				e12 += dE12dx;
+				e23 += dE23dx;
+				e31 += dE31dx;
+				continue;
+			}
+
 			int index = y * rt.width + x;
 			if ( (draw.depth & CPU_DEPTH_READ) && z>=rt.depthBuffer[index] )
 			{
@@ -839,32 +840,46 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 				continue;
 			}
 
+			float iw0 = w0*invW0;
+			float iw1 = w1*invW1;
+			float iw2 = w2*invW2;
+			float invW = iw0 + iw1 + iw2;
+			if ( fabsf(invW)<CPU_EPSILON )
+			{
+				e12 += dE12dx;
+				e23 += dE23dx;
+				e31 += dE31dx;
+				continue;
+			}
+			float w = 1.0f / invW;
+
 			// cpu_input
 			io.p.x = x;
 			io.p.y = y;
 			io.p.depth = z;
 
-			// Position (lerp)
-			io.p.pos.x = draw.vo[2]->worldPos.x + (draw.vo[0]->worldPos.x - draw.vo[2]->worldPos.x) * w1 + (draw.vo[1]->worldPos.x - draw.vo[2]->worldPos.x) * w2;
-			io.p.pos.y = draw.vo[2]->worldPos.y + (draw.vo[0]->worldPos.y - draw.vo[2]->worldPos.y) * w1 + (draw.vo[1]->worldPos.y - draw.vo[2]->worldPos.y) * w2;
-			io.p.pos.z = draw.vo[2]->worldPos.z + (draw.vo[0]->worldPos.z - draw.vo[2]->worldPos.z) * w1 + (draw.vo[1]->worldPos.z - draw.vo[2]->worldPos.z) * w2;
+			// Position (interp)
+			io.p.pos.x = (iw0*draw.vo[0]->worldPos.x + iw1*draw.vo[1]->worldPos.x + iw2*draw.vo[2]->worldPos.x) * w;
+			io.p.pos.y = (iw0*draw.vo[0]->worldPos.y + iw1*draw.vo[1]->worldPos.y + iw2*draw.vo[2]->worldPos.y) * w;
+			io.p.pos.z = (iw0*draw.vo[0]->worldPos.z + iw1*draw.vo[1]->worldPos.z + iw2*draw.vo[2]->worldPos.z) * w;
 
-			// Normal (lerp)
-			io.p.normal.x = draw.vo[2]->worldNormal.x + (draw.vo[0]->worldNormal.x - draw.vo[2]->worldNormal.x) * w1 + (draw.vo[1]->worldNormal.x - draw.vo[2]->worldNormal.x) * w2;
-			io.p.normal.y = draw.vo[2]->worldNormal.y + (draw.vo[0]->worldNormal.y - draw.vo[2]->worldNormal.y) * w1 + (draw.vo[1]->worldNormal.y - draw.vo[2]->worldNormal.y) * w2;
-			io.p.normal.z = draw.vo[2]->worldNormal.z + (draw.vo[0]->worldNormal.z - draw.vo[2]->worldNormal.z) * w1 + (draw.vo[1]->worldNormal.z - draw.vo[2]->worldNormal.z) * w2;
+			// Normal (interp)
+			io.p.normal.x = (iw0*draw.vo[0]->worldNormal.x + iw1*draw.vo[1]->worldNormal.x + iw2*draw.vo[2]->worldNormal.x) * w;
+			io.p.normal.y = (iw0*draw.vo[0]->worldNormal.y + iw1*draw.vo[1]->worldNormal.y + iw2*draw.vo[2]->worldNormal.y) * w;
+			io.p.normal.z = (iw0*draw.vo[0]->worldNormal.z + iw1*draw.vo[1]->worldNormal.z + iw2*draw.vo[2]->worldNormal.z) * w;
+			XMVECTOR normal = XMVector3NormalizeEst(XMLoadFloat3(&io.p.normal));
+			XMStoreFloat3(&io.p.normal, normal);
 
-			// Color (lerp)
-			io.p.albedo.x = draw.vo[2]->albedo.x + (draw.vo[0]->albedo.x - draw.vo[2]->albedo.x) * w1 + (draw.vo[1]->albedo.x - draw.vo[2]->albedo.x) * w2;
-			io.p.albedo.y = draw.vo[2]->albedo.y + (draw.vo[0]->albedo.y - draw.vo[2]->albedo.y) * w1 + (draw.vo[1]->albedo.y - draw.vo[2]->albedo.y) * w2;
-			io.p.albedo.z = draw.vo[2]->albedo.z + (draw.vo[0]->albedo.z - draw.vo[2]->albedo.z) * w1 + (draw.vo[1]->albedo.z - draw.vo[2]->albedo.z) * w2;
+			// Color (interp)
+			io.p.albedo.x = (iw0*draw.vo[0]->albedo.x + iw1*draw.vo[1]->albedo.x + iw2*draw.vo[2]->albedo.x) * w;
+			io.p.albedo.y = (iw0*draw.vo[0]->albedo.y + iw1*draw.vo[1]->albedo.y + iw2*draw.vo[2]->albedo.y) * w;
+			io.p.albedo.z = (iw0*draw.vo[0]->albedo.z + iw1*draw.vo[1]->albedo.z + iw2*draw.vo[2]->albedo.z) * w;
 
-			// UV (lerp)
+			// UV (interp)
 			if ( draw.pMaterial->pTexture )
 			{
-				float invW = w1*invW0 + w2*invW1 + w3*invW2;
-				io.p.uv.x = (w1*draw.vo[0]->uv.x + w2*draw.vo[1]->uv.x + w3*draw.vo[2]->uv.x) / invW;
-				io.p.uv.y = (w1*draw.vo[0]->uv.y + w2*draw.vo[1]->uv.y + w3*draw.vo[2]->uv.y) / invW;
+				io.p.uv.x = (w0*draw.vo[0]->uv.x + w1*draw.vo[1]->uv.x + w2*draw.vo[2]->uv.x) * w;
+				io.p.uv.y = (w0*draw.vo[0]->uv.y + w1*draw.vo[1]->uv.y + w2*draw.vo[2]->uv.y) * w;
 			}
 			else
 			{
@@ -875,17 +890,15 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			// Lighting
 			if ( draw.pMaterial->lighting==CPU_LIGHTING_GOURAUD )
 			{
-				float intensity = draw.vo[2]->intensity + (draw.vo[0]->intensity - draw.vo[2]->intensity) * w1 + (draw.vo[1]->intensity - draw.vo[2]->intensity) * w2;
+				float intensity = (iw0*draw.vo[0]->intensity + iw1*draw.vo[1]->intensity + iw2*draw.vo[2]->intensity) * w;
 				io.p.color.x = io.p.albedo.x * intensity;
 				io.p.color.y = io.p.albedo.y * intensity;
 				io.p.color.z = io.p.albedo.z * intensity;
 			}
 			else if ( draw.pMaterial->lighting==CPU_LIGHTING_LAMBERT )
 			{
-				XMVECTOR n = XMLoadFloat3(&io.p.normal);				
-				//n = XMVector3Normalize(n); // Expensive (better results)
 				XMVECTOR l = XMLoadFloat3(&m_pLight->dir);
-				float ndotl = XMVectorGetX(XMVector3Dot(n, l));
+				float ndotl = XMVectorGetX(XMVector3Dot(normal, l));
 				if ( ndotl<0.0f )
 					ndotl = 0.0f;
 				float intensity = ndotl + m_pLight->ambient;

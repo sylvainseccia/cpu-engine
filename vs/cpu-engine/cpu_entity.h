@@ -8,7 +8,7 @@ public:
 	XMFLOAT3 view;
 	cpu_material* pMaterial;
 	float lifetime;
-	ui32 tile;
+	ui64 tile;
 	cpu_sphere sphere;
 	cpu_aabb aabb;
 	cpu_obb obb;

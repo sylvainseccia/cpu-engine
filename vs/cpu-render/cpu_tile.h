@@ -7,7 +7,6 @@ public:
 	int top;
 	int right;
 	int bottom;
-	int index;
 	int row;
 	int col;
 

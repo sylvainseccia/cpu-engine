@@ -110,7 +110,7 @@ using ui64								= unsigned __int64;
 
 // Constants
 #define CPU_ZERO						1e-20f
-#define CPU_EPSILON						1e-8f
+#define CPU_EPSILON						1e-12f
 
 // Float3
 inline XMFLOAT3 CPU_VEC3_RIGHT			= { 1.0f, 0.0f, 0.0f };

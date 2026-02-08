@@ -69,7 +69,6 @@ bool cpu_engine::Create(int width, int height, bool fullscreen, bool amigaStyle)
 			cpu_tile tile;
 			tile.row = row;
 			tile.col = col;
-			tile.index = (int)m_tiles.size();
 			tile.left = col * m_tileWidth;
 			tile.top = row * m_tileHeight;
 			tile.right = (col+1) * m_tileWidth;
@@ -635,19 +634,24 @@ void cpu_engine::Render_AssignEntityTile()
 		if ( pEntity->dead || pEntity->clipped )
 			continue;
 
-		int minX = cpu::Clamp(int(pEntity->box.min.x) / m_tileWidth, 0, m_tileColCount-1);
-		int maxX = cpu::Clamp(int(pEntity->box.max.x) / m_tileWidth, 0, m_tileColCount-1);
-		int minY = cpu::Clamp(int(pEntity->box.min.y) / m_tileHeight, 0, m_tileRowCount-1);
-		int maxY = cpu::Clamp(int(pEntity->box.max.y) / m_tileHeight, 0, m_tileRowCount-1);
+		if ( pEntity->box.IsEmpty() )
+			continue;
+
+		int minX = cpu::Clamp(pEntity->box.minX/m_tileWidth, 0, m_tileColCount-1);
+		int maxX = cpu::Clamp((pEntity->box.maxX-1)/m_tileWidth, 0, m_tileColCount-1);
+		int minY = cpu::Clamp(pEntity->box.minY/m_tileHeight, 0, m_tileRowCount-1);
+		int maxY = cpu::Clamp((pEntity->box.maxY-1)/m_tileHeight, 0, m_tileRowCount-1);
 
 		pEntity->tile = 0;
+		int offset = minY * m_tileColCount;
 		for ( int y=minY ; y<=maxY ; y++ )
 		{
 			for ( int x=minX ; x<=maxX ; x++ )
 			{
-				int index = y*m_tileColCount + x;
-				pEntity->tile |= 1 << index;
+				int index = offset + x;
+				pEntity->tile |= 1ULL << index;
 			}
+			offset += m_tileColCount;
 		}
 	}
 }
@@ -662,7 +666,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 		if ( pEntity->dead || pEntity->clipped )
 			continue;
 	
-		bool entityHasTile = (pEntity->tile>>tile.index) & 1 ? true : false;
+		bool entityHasTile = (pEntity->tile>>iTile) & 1 ? true : false;
 		if ( entityHasTile==false )
 			continue;
 

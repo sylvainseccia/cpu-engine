@@ -3,11 +3,15 @@
 struct cpu_rectangle
 {
 public:
-	XMFLOAT2 min;
-	XMFLOAT2 max;
+	int minX;	// inclusive
+	int maxX;	// exclusive
+
+	int minY;	// inclusive
+	int maxY;	// exclusive
 
 public:
 	cpu_rectangle();
 
 	void Zero();
+	bool IsEmpty();
 };
