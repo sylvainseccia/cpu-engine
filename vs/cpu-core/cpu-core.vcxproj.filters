@@ -14,6 +14,9 @@
     <Filter Include="system">
       <UniqueIdentifier>{28485550-da15-40d3-9bc3-56ce8af70459}</UniqueIdentifier>
     </Filter>
+    <Filter Include="input">
+      <UniqueIdentifier>{9c365271-931e-4c09-9c93-777cbf640f0d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu-core.h">
@@ -32,9 +35,6 @@
       <Filter>system</Filter>
     </ClInclude>
     <ClInclude Include="cpu_function.h">
-      <Filter>system</Filter>
-    </ClInclude>
-    <ClInclude Include="cpu_input.h">
       <Filter>system</Filter>
     </ClInclude>
     <ClInclude Include="cpu_png32.h">
@@ -82,6 +82,18 @@
     <ClInclude Include="cpu_transform.h">
       <Filter>geometry</Filter>
     </ClInclude>
+    <ClInclude Include="cpu_input.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="cpu_xinput.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="cpu_xinput_state.h">
+      <Filter>input</Filter>
+    </ClInclude>
+    <ClInclude Include="cpu_vinput.h">
+      <Filter>input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpu-core.cpp">
@@ -100,9 +112,6 @@
       <Filter>system</Filter>
     </ClCompile>
     <ClCompile Include="cpu_function.cpp">
-      <Filter>system</Filter>
-    </ClCompile>
-    <ClCompile Include="cpu_input.cpp">
       <Filter>system</Filter>
     </ClCompile>
     <ClCompile Include="cpu_png32.cpp">
@@ -149,6 +158,18 @@
     </ClCompile>
     <ClCompile Include="cpu_transform.cpp">
       <Filter>geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_input.cpp">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_xinput.cpp">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_xinput_state.cpp">
+      <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_vinput.cpp">
+      <Filter>input</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

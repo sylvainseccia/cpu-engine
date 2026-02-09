@@ -83,6 +83,7 @@
     <ClInclude Include="cpu-core.h" />
     <ClInclude Include="cpu_aabb.h" />
     <ClInclude Include="cpu_atomic.h" />
+    <ClInclude Include="cpu_vinput.h" />
     <ClInclude Include="cpu_mesh.h" />
     <ClInclude Include="cpu_obb.h" />
     <ClInclude Include="cpu_object.h" />
@@ -98,6 +99,8 @@
     <ClInclude Include="cpu_img32.h" />
     <ClInclude Include="cpu_input.h" />
     <ClInclude Include="cpu_window.h" />
+    <ClInclude Include="cpu_xinput.h" />
+    <ClInclude Include="cpu_xinput_state.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="cpu_png32.h" />
     <ClInclude Include="cpu_thread.h" />
@@ -107,6 +110,7 @@
     <ClCompile Include="cpu-core.cpp" />
     <ClCompile Include="cpu_aabb.cpp" />
     <ClCompile Include="cpu_atomic.cpp" />
+    <ClCompile Include="cpu_vinput.cpp" />
     <ClCompile Include="cpu_mesh.cpp" />
     <ClCompile Include="cpu_obb.cpp" />
     <ClCompile Include="cpu_object.cpp" />
@@ -122,6 +126,8 @@
     <ClCompile Include="cpu_img32.cpp" />
     <ClCompile Include="cpu_input.cpp" />
     <ClCompile Include="cpu_window.cpp" />
+    <ClCompile Include="cpu_xinput.cpp" />
+    <ClCompile Include="cpu_xinput_state.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

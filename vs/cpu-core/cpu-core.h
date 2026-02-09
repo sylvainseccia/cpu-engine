@@ -11,6 +11,8 @@
 
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "xinput.lib")
+//#pragma comment(lib, "xaudio2.lib")
 
 // Windows
 ///////////
@@ -52,6 +54,10 @@ inline XMVECTOR CPU_XMRIGHT				= g_XMIdentityR0;
 inline XMVECTOR CPU_XMUP				= g_XMIdentityR1;
 inline XMVECTOR CPU_XMDIR				= g_XMIdentityR2;
 
+#include <xinput.h>
+//#include <wbemidl.h>				// XInput
+//#include <xaudio2.h>
+
 // Engine
 ///////////
 
@@ -71,6 +77,7 @@ inline XMVECTOR CPU_XMDIR				= g_XMIdentityR2;
 
 // Forward declarations
 struct cpu_aabb;
+struct cpu_input;
 struct cpu_obb;
 struct cpu_triangle;
 struct cpu_ray;
@@ -112,6 +119,16 @@ using ui64								= unsigned __int64;
 #define CPU_ZERO						1e-20f
 #define CPU_EPSILON						1e-12f
 
+// Controller
+#define CPU_INPUT_ACTIONS				8
+#define CPU_XINPUT_A					0
+#define CPU_XINPUT_B					1
+#define CPU_XINPUT_X					2
+#define CPU_XINPUT_Y					3
+#define CPU_XINPUT_LS					4
+#define CPU_XINPUT_RS					5
+#define CPU_XINPUT_COUNT				6
+
 // Float3
 inline XMFLOAT3 CPU_VEC3_RIGHT			= { 1.0f, 0.0f, 0.0f };
 inline XMFLOAT3 CPU_VEC3_UP				= { 0.0f, 1.0f, 0.0f };
@@ -133,6 +150,9 @@ inline XMFLOAT3 CPU_ORANGE				= { 1.0f, 0.5f, 0.0f };
 #include "cpu_global.h"
 #include "cpu_atomic.h"
 #include "cpu_time.h"
+#include "cpu_xinput_state.h"
+#include "cpu_xinput.h"
+#include "cpu_vinput.h"
 #include "cpu_input.h"
 #include "cpu_thread.h"
 #include "cpu_function.h"

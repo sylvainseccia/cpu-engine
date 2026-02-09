@@ -166,13 +166,13 @@ void App::OnUpdate()
 	cpuEngine.GetCamera()->transform.AddYPR(0.0f, 0.0f, dt*0.1f);
 
 	// Move ship
-	if ( cpuInput.IsKey(VK_UP) )
+	if ( cpuInput.IsUp() )
 		cpuEngine.GetCamera()->transform.Move(dt*1.0f);
-	if ( cpuInput.IsKey(VK_DOWN) )
+	if ( cpuInput.IsDown() )
 		cpuEngine.GetCamera()->transform.Move(-dt*1.0f);
-	if ( cpuInput.IsKey(VK_LEFT) )
+	if ( cpuInput.IsLeft() )
 		cpuEngine.GetCamera()->transform.AddYPR(-dt*XM_PI);
-	if ( cpuInput.IsKey(VK_RIGHT) )
+	if ( cpuInput.IsRight() )
 		cpuEngine.GetCamera()->transform.AddYPR(dt*XM_PI);
 
 	// Move missiles
@@ -185,7 +185,7 @@ void App::OnUpdate()
 	}
 
 	// Fire
-	if ( cpuInput.IsKeyDown(VK_LBUTTON) || cpuInput.IsKey(VK_RBUTTON) )
+	if ( cpuInput.IsActionPressed() || cpuInput.IsAction(1) )
 		cpuApp.SpawnMissileWithMouse();
 
 	// Purge missiles
@@ -198,7 +198,7 @@ void App::OnUpdate()
 	}
 
 	// Quit
-	if ( cpuInput.IsKeyDown(VK_ESCAPE) )
+	if ( cpuInput.IsBackPressed() )
 		cpuEngine.Quit();
 }
 
@@ -323,7 +323,7 @@ void Ship::Update()
 	m_pEntity->transform.pos.z += dt * 1.0f;
 
 	// Fire
-	if ( cpuInput.IsKey(VK_SPACE) )
+	if ( cpuInput.vi.IsKey(VK_SPACE) )
 		cpuApp.SpawnMissile();
 }
 

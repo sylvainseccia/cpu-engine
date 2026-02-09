@@ -8,10 +8,12 @@ namespace cpu
 void Initialize()
 {
 	cpu_window::Initialize();
+	cpuInput.Initialize();
 }
 
 void Uninitialize()
 {
+	cpuInput.Uninitialize();
 	cpu_window::Uninitialize();
 	cpu_img32::Free();
 }

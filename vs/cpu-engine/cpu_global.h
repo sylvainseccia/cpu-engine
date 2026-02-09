@@ -12,7 +12,7 @@ void Run(int width, int height, bool fullscreen = false, bool amigaStyle = false
 #endif
 
 	cpu::Initialize();
-
+	
 	MSG msg;
 	while ( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) );
 	E* pEngine = new E;
@@ -23,7 +23,7 @@ void Run(int width, int height, bool fullscreen = false, bool amigaStyle = false
 		delete pApp;
 	}
 	delete pEngine;
-
+	
 	cpu::Uninitialize();
 
 #ifdef _DEBUG
