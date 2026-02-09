@@ -17,6 +17,7 @@ cpu_xinput::~cpu_xinput()
 void cpu_xinput::Initialize(cpu_input* pI)
 {
 	pInput = pI;
+	SetDeadZones();
 	ForceFeedback();
 }
 
