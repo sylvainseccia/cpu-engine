@@ -7,7 +7,7 @@ cpu_camera::cpu_camera()
 	width = 16.0f;
 	height = 9.0f;
 	aspectRatio = width/height;
-	near = 1.0f;
+	near = 0.1f;
 	far = 100.0f;
 }
 
