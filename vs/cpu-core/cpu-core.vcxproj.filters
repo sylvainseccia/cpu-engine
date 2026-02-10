@@ -17,6 +17,9 @@
     <Filter Include="input">
       <UniqueIdentifier>{9c365271-931e-4c09-9c93-777cbf640f0d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="audio">
+      <UniqueIdentifier>{3d56940e-f4f6-49b0-a399-b27221b217fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu-core.h">
@@ -94,6 +97,15 @@
     <ClInclude Include="cpu_vinput.h">
       <Filter>input</Filter>
     </ClInclude>
+    <ClInclude Include="cpu_audio.h">
+      <Filter>audio</Filter>
+    </ClInclude>
+    <ClInclude Include="cpu_sound.h">
+      <Filter>audio</Filter>
+    </ClInclude>
+    <ClInclude Include="cpu_player.h">
+      <Filter>audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpu-core.cpp">
@@ -170,6 +182,15 @@
     </ClCompile>
     <ClCompile Include="cpu_vinput.cpp">
       <Filter>input</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_audio.cpp">
+      <Filter>audio</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_sound.cpp">
+      <Filter>audio</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_player.cpp">
+      <Filter>audio</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

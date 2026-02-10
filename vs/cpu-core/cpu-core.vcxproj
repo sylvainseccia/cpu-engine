@@ -83,6 +83,9 @@
     <ClInclude Include="cpu-core.h" />
     <ClInclude Include="cpu_aabb.h" />
     <ClInclude Include="cpu_atomic.h" />
+    <ClInclude Include="cpu_audio.h" />
+    <ClInclude Include="cpu_player.h" />
+    <ClInclude Include="cpu_sound.h" />
     <ClInclude Include="cpu_vinput.h" />
     <ClInclude Include="cpu_mesh.h" />
     <ClInclude Include="cpu_obb.h" />
@@ -110,6 +113,9 @@
     <ClCompile Include="cpu-core.cpp" />
     <ClCompile Include="cpu_aabb.cpp" />
     <ClCompile Include="cpu_atomic.cpp" />
+    <ClCompile Include="cpu_audio.cpp" />
+    <ClCompile Include="cpu_player.cpp" />
+    <ClCompile Include="cpu_sound.cpp" />
     <ClCompile Include="cpu_vinput.cpp" />
     <ClCompile Include="cpu_mesh.cpp" />
     <ClCompile Include="cpu_obb.cpp" />

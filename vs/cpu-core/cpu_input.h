@@ -13,7 +13,9 @@ public:
 	cpu_xinput xi;	// xinput
 
 public:
+	cpu_input();
 	~cpu_input();
+
 	static cpu_input& GetInstance();
 	
 	void Initialize();
@@ -45,9 +47,6 @@ public:
 	bool IsDownReleased();
 
 	void Update();
-
-private:
-	cpu_input();
 };
 
 template<typename... IDS>

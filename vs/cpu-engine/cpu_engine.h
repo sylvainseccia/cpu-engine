@@ -36,12 +36,14 @@ public:
 	cpu_sprite* CreateSprite();
 	cpu_particle_emitter* CreateParticleEmitter();
 	cpu_rt* CreateRT(bool depth = true);
+	cpu_player* CreatePlayer();
 	template <typename T>
 	cpu_fsm<T>* Release(cpu_fsm<T>* pFSM);
 	cpu_entity* Release(cpu_entity* pEntity);
 	cpu_sprite* Release(cpu_sprite* pSprite);
 	cpu_particle_emitter* Release(cpu_particle_emitter* pEmitter);
 	cpu_rt* Release(cpu_rt* pRT);
+	cpu_player* Release(cpu_player* pPlayer);
 
 	void SetCursor(cpu_texture* pTexture);
 	void SetCursor(XMFLOAT2& pt);
@@ -60,6 +62,7 @@ private:
 	void Update_Physics();
 	void Update_FSM();
 	void Update_Particles();
+	void Update_Audio();
 	void Update_Purge();
 
 	void Render();
@@ -137,6 +140,7 @@ private:
 	cpu_manager<cpu_particle_emitter> m_particleManager;
 	cpu_manager<cpu_sprite> m_spriteManager;
 	cpu_manager<cpu_rt> m_rtManager;
+	cpu_manager<cpu_player> m_playerManager;
 
 	// Callback
 	cpu_callback m_callback;

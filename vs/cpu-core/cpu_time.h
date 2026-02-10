@@ -21,7 +21,8 @@ public:
 	bool Update();
 
 	void Reset();
-	float Since(float t) { return totalTime-t; }
+	float Since(float t);
+	float Since(float t, float duration);
 
 private:
     cpu_time();

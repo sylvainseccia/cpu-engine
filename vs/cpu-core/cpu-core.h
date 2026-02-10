@@ -12,7 +12,9 @@
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "xinput.lib")
-//#pragma comment(lib, "xaudio2.lib")
+#pragma comment(lib, "xaudio2.lib")
+#pragma comment(lib, "msacm32.lib")		// MP3
+#pragma comment(lib, "wmvcore.lib")		// MP3
 
 // Windows
 ///////////
@@ -38,10 +40,15 @@
 	#include <crtdbg.h>
 #endif
 
+#include <xinput.h>
+#include <xaudio2.h>
+#include <msacm.h>						// MP3
+#include <wmsdk.h>						// MP3
+
 // DirectX
 ////////////
 
-// Enable CPU_CONFIG_GPU for improved stretching when window size != render size or if you want to use V-Sync
+// Enable CPU_CONFIG_GPU for improved stretching when window size != render size OR if you want to use V-Sync
 #define CPU_CONFIG_GPU
 #ifdef CPU_CONFIG_GPU
 	#pragma comment(lib, "d2d1.lib")
@@ -53,10 +60,6 @@ using namespace DirectX;
 inline XMVECTOR CPU_XMRIGHT				= g_XMIdentityR0;
 inline XMVECTOR CPU_XMUP				= g_XMIdentityR1;
 inline XMVECTOR CPU_XMDIR				= g_XMIdentityR2;
-
-#include <xinput.h>
-//#include <wbemidl.h>				// XInput
-//#include <xaudio2.h>
 
 // Engine
 ///////////
@@ -98,8 +101,9 @@ using ui64								= unsigned __int64;
 #endif
 
 // Singletons
-#define cpuTime							cpu_time::GetInstance()
+#define cpuAudio						cpu_audio::GetInstance()
 #define cpuInput						cpu_input::GetInstance()
+#define cpuTime							cpu_time::GetInstance()
 
 // Macro
 #define CPU_RELEASE(p)					{ if ( (p) ) { (p)->Release(); (p) = nullptr; } }
@@ -149,14 +153,17 @@ inline XMFLOAT3 CPU_ORANGE				= { 1.0f, 0.5f, 0.0f };
 #include "cpu_img32.h"
 #include "cpu_global.h"
 #include "cpu_atomic.h"
+#include "cpu_object.h"
 #include "cpu_time.h"
+#include "cpu_sound.h"
+#include "cpu_player.h"
+#include "cpu_audio.h"
 #include "cpu_xinput_state.h"
 #include "cpu_xinput.h"
 #include "cpu_vinput.h"
 #include "cpu_input.h"
 #include "cpu_thread.h"
 #include "cpu_function.h"
-#include "cpu_object.h"
 #include "cpu_vec3_cmp.h"
 #include "cpu_vertex.h"
 #include "cpu_triangle.h"

@@ -225,6 +225,11 @@ cpu_rt* cpu_engine::CreateRT(bool depth)
 	return pRT;
 }
 
+cpu_player* cpu_engine::CreatePlayer()
+{
+	return m_playerManager.Create();
+}
+
 void cpu_engine::ClearManagers()
 {
 	m_entityManager.Clear();
@@ -232,6 +237,7 @@ void cpu_engine::ClearManagers()
 	m_particleManager.Clear();
 	m_fsmManager.Clear();
 	m_rtManager.Clear();
+	m_playerManager.Clear();
 }
 
 cpu_entity* cpu_engine::Release(cpu_entity* pEntity)
@@ -255,6 +261,12 @@ cpu_particle_emitter* cpu_engine::Release(cpu_particle_emitter* pEmitter)
 cpu_rt* cpu_engine::Release(cpu_rt* pRT)
 {
 	m_rtManager.Release(pRT);
+	return nullptr;
+}
+
+cpu_player* cpu_engine::Release(cpu_player* pPlayer)
+{
+	m_playerManager.Release(pPlayer);
 	return nullptr;
 }
 
@@ -450,6 +462,9 @@ void cpu_engine::Update()
 	// Particles
 	Update_Particles();
 
+	// Audio
+	Update_Audio();
+
 	// Callback
 	m_callback.onUpdate.Call();
 
@@ -514,6 +529,18 @@ void cpu_engine::Update_Particles()
 	CPU_JOBS(m_particlePhysicsJobs);
 }
 
+void cpu_engine::Update_Audio()
+{
+	for ( int i=0 ; i<m_playerManager.count ; i++ )
+	{
+		cpu_player* pPlayer = m_playerManager[i];
+		if ( pPlayer->dead )
+			continue;
+
+		pPlayer->Update();
+	}
+}
+
 void cpu_engine::Update_Purge()
 {
 	m_fsmManager.Purge();
@@ -521,6 +548,7 @@ void cpu_engine::Update_Purge()
 	m_particleManager.Purge();
 	m_spriteManager.Purge();
 	m_rtManager.Purge();
+	m_playerManager.Purge();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
