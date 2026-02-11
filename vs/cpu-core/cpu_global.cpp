@@ -450,15 +450,11 @@ bool RaySphere(cpu_ray& ray, XMFLOAT3& center, float radius, XMFLOAT3& outHit, f
 // outHit = point d’intersection (premier point rencontré pour t >= 0).
 // outT = paramètre t (optionnel).
 // outBary = barycentriques (u,v,w) optionnel, utile pour interpoler (normal, uv, etc.).
-bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT , XMFLOAT3* pOutBary, bool cullBackFace)
+bool RayTriangle(cpu_ray& ray, XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& outHit, float* pOutT , XMFLOAT3* pOutBary, bool cullBackFace)
 {
-	const XMFLOAT3& v0 = tri.v[0].pos;
-	const XMFLOAT3& v1 = tri.v[1].pos;
-	const XMFLOAT3& v2 = tri.v[2].pos;
-
 	// Edges
-	const XMFLOAT3 e1 = Sub3(v1, v0);
-	const XMFLOAT3 e2 = Sub3(v2, v0);
+	const XMFLOAT3 e1 = Sub3(b, a);
+	const XMFLOAT3 e2 = Sub3(c, a);
 
 	// Begin calculating determinant
 	const XMFLOAT3 pvec = Cross3(ray.dir, e2);
@@ -468,7 +464,7 @@ bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT
 	{
 		if ( det<CPU_EPSILON )
 			return false; // backface ou parallèle
-		const XMFLOAT3 tvec = Sub3(ray.pos, v0);
+		const XMFLOAT3 tvec = Sub3(ray.pos, a);
 		const float u = Dot3(tvec, pvec);
 		if ( u<0.0f || u>det )
 			return false;
@@ -503,7 +499,7 @@ bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT
 			return false; // parallel
 		const float invDet = 1.0f / det;
 
-		const XMFLOAT3 tvec = Sub3(ray.pos, v0);
+		const XMFLOAT3 tvec = Sub3(ray.pos, a);
 		const float u = Dot3(tvec, pvec) * invDet;
 		if ( u<0.0f || u>1.0f )
 			return false;

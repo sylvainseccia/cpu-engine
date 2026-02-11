@@ -64,7 +64,7 @@ bool RaySphere(cpu_ray& ray, XMFLOAT3& center, float radius, XMFLOAT3& outHit, f
 bool RayAabb(cpu_ray& ray, cpu_aabb& box, XMFLOAT3* pOutHit = nullptr, float* outT = nullptr);
 bool RayAabb(cpu_ray& ray, cpu_aabb& box, float& outTEnter, float& outTExit);
 bool RayObb(cpu_ray& ray, cpu_obb& box, XMFLOAT3* pOutHit = nullptr, float* pOutT = nullptr);
-bool RayTriangle(cpu_ray& ray, cpu_triangle& tri, XMFLOAT3& outHit, float* pOutT = nullptr, XMFLOAT3* pOutBary = nullptr, bool cullBackFace = false);
+bool RayTriangle(cpu_ray& ray, XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& outHit, float* pOutT = nullptr, XMFLOAT3* pOutBary = nullptr, bool cullBackFace = false);
 bool AabbAabb(cpu_aabb& a, cpu_aabb& b);
 bool AabbAabbInclusive(cpu_aabb& a, cpu_aabb& b);
 bool ObbObb(cpu_obb& a, cpu_obb& b);

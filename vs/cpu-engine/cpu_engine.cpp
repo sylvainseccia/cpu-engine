@@ -397,9 +397,12 @@ cpu_entity* cpu_engine::HitEntity(cpu_hit& hit, cpu_ray& ray)
 		cpu_ray rayL;
 		ray.ToLocal(rayL, invWorld);
 
-		for ( cpu_triangle& tri : pEntity->pMesh->triangles )
+		for ( size_t offset=0 ; offset<pEntity->pMesh->vertices.size() ; offset+=3 )
 		{
-			if ( cpu::RayTriangle(rayL, tri, ptL, &tL) )
+			XMFLOAT3& a = pEntity->pMesh->vertices[offset+0].pos;
+			XMFLOAT3& b = pEntity->pMesh->vertices[offset+1].pos;
+			XMFLOAT3& c = pEntity->pMesh->vertices[offset+2].pos;
+			if ( cpu::RayTriangle(rayL, a, b, c, ptL, &tL) )
 			{
 				XMVECTOR pL = XMLoadFloat3(&ptL);
 				XMVECTOR pW = XMVector3TransformCoord(pL, world);
@@ -436,7 +439,7 @@ int cpu_engine::GetTotalTriangleCount()
 	{
 		cpu_mesh* pMesh = m_entityManager[i]->pMesh;
 		if ( pMesh )
-			count += (int)pMesh->triangles.size();
+			count += pMesh->GetTriangleCount();
 	}
 	return count;
 }

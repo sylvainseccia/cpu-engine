@@ -368,12 +368,12 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 
 	cpu_vertex_out vo[3];
 	cpu_vertex_out clipped[8];
-	for ( const cpu_triangle& triangle : pMesh->triangles )
+	for ( size_t offset=0 ; offset<pMesh->vertices.size() ; offset+=3 )
 	{
 		for ( int i=0 ; i<3 ; ++i )
 		{
 			// Vertex
-			const cpu_vertex& in = triangle.v[i];
+			const cpu_vertex& in = pMesh->vertices[offset+i];
 
 			// World pos
 			XMVECTOR loc = XMLoadFloat3(&in.pos);
@@ -431,11 +431,11 @@ void cpu_device::DrawWireframeMesh(cpu_mesh* pMesh, FXMMATRIX matrix, cpu_tile* 
 	XMMATRIX matViewProj = XMLoadFloat4x4(&m_pCamera->matViewProj);
 
 	XMFLOAT4 clip[3];
-	for ( const cpu_triangle& triangle : pMesh->triangles )
+	for ( size_t offset=0 ; offset<pMesh->vertices.size() ; offset+=3 )
 	{
 		for ( int i=0 ; i<3 ; ++i )
 		{
-			const cpu_vertex& in = triangle.v[i];
+			const cpu_vertex& in = pMesh->vertices[offset+i];
 			XMVECTOR loc = XMLoadFloat3(&in.pos);
 			loc = XMVectorSetW(loc, 1.0f);
 			XMVECTOR world = XMVector4Transform(loc, matrix);

@@ -3,7 +3,7 @@
 struct cpu_mesh
 {
 public:
-	std::list<cpu_triangle> triangles;
+	std::vector<cpu_vertex> vertices;
 	float radius;
 	cpu_aabb aabb;
 	cpu_obb obb;
@@ -13,7 +13,7 @@ public:
 	~cpu_mesh() = default;
 
 	void Clear();
-	cpu_triangle* GetTriangle(int index);
+	int GetTriangleCount();
 	void AddMesh(cpu_mesh& mesh);
 	void AddTriangle(cpu_triangle& tri);
 	void AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color);

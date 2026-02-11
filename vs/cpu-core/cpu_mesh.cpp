@@ -11,61 +11,59 @@ cpu_mesh::cpu_mesh()
 
 void cpu_mesh::Clear()
 {
-	triangles.clear();
+	vertices.clear();
 	radius = 0.0f;
 	aabb.Zero();
 	obb.Zero();
 }
 
-cpu_triangle* cpu_mesh::GetTriangle(int index)
+int cpu_mesh::GetTriangleCount()
 {
-	if ( index<0 || index>=triangles.size() )
-		return nullptr;
-	int i = 0;
-	for ( auto it=triangles.begin() ; it!=triangles.end() ; ++it, i++ )
-	{
-		if ( i==index )
-			return &*it;
-	}
-	return nullptr;
+	return (int)(vertices.size()/3);
 }
 
 void cpu_mesh::AddMesh(cpu_mesh& mesh)
 {
-	for ( cpu_triangle& tri : mesh.triangles )
-		triangles.push_back(tri);
+	for ( cpu_vertex& v : mesh.vertices )
+		vertices.push_back(v);
 }
 
 void cpu_mesh::AddTriangle(cpu_triangle& tri)
 {
-	triangles.push_back(tri);
+	vertices.push_back(tri.v[0]);
+	vertices.push_back(tri.v[1]);
+	vertices.push_back(tri.v[2]);
 }
 
 void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color)
 {
-	cpu_triangle t;
-	t.v[0].pos = a;
-	t.v[0].color = color;
-	t.v[1].pos = b;
-	t.v[1].color = color;
-	t.v[2].pos = c;
-	t.v[2].color = color;
-	triangles.push_back(t);
+	cpu_vertex v;
+	v.pos = a;
+	v.color = color;
+	vertices.push_back(v);
+	v.pos = b;
+	v.color = color;
+	vertices.push_back(v);
+	v.pos = c;
+	v.color = color;
+	vertices.push_back(v);
 }
 
 void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT2& auv, XMFLOAT2& buv, XMFLOAT2& cuv, XMFLOAT3& color)
 {
-	cpu_triangle t;
-	t.v[0].pos = a;
-	t.v[0].color = color;
-	t.v[0].uv = auv;
-	t.v[1].pos = b;
-	t.v[1].color = color;
-	t.v[1].uv = buv;
-	t.v[2].pos = c;
-	t.v[2].color = color;
-	t.v[2].uv = cuv;
-	triangles.push_back(t);
+	cpu_vertex v;
+	v.pos = a;
+	v.color = color;
+	v.uv = auv;
+	vertices.push_back(v);
+	v.pos = b;
+	v.color = color;
+	v.uv = buv;
+	vertices.push_back(v);
+	v.pos = c;
+	v.color = color;
+	v.uv = cuv;
+	vertices.push_back(v);
 }
 
 void cpu_mesh::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLOAT3& color)
@@ -93,35 +91,32 @@ void cpu_mesh::Optimize()
 void cpu_mesh::CalculateNormals()
 {
 	std::map<XMFLOAT3, XMVECTOR, cpu_vec3_cmp> normalAccumulator;
-	for ( cpu_triangle& t : triangles )
+	for ( size_t i=0 ; i<vertices.size() ; i+=3 )
 	{
-		XMVECTOR p0 = XMLoadFloat3(&t.v[0].pos);
-		XMVECTOR p1 = XMLoadFloat3(&t.v[1].pos);
-		XMVECTOR p2 = XMLoadFloat3(&t.v[2].pos);
+		XMVECTOR p0 = XMLoadFloat3(&vertices[i+0].pos);
+		XMVECTOR p1 = XMLoadFloat3(&vertices[i+1].pos);
+		XMVECTOR p2 = XMLoadFloat3(&vertices[i+2].pos);
 
 		XMVECTOR edge1 = XMVectorSubtract(p1, p0);
 		XMVECTOR edge2 = XMVectorSubtract(p2, p0);
 		XMVECTOR faceNormal = XMVector3Cross(edge1, edge2);
 		
-		if ( normalAccumulator.count(t.v[0].pos)==0 )
-			normalAccumulator[t.v[0].pos] = XMVectorZero();
-		if ( normalAccumulator.count(t.v[1].pos)==0 )
-			normalAccumulator[t.v[1].pos] = XMVectorZero();
-		if ( normalAccumulator.count(t.v[2].pos)==0 )
-			normalAccumulator[t.v[2].pos] = XMVectorZero();
+		if ( normalAccumulator.count(vertices[i+0].pos)==0 )
+			normalAccumulator[vertices[i+0].pos] = XMVectorZero();
+		if ( normalAccumulator.count(vertices[i+1].pos)==0 )
+			normalAccumulator[vertices[i+1].pos] = XMVectorZero();
+		if ( normalAccumulator.count(vertices[i+2].pos)==0 )
+			normalAccumulator[vertices[i+2].pos] = XMVectorZero();
 
-		normalAccumulator[t.v[0].pos] = XMVectorAdd(normalAccumulator[t.v[0].pos], faceNormal);
-		normalAccumulator[t.v[1].pos] = XMVectorAdd(normalAccumulator[t.v[1].pos], faceNormal);
-		normalAccumulator[t.v[2].pos] = XMVectorAdd(normalAccumulator[t.v[2].pos], faceNormal);
+		normalAccumulator[vertices[i+0].pos] = XMVectorAdd(normalAccumulator[vertices[i+0].pos], faceNormal);
+		normalAccumulator[vertices[i+1].pos] = XMVectorAdd(normalAccumulator[vertices[i+1].pos], faceNormal);
+		normalAccumulator[vertices[i+2].pos] = XMVectorAdd(normalAccumulator[vertices[i+2].pos], faceNormal);
 	}
-	for ( cpu_triangle& t : triangles )
+	for ( cpu_vertex& v : vertices )
 	{
-		for ( int i=0 ; i<3 ; i++ )
-		{
-			XMVECTOR sumNormal = normalAccumulator[t.v[i].pos];
-			sumNormal = XMVector3Normalize(sumNormal);
-			XMStoreFloat3(&t.v[i].normal, sumNormal);
-		}
+		XMVECTOR sumNormal = normalAccumulator[v.pos];
+		sumNormal = XMVector3Normalize(sumNormal);
+		XMStoreFloat3(&v.normal, sumNormal);
 	}
 }
 
@@ -134,24 +129,21 @@ void cpu_mesh::CalculateBoundingVolumes()
 	aabb.max.y = -FLT_MAX;
 	aabb.max.z = -FLT_MAX;
 
-	for ( cpu_triangle& t : triangles )
+	for ( cpu_vertex& v : vertices )
 	{
-		for ( int i=0 ; i<3 ; i++ )
-		{
-			if ( t.v[i].pos.x<aabb.min.x )
-				aabb.min.x = t.v[i].pos.x;
-			if ( t.v[i].pos.y<aabb.min.y )
-				aabb.min.y = t.v[i].pos.y;
-			if ( t.v[i].pos.z<aabb.min.z )
-				aabb.min.z = t.v[i].pos.z;
+		if ( v.pos.x<aabb.min.x )
+			aabb.min.x = v.pos.x;
+		if ( v.pos.y<aabb.min.y )
+			aabb.min.y = v.pos.y;
+		if ( v.pos.z<aabb.min.z )
+			aabb.min.z = v.pos.z;
 				
-			if ( t.v[i].pos.x>aabb.max.x )
-				aabb.max.x = t.v[i].pos.x;
-			if ( t.v[i].pos.y>aabb.max.y )
-				aabb.max.y = t.v[i].pos.y;
-			if ( t.v[i].pos.z>aabb.max.z )
-				aabb.max.z = t.v[i].pos.z;
-		}
+		if ( v.pos.x>aabb.max.x )
+			aabb.max.x = v.pos.x;
+		if ( v.pos.y>aabb.max.y )
+			aabb.max.y = v.pos.y;
+		if ( v.pos.z>aabb.max.z )
+			aabb.max.z = v.pos.z;
 	}
 
 	float fx = std::max(fabsf(aabb.min.x), fabsf(aabb.max.x));
@@ -165,13 +157,10 @@ void cpu_mesh::CalculateBoundingVolumes()
 
 void XM_CALLCONV cpu_mesh::Transform(FXMMATRIX matrix)
 {
-	for ( cpu_triangle& tri : triangles )
+	for ( cpu_vertex& v : vertices )
 	{
-		for ( int i=0 ; i<3 ; i++ )
-		{
-			XMVECTOR v = XMVector3TransformCoord(XMLoadFloat3(&tri.v[i].pos), matrix);
-			XMStoreFloat3(&tri.v[i].pos, v);
-		}
+		XMVECTOR vec = XMVector3TransformCoord(XMLoadFloat3(&v.pos), matrix);
+		XMStoreFloat3(&v.pos, vec);
 	}
 
 	cpu_obb old = obb;
