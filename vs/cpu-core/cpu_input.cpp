@@ -67,13 +67,13 @@ bool cpu_input::IsAction(int index)
 {
 	assert( index>=0 && index<CPU_INPUT_ACTIONS );
 
-	for ( size_t i=0 ; i<mapActionsForVI->size() ; i++ )
+	for ( size_t i=0 ; i<mapActionsForVI[index].size() ; i++ )
 	{
 		if ( vi.IsKey(mapActionsForVI[index][i]) )
 			return true;
 	}
 
-	for ( size_t i=0 ; i<mapActionsForXI->size() ; i++ )
+	for ( size_t i=0 ; i<mapActionsForXI[index].size() ; i++ )
 	{
 		if ( xi.IsButton(mapActionsForXI[index][i]) )
 			return true;
@@ -86,13 +86,13 @@ bool cpu_input::IsActionPressed(int index)
 {
 	assert( index>=0 && index<CPU_INPUT_ACTIONS );
 
-	for ( size_t i=0 ; i<mapActionsForVI->size() ; i++ )
+	for ( size_t i=0 ; i<mapActionsForVI[index].size() ; i++ )
 	{
 		if ( vi.IsKeyPressed(mapActionsForVI[index][i]) )
 			return true;
 	}
 
-	for ( size_t i=0 ; i<mapActionsForXI->size() ; i++ )
+	for ( size_t i=0 ; i<mapActionsForXI[index].size() ; i++ )
 	{
 		if ( xi.IsButtonPressed(mapActionsForXI[index][i]) )
 			return true;
@@ -105,13 +105,13 @@ bool cpu_input::IsActionReleased(int index)
 {
 	assert( index>=0 && index<CPU_INPUT_ACTIONS );
 
-	for ( size_t i=0 ; i<mapActionsForVI->size() ; i++ )
+	for ( size_t i=0 ; i<mapActionsForVI[index].size() ; i++ )
 	{
 		if ( vi.IsKeyReleased(mapActionsForVI[index][i]) )
 			return true;
 	}
 
-	for ( size_t i=0 ; i<mapActionsForXI->size() ; i++ )
+	for ( size_t i=0 ; i<mapActionsForXI[index].size() ; i++ )
 	{
 		if ( xi.IsButtonReleased(mapActionsForXI[index][i]) )
 			return true;
