@@ -24,12 +24,14 @@ int cpu_mesh::GetTriangleCount()
 
 void cpu_mesh::AddMesh(cpu_mesh& mesh)
 {
+	vertices.reserve(vertices.size()+mesh.vertices.size());
 	for ( cpu_vertex& v : mesh.vertices )
 		vertices.push_back(v);
 }
 
 void cpu_mesh::AddTriangle(cpu_triangle& tri)
 {
+	vertices.reserve(vertices.size()+3);
 	vertices.push_back(tri.v[0]);
 	vertices.push_back(tri.v[1]);
 	vertices.push_back(tri.v[2]);
@@ -37,6 +39,7 @@ void cpu_mesh::AddTriangle(cpu_triangle& tri)
 
 void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& color)
 {
+	vertices.reserve(vertices.size()+3);
 	cpu_vertex v;
 	v.pos = a;
 	v.color = color;
@@ -51,6 +54,7 @@ void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& colo
 
 void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT2& auv, XMFLOAT2& buv, XMFLOAT2& cuv, XMFLOAT3& color)
 {
+	vertices.reserve(vertices.size()+3);
 	cpu_vertex v;
 	v.pos = a;
 	v.color = color;
@@ -68,12 +72,14 @@ void cpu_mesh::AddTriangle(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT2& auv,
 
 void cpu_mesh::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLOAT3& color)
 {
+	vertices.reserve(vertices.size()+6);
 	AddTriangle(a, b, c, color);
 	AddTriangle(a, c, d, color);
 }
 
 void cpu_mesh::AddFace(XMFLOAT3& a, XMFLOAT3& b, XMFLOAT3& c, XMFLOAT3& d, XMFLOAT2& auv, XMFLOAT2& buv, XMFLOAT2& cuv, XMFLOAT2& duv, XMFLOAT3& color)
 {
+	vertices.reserve(vertices.size()+6);
 	AddTriangle(a, b, c, auv, buv, cuv, color);
 	AddTriangle(a, c, d, auv, cuv, duv, color);
 }
@@ -206,6 +212,7 @@ void cpu_mesh::CreateCube(float halfSize, XMFLOAT3 color)
 	XMFLOAT2 tr = { 1.0f, 0.0f };					// top-right
 	XMFLOAT2 br = { 1.0f, 1.0f };					// bottom-right
 	XMFLOAT2 bl = { 0.0f, 1.0f };					// bottom-left
+	vertices.reserve(vertices.size()+36);
 	AddFace(p0, p1, p2, p3, bl, br, tr, tl, color);	// -Z (back)
 	AddFace(p4, p7, p6, p5, bl, tl, tr, br, color);	// +Z (front)
 	AddFace(p1, p5, p6, p2, bl, br, tr, tl, color);	// +X (droite)
@@ -231,6 +238,7 @@ void cpu_mesh::CreateSkyBox(float halfSize, XMFLOAT3 color)
 	XMFLOAT2 tr = { 1.0f, 0.0f };					// top-right
 	XMFLOAT2 br = { 1.0f, 1.0f };					// bottom-right
 	XMFLOAT2 bl = { 0.0f, 1.0f };					// bottom-left
+	vertices.reserve(vertices.size()+36);
 	AddFace(p3, p2, p1, p0, tl, tr, br, bl, color); // -Z
 	AddFace(p5, p6, p7, p4, br, tr, tl, bl, color); // +Z
 	AddFace(p2, p6, p5, p1, tl, tr, br, bl, color); // +X
@@ -246,6 +254,7 @@ void cpu_mesh::CreateCircle(float radius, int count, XMFLOAT3 color)
 		return;
 
 	Clear();
+	vertices.reserve(vertices.size()+count*3);
 	float radius2 = radius * 2.0f;
 	float step = XM_2PI / count;
 	float angle = 0.0f;
@@ -330,6 +339,7 @@ void cpu_mesh::CreateTube(float halfHeight, float radius, int count, XMFLOAT3 co
 		return;
 
 	Clear();
+	vertices.reserve(vertices.size()+count*6);
 	float radius2 = radius * 2.0f;
 	float step = XM_2PI / count;
 	float angle = 0.0f;
@@ -459,6 +469,7 @@ void cpu_mesh::CreateSpaceship()
 	XMFLOAT3 c5 = cpu::ToColor(255, 255, 255);
 	XMFLOAT3 c6 = cpu::ToColor(255, 255, 255);
 
+	vertices.reserve(vertices.size()+18);
 	AddTriangle(nose, wLeft, rTop, noseUV, wLeftUV, rTopUV, c1);		// Avant gauche haut
 	AddTriangle(nose, rTop, wRight, noseUV, rTopUV, wRightUV, c2);		// Avant droit haut
 	AddTriangle(nose, rBot, wLeft, noseUV, rBotUV, wLeftUV, c3);		// Avant gauche bas
