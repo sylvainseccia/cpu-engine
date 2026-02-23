@@ -9,7 +9,7 @@ public:
 
 	XMFLOAT3 albedo;
 	float intensity;
-	XMFLOAT2 uv;			// uv over w
+	XMFLOAT2 uv;
 
 public:
 	void Lerp(const cpu_vertex_out& a, const cpu_vertex_out& b, float t);

@@ -48,6 +48,8 @@ public:
 
 	void Present();
 
+	static float ToInvW(float w);
+
 private:
 	void OnWindowCallback(UINT message, WPARAM wParam, LPARAM lParam);
 	bool ClipToScreen(cpu_draw& draw);

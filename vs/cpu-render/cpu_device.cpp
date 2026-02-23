@@ -384,8 +384,6 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			// Clip pos
 			XMVECTOR clip = XMVector4Transform(world, matViewProj);
 			XMStoreFloat4(&vo[i].clipPos, clip);
-			float w = vo[i].clipPos.w;
-			float invW = fabsf(w)>CPU_EPSILON ? (1.0f/w) : 0.0f;
 
 			// World normal
 			XMVECTOR localNormal = XMLoadFloat3(&in.normal);
@@ -404,8 +402,8 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 			vo[i].intensity = ndotl + m_pLight->ambient;
 
 			// UV
-			vo[i].uv.x = in.uv.x * invW;
-			vo[i].uv.y = in.uv.y * invW;
+			vo[i].uv.x = in.uv.x;
+			vo[i].uv.y = in.uv.y;
 		}
 
 		// Clipping
@@ -682,6 +680,18 @@ void cpu_device::Present()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+float cpu_device::ToInvW(float w)
+{
+	//return fabsf(w)>CPU_EPSILON ? (1.0f/w) : 0.0f;
+	if ( fabsf(w)<CPU_EPSILON )
+		w = w<0.0f ? -CPU_EPSILON : CPU_EPSILON;
+	return 1.0f/w;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void cpu_device::OnWindowCallback(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch ( message )
@@ -709,7 +719,7 @@ bool cpu_device::ClipToScreen(cpu_draw& draw)
 			return false;
 
 		// NDC (DirectX: z in [0..1])
-		float invW = 1.0f / w;
+		float invW = ToInvW(w);
 		float ndcX = draw.vo[i]->clipPos.x * invW; // [-1,1]
 		float ndcY = draw.vo[i]->clipPos.y * invW; // [-1,1]
 		float ndcZ = draw.vo[i]->clipPos.z * invW; // [0,1]
@@ -784,9 +794,9 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 	const float dE23dy = b23;
 	const float dE31dx = a31;
 	const float dE31dy = b31;
-	float invW0 = 1.0f / draw.vo[0]->clipPos.w;
-	float invW1 = 1.0f / draw.vo[1]->clipPos.w;
-	float invW2 = 1.0f / draw.vo[2]->clipPos.w;
+	float invW0 = ToInvW(draw.vo[0]->clipPos.w);
+	float invW1 = ToInvW(draw.vo[1]->clipPos.w);
+	float invW2 = ToInvW(draw.vo[2]->clipPos.w);
 
 	const CPU_PS_FUNC func = draw.pMaterial->ps ? draw.pMaterial->ps : &PixelShader;
 	cpu_ps_io io;
@@ -878,8 +888,10 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			// UV (interp)
 			if ( draw.pMaterial->pTexture )
 			{
-				io.p.uv.x = (w0*draw.vo[0]->uv.x + w1*draw.vo[1]->uv.x + w2*draw.vo[2]->uv.x) * w;
-				io.p.uv.y = (w0*draw.vo[0]->uv.y + w1*draw.vo[1]->uv.y + w2*draw.vo[2]->uv.y) * w;
+				//io.p.uv.x = (w0*draw.vo[0]->uv.x + w1*draw.vo[1]->uv.x + w2*draw.vo[2]->uv.x) * w;
+				//io.p.uv.y = (w0*draw.vo[0]->uv.y + w1*draw.vo[1]->uv.y + w2*draw.vo[2]->uv.y) * w;
+				io.p.uv.x = (iw0*draw.vo[0]->uv.x + iw1*draw.vo[1]->uv.x + iw2*draw.vo[2]->uv.x) * w;
+				io.p.uv.y = (iw0*draw.vo[0]->uv.y + iw1*draw.vo[1]->uv.y + iw2*draw.vo[2]->uv.y) * w;
 			}
 			else
 			{
@@ -974,7 +986,7 @@ bool cpu_device::WireframeClipToScreen(const XMFLOAT4& c, float widthHalf, float
 	if ( c.w<CPU_EPSILON )
 		return false;
 
-	float invW = 1.0f / c.w;
+	float invW = ToInvW(c.w);
 	float ndcX = c.x * invW;
 	float ndcY = c.y * invW;
 	float ndcZ = c.z * invW;
@@ -1014,7 +1026,7 @@ int cpu_device::ClipPolyAgainstPlane(const cpu_vertex_out* pInV, int inCount, cp
 		else if ( ain && bin==false )
 		{
 			float denom = dA - dB;
-			if ( fabsf(denom)>1e-12f )
+			if ( fabsf(denom)>CPU_EPSILON )
 			{
 				float t = dA / denom; // A + t(B-A) est sur le plan
 				pOutV[outCount++].Lerp(*pA, *pB, t);
@@ -1023,7 +1035,7 @@ int cpu_device::ClipPolyAgainstPlane(const cpu_vertex_out* pInV, int inCount, cp
 		else if ( ain==false && bin )
 		{
 			float denom = dA - dB;
-			if ( fabsf(denom)>1e-12f )
+			if ( fabsf(denom)>CPU_EPSILON )
 			{
 				float t = dA / denom;
 				pOutV[outCount++].Lerp(*pA, *pB, t);

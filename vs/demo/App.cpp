@@ -113,6 +113,20 @@ void App::OnStart()
 	//m_pEmitter->colorMin = cpu::ToColor(0, 0, 0);
 	//m_pEmitter->colorMax = cpu::ToColor(16, 16, 16);
 
+	// Debug: texture
+	//float roomSize = 100.0f;
+	//cpu_mesh* pMesh = new cpu_mesh;
+	//pMesh->CreatePlane(roomSize, roomSize);
+	//XMMATRIX matrix = XMMatrixRotationX(XM_PIDIV2);
+	//pMesh->Transform(matrix);
+	//matrix = XMMatrixTranslation(0.0f, -2.0f, 0.0f);
+	//pMesh->Transform(matrix);
+	//pMesh->Optimize();
+	//cpu_entity* pE = cpuEngine.CreateEntity();
+	//pE->pMesh = pMesh;
+	//pE->pMaterial = new cpu_material;
+	//pE->pMaterial->pTexture = &m_textureEarth;
+
 	// Camera
 	cpuEngine.GetCamera()->transform.pos.z = -5.0f;
 }
