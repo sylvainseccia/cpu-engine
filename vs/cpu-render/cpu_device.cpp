@@ -888,8 +888,6 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			// UV (interp)
 			if ( draw.pMaterial->pTexture )
 			{
-				//io.p.uv.x = (w0*draw.vo[0]->uv.x + w1*draw.vo[1]->uv.x + w2*draw.vo[2]->uv.x) * w;
-				//io.p.uv.y = (w0*draw.vo[0]->uv.y + w1*draw.vo[1]->uv.y + w2*draw.vo[2]->uv.y) * w;
 				io.p.uv.x = (iw0*draw.vo[0]->uv.x + iw1*draw.vo[1]->uv.x + iw2*draw.vo[2]->uv.x) * w;
 				io.p.uv.y = (iw0*draw.vo[0]->uv.y + iw1*draw.vo[1]->uv.y + iw2*draw.vo[2]->uv.y) * w;
 			}
