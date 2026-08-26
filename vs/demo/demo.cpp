@@ -11,8 +11,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int cmdShow)
 	// RETRO FULLSCREEN
 	CPU_RUN(512, 256, true, true);
 
+	// RETRO WINDOWED
+	//CPU_RUN(512, 256);
+
 	// MODERN
 	//CPU_RUN(1024, 576);
+	//CPU_RUN(1024, 576, true, true);
 
 	// FULL HD (please use release)
 	//CPU_RUN(1920, 1080, true);
