@@ -381,7 +381,7 @@ cpu_entity* cpu_engine::HitEntity(cpu_hit& hit, cpu_ray& ray)
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->dead )
+		if ( pEntity->IsActive()==false )
 			continue;
 
 		float enter, exit;
@@ -494,7 +494,7 @@ void cpu_engine::Update_Physics()
 	for ( int i=0 ; i<m_entityManager.count ; i++ )
 	{
 		cpu_entity* pEntity = m_entityManager[i];
-		if ( pEntity->dead )
+		if ( pEntity->IsActive()==false )
 			continue;
 
 		pEntity->lifetime += cpuTime.delta;
@@ -507,7 +507,7 @@ void cpu_engine::Update_FSM()
 	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
 		cpu_fsm_base* pFSM = m_fsmManager[i];
-		if ( pFSM->dead==false )
+		if ( pFSM->IsActive() )
 			pFSM->UpdatePreGlobal();
 	}
 
@@ -515,7 +515,7 @@ void cpu_engine::Update_FSM()
 	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
 		cpu_fsm_base* pFSM = m_fsmManager[i];
-		if ( pFSM->dead==false )
+		if ( pFSM->IsActive() )
 			pFSM->Update();
 	}
 
@@ -523,7 +523,7 @@ void cpu_engine::Update_FSM()
 	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
 		cpu_fsm_base* pFSM = m_fsmManager[i];
-		if ( pFSM->dead==false )
+		if ( pFSM->IsActive() )
 			pFSM->UpdatePostGlobal();
 	}
 }
@@ -534,7 +534,7 @@ void cpu_engine::Update_Particles()
 	for ( int i=0 ; i<m_particleManager.count ; i++ )
 	{
 		cpu_particle_emitter* pEmitter = m_particleManager[i];
-		if ( pEmitter->dead )
+		if ( pEmitter->IsActive()==false )
 			continue;
 
 		pEmitter->Update(m_device.GetPixelCount());
@@ -552,7 +552,7 @@ void cpu_engine::Update_Audio()
 	for ( int i=0 ; i<m_playerManager.count ; i++ )
 	{
 		cpu_player* pPlayer = m_playerManager[i];
-		if ( pPlayer->dead )
+		if ( pPlayer->IsActive()==false )
 			continue;
 
 		pPlayer->Update();
@@ -677,7 +677,7 @@ void cpu_engine::Render_AssignEntityTile()
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager[iEntity];
-		if ( pEntity->dead || pEntity->clipped )
+		if ( pEntity->IsActive()==false || pEntity->clipped )
 			continue;
 
 		if ( pEntity->box.IsEmpty() )
@@ -709,7 +709,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 	for ( int iEntity=0 ; iEntity<m_entityManager.count ; iEntity++ )
 	{
 		cpu_entity* pEntity = m_entityManager.sortedList[iEntity];
-		if ( pEntity->dead || pEntity->clipped )
+		if ( pEntity->IsActive()==false || pEntity->clipped )
 			continue;
 	
 		bool entityHasTile = (pEntity->tile>>iTile) & 1 ? true : false;
@@ -868,7 +868,7 @@ void cpu_engine::Render_UI()
 	for ( int iSprite=0 ; iSprite<m_spriteManager.count ; iSprite++ )
 	{
 		cpu_sprite* pSprite = m_spriteManager.sortedList[iSprite];
-		if ( pSprite->dead || pSprite->visible==false || pSprite->pTexture==nullptr )
+		if ( pSprite->IsActive()==false || pSprite->visible==false || pSprite->pTexture==nullptr )
 			continue;
 
 		m_device.DrawSprite(pSprite);

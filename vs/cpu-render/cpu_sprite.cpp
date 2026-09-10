@@ -8,9 +8,6 @@ cpu_sprite::cpu_sprite()
 	z = 0;
 	anchorX = 0;
 	anchorY = 0;
-	index = -1;
-	sortedIndex = -1;
-	dead = false;
 	visible = true;
 }
 

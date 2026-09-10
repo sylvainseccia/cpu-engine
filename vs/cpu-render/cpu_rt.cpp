@@ -2,10 +2,6 @@
 
 cpu_rt::cpu_rt()
 {
-	index = -1;
-	sortedIndex = 1;
-	dead = false;
-
 	Destroy();
 }
 

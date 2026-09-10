@@ -2,10 +2,6 @@
 
 cpu_particle_emitter::cpu_particle_emitter()
 {
-	index = -1;
-	sortedIndex = -1;
-	dead = false;
-
 	pData = nullptr;
 
 	blend = CPU_PARTICLE_INTENSITY;
