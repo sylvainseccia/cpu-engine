@@ -503,13 +503,28 @@ void cpu_engine::Update_Physics()
 
 void cpu_engine::Update_FSM()
 {
+	// Pre Global
 	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
 		cpu_fsm_base* pFSM = m_fsmManager[i];
-		if ( pFSM->dead )
-			continue;
+		if ( pFSM->dead==false )
+			pFSM->UpdatePreGlobal();
+	}
 
-		pFSM->Update();
+	// Current
+	for ( int i=0 ; i<m_fsmManager.count ; i++ )
+	{
+		cpu_fsm_base* pFSM = m_fsmManager[i];
+		if ( pFSM->dead==false )
+			pFSM->Update();
+	}
+
+	// Post Global
+	for ( int i=0 ; i<m_fsmManager.count ; i++ )
+	{
+		cpu_fsm_base* pFSM = m_fsmManager[i];
+		if ( pFSM->dead==false )
+			pFSM->UpdatePostGlobal();
 	}
 }
 

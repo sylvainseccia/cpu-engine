@@ -79,21 +79,21 @@ protected:
 
 struct StateShipGlobal
 {
-	void OnEnter(Ship& cur, int from);
+	void OnEnter(Ship& cur, int from, void* pParam);
 	void OnExecute(Ship& cur);
 	void OnExit(Ship& cur, int to);
 };
 
 struct StateShipIdle
 {
-	void OnEnter(Ship& cur, int from);
+	void OnEnter(Ship& cur, int from, void* pParam);
 	void OnExecute(Ship& cur);
 	void OnExit(Ship& cur, int to);
 };
 
 struct StateShipBlink
 {
-	void OnEnter(Ship& cur, int from);
+	void OnEnter(Ship& cur, int from, void* pParam);
 	void OnExecute(Ship& cur);
 	void OnExit(Ship& cur, int to);
 };

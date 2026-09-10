@@ -7,20 +7,24 @@ public:
 
 public:
 	int state;
-	float globalTotalTime;
+	float preGlobalTotalTime;
+	float postGlobalTotalTime;
 	float totalTime;
 
 protected:
 	int pending;
+	void* pPendingParam;
 
 public:
 	cpu_fsm_base();
 	virtual ~cpu_fsm_base();
 
-	void ToState(int to);
+	void ToState(int to, void* pParam = nullptr);
 
 protected:
 	virtual void Update() = 0;
+	virtual void UpdatePreGlobal() = 0;
+	virtual void UpdatePostGlobal() = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,7 +37,7 @@ struct cpu_fsm : public cpu_fsm_base
 private:
 	struct _cpu_handle
 	{
-		using EnterFn = void(*)(void* self, T& cur, int from);
+		using EnterFn = void(*)(void* self, T& cur, int from, void* pParam);
 		using ExecuteFn = void(*)(void* self, T& cur);
 		using ExitFn = void(*)(void* self, T& cur, int to);
 
@@ -45,7 +49,8 @@ private:
 
 private:
 	T* pReceiver;
-	_cpu_handle globalState;
+	_cpu_handle preGlobalState;
+	_cpu_handle postGlobalState;
 	std::vector<_cpu_handle> states;
 
 public:
@@ -55,16 +60,19 @@ public:
 	}
 
 	template <typename S>
-	void SetGlobal();
+	void SetPreGlobal();
+
+	template <typename S>
+	void SetPostGlobal();
 
 	template <typename S>
 	void Add();
 
 protected:
 	template<typename S>
-	static void Enter(void* self, T& cur, int from)
+	static void Enter(void* self, T& cur, int from, void* pParam)
 	{
-		static_cast<S*>(self)->OnEnter(cur, from);
+		static_cast<S*>(self)->OnEnter(cur, from, pParam);
 	}
 
 	template<typename S>
@@ -80,20 +88,36 @@ protected:
 	}
 
 	void Update() override;
+	void UpdatePreGlobal() override;
+	void UpdatePostGlobal() override;
 };
 
 template <typename T>
 template <typename S>
-void cpu_fsm<T>::SetGlobal()
+void cpu_fsm<T>::SetPreGlobal()
 {
-	if ( globalState.self )
+	if ( preGlobalState.self )
 		return;
 
 	static S state;
-	globalState.self = &state;
-	globalState.enter = &Enter<S>;
-	globalState.execute = &Execute<S>;
-	globalState.exit = &Exit<S>;
+	preGlobalState.self = &state;
+	preGlobalState.enter = &Enter<S>;
+	preGlobalState.execute = &Execute<S>;
+	preGlobalState.exit = &Exit<S>;
+}
+
+template <typename T>
+template <typename S>
+void cpu_fsm<T>::SetPostGlobal()
+{
+	if ( postGlobalState.self )
+		return;
+
+	static S state;
+	postGlobalState.self = &state;
+	postGlobalState.enter = &Enter<S>;
+	postGlobalState.execute = &Execute<S>;
+	postGlobalState.exit = &Exit<S>;
 }
 
 template <typename T>
@@ -121,13 +145,13 @@ template <typename T>
 void cpu_fsm<T>::Update()
 {
 	float dt = cpuTime.delta;
-	globalTotalTime += dt;
 	totalTime += dt;
 	
 	if ( pending!=state )
 	{
 		int from = state;
 		int to = pending;
+		void* pParam = pPendingParam;
 	
 		if ( from!=-1 )
 		{
@@ -143,7 +167,7 @@ void cpu_fsm<T>::Update()
 			totalTime = 0.0f;
 			_cpu_handle& handle = states[to];
 			if ( handle.enter )
-				handle.enter(handle.self, *pReceiver, from);
+				handle.enter(handle.self, *pReceiver, from, pParam);
 		}
 	}
 	
@@ -153,7 +177,22 @@ void cpu_fsm<T>::Update()
 		if ( handle.execute )
 			handle.execute(handle.self, *pReceiver);
 	}
-	
-	if ( globalState.execute )
-		globalState.execute(globalState.self, *pReceiver);
+}
+
+template <typename T>
+void cpu_fsm<T>::UpdatePreGlobal()
+{
+	float dt = cpuTime.delta;
+	preGlobalTotalTime += dt;
+	if ( preGlobalState.execute )
+		preGlobalState.execute(preGlobalState.self, *pReceiver);
+}
+
+template <typename T>
+void cpu_fsm<T>::UpdatePostGlobal()
+{
+	float dt = cpuTime.delta;
+	postGlobalTotalTime += dt;
+	if ( postGlobalState.execute )
+		postGlobalState.execute(postGlobalState.self, *pReceiver);
 }
