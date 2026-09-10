@@ -45,6 +45,7 @@ private:
 		EnterFn enter = nullptr;
 		ExecuteFn execute = nullptr;
 		ExitFn exit = nullptr;
+		std::string name;
 	};
 
 private:
@@ -57,6 +58,8 @@ public:
 	cpu_fsm(T* pRcv)
 	{
 		pReceiver = pRcv;
+		preGlobalState.name = "";
+		postGlobalState.name = "";
 	}
 
 	template <typename S>
@@ -66,7 +69,9 @@ public:
 	void SetPostGlobal();
 
 	template <typename S>
-	void Add();
+	void Add(const char* name = nullptr);
+
+	std::string GetName(int id);
 
 protected:
 	template<typename S>
@@ -122,7 +127,7 @@ void cpu_fsm<T>::SetPostGlobal()
 
 template <typename T>
 template <typename S>
-void cpu_fsm<T>::Add()
+void cpu_fsm<T>::Add(const char* name)
 {
 	static S state;
 
@@ -131,6 +136,7 @@ void cpu_fsm<T>::Add()
 	handle.enter = &Enter<S>;
 	handle.execute = &Execute<S>;
 	handle.exit = &Exit<S>;
+	handle.name = name ? name : "";
 
 	int id = (int)states.size();
 	if ( CPU_ID(S)==-1 )
@@ -139,6 +145,12 @@ void cpu_fsm<T>::Add()
 	states.push_back(handle);
 
 	assert( CPU_ID(S)==(int)states.size()-1 );
+}
+
+template <typename T>
+std::string cpu_fsm<T>::GetName(int id)
+{
+	return states[id].name;
 }
 
 template <typename T>
