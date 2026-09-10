@@ -71,7 +71,7 @@ public:
 	template <typename S>
 	void Add(const char* name = nullptr);
 
-	std::string GetName(int id);
+	std::string GetName();
 
 protected:
 	template<typename S>
@@ -148,9 +148,11 @@ void cpu_fsm<T>::Add(const char* name)
 }
 
 template <typename T>
-std::string cpu_fsm<T>::GetName(int id)
+std::string cpu_fsm<T>::GetName()
 {
-	return states[id].name;
+	if ( state<0 || state>=(int)states.size() )
+		return "";
+	return states[state].name;
 }
 
 template <typename T>
