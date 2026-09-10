@@ -101,6 +101,7 @@ template <typename S>
 void cpu_fsm<T>::Add()
 {
 	static S state;
+
 	_cpu_handle handle;
 	handle.self = &state;
 	handle.enter = &Enter<S>;
@@ -112,6 +113,8 @@ void cpu_fsm<T>::Add()
 		CPU_ID(S) = id;
 
 	states.push_back(handle);
+
+	assert( CPU_ID(S)==(int)states.size()-1 );
 }
 
 template <typename T>
