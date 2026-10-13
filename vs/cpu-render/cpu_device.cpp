@@ -460,6 +460,29 @@ void cpu_device::DrawWireframeMesh(cpu_mesh* pMesh, FXMMATRIX matrix, cpu_tile* 
 	}
 }
 
+void cpu_device::DrawWire(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color)
+{
+	cpu_rt& rt = *GetRT();
+	XMMATRIX matViewProj = XMLoadFloat4x4(&m_pCamera->matViewProj);
+
+	XMVECTOR p0 = XMVectorSet((float)x0, (float)y0, z0, 1.0f);
+	XMVECTOR p1 = XMVectorSet((float)x1, (float)y1, z1, 1.0f);
+
+	XMFLOAT4 a, b;
+	XMStoreFloat4(&a, XMVector4Transform(p0, matViewProj));
+	XMStoreFloat4(&b, XMVector4Transform(p1, matViewProj));
+	if ( WireframeClipLineNearPlane(a, b)==false )
+		return;
+
+	XMFLOAT3 sa, sb;
+	if ( WireframeClipToScreen(a, rt.widthHalf, rt.heightHalf, sa)==false )
+		return;
+	if ( WireframeClipToScreen(b, rt.widthHalf, rt.heightHalf, sb)==false )
+		return;
+
+	DrawLine((int)sa.x, (int)sa.y, sa.z, (int)sb.x, (int)sb.y, sb.z, CPU_WHITE);
+}
+
 void cpu_device::DrawText(cpu_font* pFont, cstr text, int x, int y, int align, XMFLOAT3* pTint)
 {
 	if ( pFont==nullptr || pFont->bgra.size()==0 || text==nullptr )

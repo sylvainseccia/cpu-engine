@@ -37,6 +37,7 @@ public:
 
 	void DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_material* pMaterial, int depthMode = CPU_DEPTH_RW, cpu_tile* pTile = nullptr);
 	void XM_CALLCONV DrawWireframeMesh(cpu_mesh* pMesh, FXMMATRIX matrix, cpu_tile* pTile = nullptr);
+	void DrawWire(int x0, int y0, float z0, int x1, int y1, float z1, XMFLOAT3& color);
 	void DrawText(cpu_font* pFont, cstr text, int x, int y, int align = CPU_TEXT_LEFT, XMFLOAT3* pTint = nullptr);
 	void DrawTexture(cpu_texture* pTexture, int x, int y);
 	void DrawSprite(cpu_sprite* pSprite);
