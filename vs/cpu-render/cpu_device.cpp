@@ -791,26 +791,20 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 	if ( minX>=maxX || minY>=maxY )
 		return;
 
-	float a12 = y1 - y2;
-	float b12 = x2 - x1;
-	float c12 = x1 * y2 - x2 * y1;
-	float a23 = y2 - y3;
-	float b23 = x3 - x2;
-	float c23 = x2 * y3 - x3 * y2;
-	float a31 = y3 - y1;
-	float b31 = x1 - x3;
-	float c31 = x3 * y1 - x1 * y3;
-	float area = a12 * x3 + b12 * y3 + c12;
-	if ( fabsf(area)<CPU_EPSILON )
+	const float a12 = y1 - y2;
+	const float b12 = x2 - x1;
+	const float a23 = y2 - y3;
+	const float b23 = x3 - x2;
+	const float a31 = y3 - y1;
+	const float b31 = x1 - x3;
+	const float area = std::fma(a12, x3 - x1, b12 * (y3 - y1));
+	if ( area==0.0f )
 		return;
 
 	float invArea = 1.0f / area;
 	bool areaPositive = area>0.0f;
 	float startX = (float)minX + 0.5f;
 	float startY = (float)minY + 0.5f;
-	float e12_row = a12 * startX + b12 * startY + c12;
-	float e23_row = a23 * startX + b23 * startY + c23;
-	float e31_row = a31 * startX + b31 * startY + c31;
 	const float dE12dx = a12;
 	const float dE12dy = b12;
 	const float dE23dx = a23;
@@ -826,9 +820,10 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 	io.pMaterial = draw.pMaterial;
 	for ( int y=minY ; y<maxY ; ++y )
 	{
-		float e12 = e12_row;
-		float e23 = e23_row;
-		float e31 = e31_row;
+		const float py = (float)y + 0.5f;
+		float e12 = std::fma(a12, startX - x1, b12 * (py - y1));
+		float e23 = std::fma(a23, startX - x2, b23 * (py - y2));
+		float e31 = std::fma(a31, startX - x3, b31 * (py - y3));
 		for ( int x=minX ; x<maxX ; ++x )
 		{
 			if ( areaPositive )
@@ -855,7 +850,7 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			float w0 = e23 * invArea;
 			float w1 = e31 * invArea;
 			float w2 = e12 * invArea;
-			float z = z1*w0 + z2*w1 + z3*w2;
+			float z = std::fma(w1, z2-z1, std::fma(w2, z3-z1, z1));
 			if ( z<CPU_EPSILON )
 			{
 				e12 += dE12dx;
@@ -958,10 +953,6 @@ void cpu_device::DrawTriangle(cpu_draw& draw)
 			e23 += dE23dx;
 			e31 += dE31dx;
 		}
-
-		e12_row += dE12dy;
-		e23_row += dE23dy;
-		e31_row += dE31dy;
 	}
 
 	// Stats
