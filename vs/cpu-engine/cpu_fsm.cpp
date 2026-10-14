@@ -8,6 +8,7 @@ cpu_fsm_base::cpu_fsm_base()
 	preGlobalTotalTime = 0.0f;
 	postGlobalTotalTime = 0.0f;
 	totalTime = 0.0f;
+	pParent = nullptr;
 }
 
 cpu_fsm_base::~cpu_fsm_base()
@@ -22,4 +23,13 @@ void cpu_fsm_base::ToState(int to, void* pParam)
 {
 	pending = to;
 	pPendingParam = pParam;
+}
+
+bool cpu_fsm_base::IsRunning()
+{
+	if ( IsActive()==false )
+		return false;
+	if ( pParent )
+		return pParent->IsRunning();
+	return true;
 }

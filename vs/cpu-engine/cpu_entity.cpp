@@ -47,7 +47,7 @@ void cpu_entity::UpdateWorld(cpu_camera* pCamera, int width, int height)
 
 void cpu_entity::Clip(cpu_camera* pCamera, int* pStats)
 {
-	if ( dead || visible==false || pMesh==nullptr )
+	if ( IsActive()==false || visible==false || pMesh==nullptr )
 	{
 		clipped = true;
 		return;

@@ -507,24 +507,21 @@ void cpu_engine::Update_FSM()
 	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
 		cpu_fsm_base* pFSM = m_fsmManager[i];
-		if ( pFSM->IsActive() )
-			pFSM->UpdatePreGlobal();
+		pFSM->UpdatePreGlobal();
 	}
 
 	// Current
 	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
 		cpu_fsm_base* pFSM = m_fsmManager[i];
-		if ( pFSM->IsActive() )
-			pFSM->Update();
+		pFSM->Update();
 	}
 
 	// Post Global
 	for ( int i=0 ; i<m_fsmManager.count ; i++ )
 	{
 		cpu_fsm_base* pFSM = m_fsmManager[i];
-		if ( pFSM->IsActive() )
-			pFSM->UpdatePostGlobal();
+		pFSM->UpdatePostGlobal();
 	}
 }
 

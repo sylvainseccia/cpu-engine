@@ -10,6 +10,7 @@ public:
 	float preGlobalTotalTime;
 	float postGlobalTotalTime;
 	float totalTime;
+	cpu_fsm_base* pParent;
 
 protected:
 	int pending;
@@ -19,6 +20,7 @@ public:
 	cpu_fsm_base();
 	virtual ~cpu_fsm_base();
 
+	bool IsRunning();
 	void ToState(int to, void* pParam = nullptr);
 
 protected:
@@ -158,6 +160,9 @@ std::string cpu_fsm<T>::GetName()
 template <typename T>
 void cpu_fsm<T>::Update()
 {
+	if ( IsRunning()==false )
+		return;
+
 	float dt = cpuTime.delta;
 	totalTime += dt;
 	
@@ -196,6 +201,9 @@ void cpu_fsm<T>::Update()
 template <typename T>
 void cpu_fsm<T>::UpdatePreGlobal()
 {
+	if ( IsRunning()==false )
+		return;
+
 	float dt = cpuTime.delta;
 	preGlobalTotalTime += dt;
 	if ( preGlobalState.execute )
@@ -205,6 +213,9 @@ void cpu_fsm<T>::UpdatePreGlobal()
 template <typename T>
 void cpu_fsm<T>::UpdatePostGlobal()
 {
+	if ( IsRunning()==false )
+		return;
+
 	float dt = cpuTime.delta;
 	postGlobalTotalTime += dt;
 	if ( postGlobalState.execute )
