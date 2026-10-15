@@ -18,51 +18,102 @@ cpu_sound::~cpu_sound()
 
 bool cpu_sound::LoadWave(byte* sourceBuffer, int sourceSize)
 {
-	if ( sourceBuffer==nullptr || sourceSize<=0 )
+	if ( sourceBuffer==nullptr || sourceSize<12 )
 		return false;
 
 	Close();
 
-	byte* buf = sourceBuffer;
+	// RIFF / WAVE
+	if ( memcmp(sourceBuffer, "RIFF", 4)!=0 || memcmp(sourceBuffer+8, "WAVE", 4)!=0 )
+		return false;
 
-	// Chunk RIFF
-	if ( memcmp(buf, "RIFF", 4) )
+	DWORD riffSize = 0;
+	memcpy(&riffSize, sourceBuffer+4, 4);
+	if ( riffSize<4 || (size_t)riffSize>(size_t)sourceSize-8 )
 		return false;
-	buf += 8;
-	if ( memcmp(buf, "WAVE", 4) )
-		return false;
-	buf += 4;
 
-	// Chunk FMT
-	if ( memcmp(buf, "fmt ", 4) )
-		return false;
-	buf += 4;
-	DWORD formatSize;
-	memcpy(&formatSize, buf, 4);
-	buf += 4;
-	memcpy(&format, buf, formatSize);
-	buf += size;
+	const size_t riffEnd = 8 + (size_t)riffSize;
 
-	// Chunk DATA
-	if ( memcpy(buf, "data", 4) )
+	// Search chunks
+	WAVEFORMATEXTENSIBLE wave = {};
+	bool hasFormat = false;
+	const byte* audioData = nullptr;
+	DWORD audioSize = 0;
+	size_t pos = 12;
+	while ( pos+8<=riffEnd )
+	{
+		const byte* chunk = sourceBuffer + pos;
+		DWORD chunkSize = 0;
+		memcpy(&chunkSize, chunk+4, 4);
+		size_t chunkStart = pos + 8;
+
+		// Check boundaries
+		if ( (size_t)chunkSize>riffEnd-chunkStart )
+			return false;
+
+		if ( memcmp(chunk, "fmt ", 4)==0 && hasFormat==false )
+		{
+			if ( chunkSize<16 )
+				return false;
+
+			size_t copySize = std::min((size_t)chunkSize, sizeof(WAVEFORMATEXTENSIBLE));
+			memcpy(&wave, sourceBuffer+chunkStart, copySize);
+			hasFormat = true;
+
+			// Extended format
+			if ( wave.Format.wFormatTag==WAVE_FORMAT_EXTENSIBLE )
+			{
+				if ( chunkSize<40 || wave.Format.cbSize!=22 )
+					return false;
+			}
+			else if ( wave.Format.wFormatTag==WAVE_FORMAT_PCM || wave.Format.wFormatTag==WAVE_FORMAT_IEEE_FLOAT )
+				wave.Format.cbSize = 0;
+			else
+				return false;
+		}
+		else if ( memcmp(chunk, "data", 4)==0 && audioData==nullptr )
+		{
+			audioData = sourceBuffer+chunkStart;
+			audioSize = chunkSize;
+		}
+		if ( hasFormat && audioData )
+			break;
+
+		// RIFF chunks are aligned to 2 bytes
+		pos = chunkStart + (size_t)chunkSize;
+		if ( chunkSize & 1 )
+		{
+			if ( pos>=riffEnd )
+				return false;
+			++pos;
+		}
+	}
+
+	if ( hasFormat==false || audioData==nullptr || audioSize==0 )
 		return false;
-	buf += 4;
-	DWORD dataSize;
-	memcpy(&dataSize, buf, 4);
-	buf += 4;
+
+	// Validate audio format
+	if ( wave.Format.nChannels==0 || wave.Format.nSamplesPerSec==0 || wave.Format.nBlockAlign==0 )
+		return false;
+
+	if ( audioSize%wave.Format.nBlockAlign!=0 )
+		return false;
+
+	// Keep basic format information
+	format = wave.Format;
 
 	// Create Voice
-	if ( FAILED(cpuAudio.pAudio->CreateSourceVoice(&pVoice, &format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, nullptr, nullptr)) )
+	HRESULT hr = cpuAudio.pAudio->CreateSourceVoice(&pVoice, &wave.Format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, nullptr, nullptr);
+	if ( FAILED(hr) )
 		return false;
 
-	// Buffer
-	size = dataSize;
+	// Copy audio data
+	size = audioSize;
 	data = new byte[size];
-	memcpy(data, buf, size);
+	memcpy(data, audioData, size);
 	ZeroMemory(&buffer, sizeof(XAUDIO2_BUFFER));
 	buffer.AudioBytes = size;
 	buffer.pAudioData = data;
-	//m_buffer.Flags = XAUDIO2_END_OF_STREAM;
 	loaded = true;
 	return true;
 }
@@ -84,7 +135,8 @@ bool cpu_sound::LoadRaw(byte* sourceBuffer, int sourceSize)
 	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
 
 	// Create Voice
-	if ( FAILED(cpuAudio.pAudio->CreateSourceVoice(&pVoice, &format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, nullptr, nullptr)) )
+	HRESULT hr = cpuAudio.pAudio->CreateSourceVoice(&pVoice, &format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, nullptr, nullptr);
+	if ( FAILED(hr) )
 		return false;
 
 	// Buffer
