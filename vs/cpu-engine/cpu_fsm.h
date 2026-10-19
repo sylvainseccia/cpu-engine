@@ -75,6 +75,9 @@ public:
 
 	std::string GetName();
 
+	template <typename S>
+	bool IsState();
+
 protected:
 	template<typename S>
 	static void Enter(void* self, T& cur, int from, void* pParam)
@@ -155,6 +158,13 @@ std::string cpu_fsm<T>::GetName()
 	if ( state<0 || state>=(int)states.size() )
 		return "";
 	return states[state].name;
+}
+
+template <typename T>
+template <typename S>
+bool cpu_fsm<T>::IsState()
+{
+	return CPU_ID(S)==state;
 }
 
 template <typename T>
