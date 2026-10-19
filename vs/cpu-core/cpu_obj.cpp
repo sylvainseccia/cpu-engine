@@ -82,7 +82,7 @@ namespace cpu_obj
 
 		bool missingNormals = false;
 		int offset = 0;
-		while ( true )
+		while ( offset<size )
 		{
 			std::string line = GetLine(file, offset, size);
 			if ( line.empty() )
@@ -244,17 +244,18 @@ namespace cpu_obj
 
 	std::string GetLine(byte* stream, int& offset, int size)
 	{
+		int startOffset = offset;
 		std::string output = "";
 		while ( offset<size )
 		{
 			char c = (char)stream[offset];
 			if ( c=='\n' || c=='\r' || offset+1>=size )
 			{
-				int len = (int)((ui64)offset - (ui64)stream);
+				int len = offset - startOffset;
 				if ( c!='\n' && c!='\r' )
 					len++;
 				char* line = new char[len+1];
-				memcpy(line, stream, len);
+				memcpy(line, stream+startOffset, len);
 				line[len] = 0;
 				output = line;
 				offset += c=='\r' ? 2 : 1;
