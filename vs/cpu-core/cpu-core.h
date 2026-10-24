@@ -30,12 +30,14 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <set>
 #include <algorithm>
 #include <map>
 #include <thread>
 #include <functional>
 #include <cmath>
 #include <emmintrin.h>
+#include <typeindex>
 #ifdef _DEBUG
 	#include <crtdbg.h>
 #endif
@@ -112,7 +114,6 @@ using cstr								= const char*;
 #define CPU_DELPTRS(p)					{ if ( (p) ) { delete [] (p); (p) = nullptr; } }
 #define CPU_STR(v)						std::to_string(v)
 #define CPU_CAPTION(v)					SetWindowText(cpu.GetHWND(), STR(v).c_str());
-#define CPU_ID(s)						cpu::GetStateID<s>()
 #define CPU_RGBX(r,g,b)					((ui32)(((byte)(r)|((ui16)((byte)(g))<<8))|(((ui16)(byte)(b))<<16))|0xFF000000)
 #define CPU_RGBA(r,g,b,a)				((ui32)(((byte)(r)|((ui16)((byte)(g))<<8))|(((ui16)(byte)(b))<<16))|(((ui32)(byte)(a))<<24))
 #define CPU_R(rgba)						((rgba)&0xFF)
@@ -135,6 +136,8 @@ using cstr								= const char*;
 #define CPU_XINPUT_COUNT				6
 
 // Float3
+inline XMFLOAT2 CPU_VEC2_ZERO			= { 0.0f, 0.0f };
+inline XMFLOAT2 CPU_VEC2_ONE			= { 1.0f, 1.0f };
 inline XMFLOAT3 CPU_VEC3_RIGHT			= { 1.0f, 0.0f, 0.0f };
 inline XMFLOAT3 CPU_VEC3_UP				= { 0.0f, 1.0f, 0.0f };
 inline XMFLOAT3 CPU_VEC3_DIR			= { 0.0f, 0.0f, 1.0f };

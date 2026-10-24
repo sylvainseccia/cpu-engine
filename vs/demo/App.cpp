@@ -62,7 +62,7 @@ void App::OnStart()
 	m_meshShip.CreateSpaceship();
 	m_meshMissile.CreateSphere(0.5f);
 	m_meshSphere.CreateSphere(2.0f, 12, 12);
-	m_rts[0] = cpuEngine.CreateRT();
+	//m_rts[0] = cpuEngine.CreateRT();
 
 	// UI
 	m_pSprite = cpuEngine.CreateSprite();
@@ -93,7 +93,7 @@ void App::OnStart()
 	// Ship
 	m_pShip = new Ship;
 	m_pShip->Create(&m_meshShip, &m_materialShip);
-	m_pShip->GetFSM()->ToState(CPU_ID(StateShipIdle));
+	m_pShip->GetFSM()->ToState<StateShipIdle>();
 
 	// Particle
 	cpuEngine.GetParticleData()->Create(2000000);
@@ -347,7 +347,7 @@ void StateShipIdle::OnExecute(Ship& cur)
 	// Blink every 3 seconds
 	if ( cur.GetFSM()->totalTime>3.0f )
 	{
-		cur.GetFSM()->ToState(CPU_ID(StateShipBlink));
+		cur.GetFSM()->ToState<StateShipBlink>();
 		return;
 	}
 }
@@ -378,7 +378,7 @@ void StateShipBlink::OnExecute(Ship& cur)
 
 	if ( cur.GetFSM()->totalTime>1.0f )
 	{
-		cur.GetFSM()->ToState(CPU_ID(StateShipIdle));
+		cur.GetFSM()->ToState<StateShipIdle>();
 		return;
 	}
 }

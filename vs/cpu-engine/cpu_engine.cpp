@@ -125,6 +125,9 @@ void cpu_engine::Run()
 	for ( int i=0 ; i<m_threadCount ; i++ )
 		m_threads[i].Run();
 
+	// FSM
+	cpu_fsm_base::Initialize();
+
 	// Reset
 	cpuTime.Reset();
 	cpuInput.Reset();
@@ -166,6 +169,9 @@ void cpu_engine::Run()
 	m_particlePhysicsJobs.clear();
 	m_particleSpaceJobs.clear();
 	m_particleRenderJobs.clear();
+
+	// FSM
+	cpu_fsm_base::Uninitialize();
 
 	// Managers
 	Update_Purge();

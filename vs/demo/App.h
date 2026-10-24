@@ -29,7 +29,7 @@ private:
 	cpu_mesh m_meshSphere;
 	cpu_texture m_textureBird;
 	cpu_texture m_textureEarth;
-	cpu_rt* m_rts[1];
+	//cpu_rt* m_rts[1];
 
 	// UI
 	cpu_sprite* m_pSprite;

@@ -254,10 +254,7 @@ namespace cpu_obj
 				int len = offset - startOffset;
 				if ( c!='\n' && c!='\r' )
 					len++;
-				char* line = new char[len+1];
-				memcpy(line, stream+startOffset, len);
-				line[len] = 0;
-				output = line;
+				output.assign((cstr)stream+startOffset, (size_t)len);
 				offset += c=='\r' ? 2 : 1;
 				break;
 			}

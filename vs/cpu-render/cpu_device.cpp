@@ -480,7 +480,7 @@ void cpu_device::DrawWire(int x0, int y0, float z0, int x1, int y1, float z1, XM
 	if ( WireframeClipToScreen(b, rt.widthHalf, rt.heightHalf, sb)==false )
 		return;
 
-	DrawLine((int)sa.x, (int)sa.y, sa.z, (int)sb.x, (int)sb.y, sb.z, CPU_WHITE);
+	DrawLine((int)sa.x, (int)sa.y, sa.z, (int)sb.x, (int)sb.y, sb.z, color);
 }
 
 void cpu_device::DrawText(cpu_font* pFont, cstr text, int x, int y, int align, XMFLOAT3* pTint)

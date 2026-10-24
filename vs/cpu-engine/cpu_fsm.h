@@ -6,28 +6,63 @@ public:
 	friend cpu_engine;
 
 public:
-	int state;
+	struct _RELEASE
+	{
+		using ReleaseFn = void(*)(void*);
+		ReleaseFn func;
+		void* pInst;
+	};
+
+public:
 	float preGlobalTotalTime;
 	float postGlobalTotalTime;
 	float totalTime;
 	cpu_fsm_base* pParent;
 
 protected:
-	int pending;
 	void* pPendingParam;
+	inline static std::list<_RELEASE>* pReleaseItems = nullptr;
 
 public:
 	cpu_fsm_base();
 	virtual ~cpu_fsm_base();
 
+	static void Initialize();
+	static void Uninitialize();
+	static void Free();
+
+	template <typename S>
+	static S** StaticGetStateInstance() { static S* pInstance = nullptr; return &pInstance; }
+
+	template <typename S>
+	S* GetStateInstance();
+
 	bool IsRunning();
-	void ToState(int to, void* pParam = nullptr);
 
 protected:
 	virtual void Update() = 0;
 	virtual void UpdatePreGlobal() = 0;
 	virtual void UpdatePostGlobal() = 0;
 };
+
+template <typename S>
+S* cpu_fsm_base::GetStateInstance()
+{
+	S** ppInst = StaticGetStateInstance<S>();
+	if ( *ppInst==nullptr )
+	{
+		*ppInst = new S;
+		_RELEASE obj;
+		obj.func = +[](void* s)
+			{
+				delete static_cast<S*>(s);
+				*StaticGetStateInstance<S>() = nullptr;
+			};
+		obj.pInst = (void*)*ppInst;
+		pReleaseItems->push_back(obj);
+	}
+	return *ppInst;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,26 +78,42 @@ private:
 		using ExecuteFn = void(*)(void* self, T& cur);
 		using ExitFn = void(*)(void* self, T& cur, int to);
 
-		void* self = nullptr;
-		EnterFn enter = nullptr;
-		ExecuteFn execute = nullptr;
-		ExitFn exit = nullptr;
+		void* self;
+		EnterFn enter;
+		ExecuteFn execute;
+		ExitFn exit;
+		int id;
 		std::string name;
+
+		_cpu_handle() { Clear(); }
+		void Clear()
+		{
+			self = nullptr;
+			enter = nullptr;
+			execute = nullptr;
+			exit = nullptr;
+			id = -1;
+			name = "";
+		}
 	};
 
 private:
 	T* pReceiver;
 	_cpu_handle preGlobalState;
 	_cpu_handle postGlobalState;
-	std::vector<_cpu_handle> states;
+	std::unordered_map<std::type_index, _cpu_handle> states;
+	_cpu_handle* pState;
+	_cpu_handle* pPendingState;
 
 public:
 	cpu_fsm(T* pRcv)
 	{
 		pReceiver = pRcv;
-		preGlobalState.name = "";
-		postGlobalState.name = "";
+		pState = nullptr;
+		pPendingState = nullptr;
 	}
+
+	void Clear();
 
 	template <typename S>
 	void SetPreGlobal();
@@ -73,12 +124,21 @@ public:
 	template <typename S>
 	void Add(cstr name = nullptr);
 
-	std::string GetName();
+	std::string GetCurrentName();
 
 	template <typename S>
-	bool IsState();
+	bool IsCurrentState();
+
+	template <typename S>
+	int GetStateID();
+
+	template <typename S>
+	void ToState(void* pParam = nullptr);
 
 protected:
+	template <typename S>
+	_cpu_handle* GetState();
+
 	template<typename S>
 	static void Enter(void* self, T& cur, int from, void* pParam)
 	{
@@ -103,14 +163,23 @@ protected:
 };
 
 template <typename T>
+void cpu_fsm<T>::Clear()
+{
+	pState = nullptr;
+	pPendingState = nullptr;
+	preGlobalState.clear();
+	postGlobalState.clear();
+	states.clear();
+}
+
+template <typename T>
 template <typename S>
 void cpu_fsm<T>::SetPreGlobal()
 {
 	if ( preGlobalState.self )
 		return;
 
-	static S state;
-	preGlobalState.self = &state;
+	preGlobalState.self = GetStateInstance<S>();
 	preGlobalState.enter = &Enter<S>;
 	preGlobalState.execute = &Execute<S>;
 	preGlobalState.exit = &Exit<S>;
@@ -123,8 +192,7 @@ void cpu_fsm<T>::SetPostGlobal()
 	if ( postGlobalState.self )
 		return;
 
-	static S state;
-	postGlobalState.self = &state;
+	postGlobalState.self = GetStateInstance<S>();
 	postGlobalState.enter = &Enter<S>;
 	postGlobalState.execute = &Execute<S>;
 	postGlobalState.exit = &Exit<S>;
@@ -134,37 +202,65 @@ template <typename T>
 template <typename S>
 void cpu_fsm<T>::Add(cstr name)
 {
-	static S state;
-
 	_cpu_handle handle;
-	handle.self = &state;
+	handle.self = GetStateInstance<S>();
 	handle.enter = &Enter<S>;
 	handle.execute = &Execute<S>;
 	handle.exit = &Exit<S>;
-	handle.name = name ? name : "";
-
-	int id = (int)states.size();
-	if ( CPU_ID(S)==-1 )
-		CPU_ID(S) = id;
-
-	states.push_back(handle);
-
-	assert( CPU_ID(S)==(int)states.size()-1 );
+	handle.id = (int)states.size();
+	if ( name )
+		handle.name = name;
+	std::type_index id = typeid(S);
+	states.insert(std::make_pair(id, handle));
 }
 
 template <typename T>
-std::string cpu_fsm<T>::GetName()
+std::string cpu_fsm<T>::GetCurrentName()
 {
-	if ( state<0 || state>=(int)states.size() )
+	if ( pState==nullptr )
 		return "";
-	return states[state].name;
+	return pState->name;
 }
 
 template <typename T>
 template <typename S>
-bool cpu_fsm<T>::IsState()
+bool cpu_fsm<T>::IsCurrentState()
 {
-	return CPU_ID(S)==state;
+	_cpu_handle* pStateHandle = GetState<S>();
+	if ( pStateHandle==nullptr )
+		return false;
+	return pStateHandle==pState;
+}
+
+template <typename T>
+template <typename S>
+int cpu_fsm<T>::GetStateID()
+{
+	_cpu_handle* pStateHandle = GetState<S>();
+	if ( pStateHandle==nullptr )
+		return -1;
+	return pStateHandle->id;
+}
+
+template <typename T>
+template <typename S>
+void cpu_fsm<T>::ToState(void* pParam)
+{
+	_cpu_handle* pNewState = GetState<S>();
+	if ( pNewState==nullptr )
+		return;
+	pPendingState = pNewState;
+	pPendingParam = pParam;
+}
+
+template <typename T>
+template <typename S>
+cpu_fsm<T>::_cpu_handle* cpu_fsm<T>::GetState()
+{
+	auto it = states.find(typeid(S));
+	if ( it==states.end() )
+		return nullptr;
+	return &it->second;
 }
 
 template <typename T>
@@ -176,35 +272,32 @@ void cpu_fsm<T>::Update()
 	float dt = cpuTime.delta;
 	totalTime += dt;
 	
-	if ( pending!=state )
+	if ( pPendingState!=pState )
 	{
-		int from = state;
-		int to = pending;
+		_cpu_handle* pFrom = pState;
+		_cpu_handle* pTo = pPendingState;
 		void* pParam = pPendingParam;
 	
-		if ( from!=-1 )
+		if ( pFrom )
 		{
-			_cpu_handle& handle = states[from];
-			if ( handle.exit )
-				handle.exit(handle.self, *pReceiver, to);
+			if ( pFrom->exit )
+				pFrom->exit(pFrom->self, *pReceiver, pTo ? pTo->id : -1);
 		}
 
-		state = to;
+		pState = pTo;
 	
-		if ( to!=-1 )
+		if ( pTo )
  		{
 			totalTime = 0.0f;
-			_cpu_handle& handle = states[to];
-			if ( handle.enter )
-				handle.enter(handle.self, *pReceiver, from, pParam);
+			if ( pTo->enter )
+				pTo->enter(pTo->self, *pReceiver, pFrom ? pFrom->id : -1, pParam);
 		}
 	}
 	
-	if ( state!=-1 )
+	if ( pState )
 	{
-		_cpu_handle& handle = states[state];
-		if ( handle.execute )
-			handle.execute(handle.self, *pReceiver);
+		if ( pState->execute )
+			pState->execute(pState->self, *pReceiver);
 	}
 }
 
