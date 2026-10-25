@@ -124,7 +124,7 @@ public:
 	template <typename S>
 	void Add(cstr name = nullptr);
 
-	std::string GetCurrentName();
+	std::string GetCurrentStateName();
 
 	template <typename S>
 	bool IsCurrentState();
@@ -215,7 +215,7 @@ void cpu_fsm<T>::Add(cstr name)
 }
 
 template <typename T>
-std::string cpu_fsm<T>::GetCurrentName()
+std::string cpu_fsm<T>::GetCurrentStateName()
 {
 	if ( pState==nullptr )
 		return "";
