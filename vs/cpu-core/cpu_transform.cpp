@@ -199,14 +199,7 @@ void cpu_transform::AddYPR(float yaw, float pitch, float roll)
 
 void cpu_transform::LookAt(float x, float y, float z, const XMFLOAT3& up)
 {
-	XMVECTOR vA = XMLoadFloat3(&pos);
-	XMVECTOR vB = XMVectorSet(x, y, z, 1.0f);
-	XMVECTOR vDir = XMVectorSubtract(vB, vA);
-	if ( XMVectorGetX(XMVector3LengthSq(vDir))<=CPU_ZERO )
-		return;
-	const XMMATRIX cam = XMMatrixTranspose(XMMatrixLookAtLH(XMVectorZero(), vDir, XMLoadFloat3(&up)));
-	XMStoreFloat4x4(&rot, cam);
-	SetRotationFromMatrix();
+    LookTo(x-pos.x, y-pos.y, z-pos.z, up);
 }
 
 void cpu_transform::LookTo(float ndx, float ndy, float ndz, const XMFLOAT3& up)
@@ -214,7 +207,16 @@ void cpu_transform::LookTo(float ndx, float ndy, float ndz, const XMFLOAT3& up)
 	XMVECTOR vDir = XMVectorSet(ndx, ndy, ndz, 0.0f);
 	if ( XMVectorGetX(XMVector3LengthSq(vDir))<=CPU_ZERO )
 		return;
-	XMMATRIX cam = XMMatrixTranspose(XMMatrixLookToLH(XMVectorZero(), vDir, XMLoadFloat3(&up)));
+	vDir = XMVector3Normalize(vDir);
+	XMVECTOR vUp = XMLoadFloat3(&up);
+	// Handle invalid or parallel up vector
+	if ( XMVectorGetX(XMVector3LengthSq(vUp))<=CPU_ZERO )
+		vUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	vUp = XMVector3Normalize(vUp);
+	XMVECTOR vCross = XMVector3Cross(vDir, vUp);
+	if ( XMVectorGetX(XMVector3LengthSq(vCross))<1e-6f )
+		vUp = fabsf(XMVectorGetY(vDir))<0.9f ? XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f) : XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	const XMMATRIX cam = XMMatrixTranspose(XMMatrixLookToLH(XMVectorZero(), vDir, vUp));
 	XMStoreFloat4x4(&rot, cam);
 	SetRotationFromMatrix();
 }
