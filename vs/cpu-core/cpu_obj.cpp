@@ -66,9 +66,9 @@ namespace cpu_obj
 		byte* file = cpu::LoadFile(path, size);
 		if ( file==nullptr )
 			return false;
-		if ( Load(file, size, pMesh)==false )
-			return false;
-		return true;
+		bool result = Load(file, size, pMesh);
+		delete [] file;
+		return result;
 	}
 
 	bool Load(byte* file, int size, cpu_mesh* pMesh)
