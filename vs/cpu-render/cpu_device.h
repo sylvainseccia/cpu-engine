@@ -59,7 +59,7 @@ private:
 	bool WireframeClipToScreen(const XMFLOAT4& c, float widthHalf, float heightHalf, XMFLOAT3& out);
 	inline float PlaneEval(const XMFLOAT4& p, const XMFLOAT4& c);
 	int ClipPolyAgainstPlane(const cpu_vertex_out* pInV, int inCount, cpu_vertex_out* pOutV, const XMFLOAT4& plane);
-	int ClipTriangleFrustum(const cpu_vertex_out tri[3], cpu_vertex_out outV[8]);
+	int ClipTriangleFrustum(const cpu_vertex_out tri[3], cpu_vertex_out outV[16]);
 	static void PixelShader(cpu_ps_io& io);
 
 private:

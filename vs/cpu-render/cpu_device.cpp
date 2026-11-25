@@ -367,7 +367,7 @@ void cpu_device::DrawMesh(cpu_mesh* pMesh, cpu_transform* pTransform, cpu_materi
 	draw.depth = depthMode;
 
 	cpu_vertex_out vo[3];
-	cpu_vertex_out clipped[8];
+	cpu_vertex_out clipped[16];
 	for ( size_t offset=0 ; offset<pMesh->vertices.size() ; offset+=3 )
 	{
 		for ( int i=0 ; i<3 ; ++i )
@@ -1015,59 +1015,42 @@ float cpu_device::PlaneEval(const XMFLOAT4& p, const XMFLOAT4& c)
 
 int cpu_device::ClipPolyAgainstPlane(const cpu_vertex_out* pInV, int inCount, cpu_vertex_out* pOutV, const XMFLOAT4& plane)
 {
-	if ( inCount<=0 )
-		return 0;
+    if ( inCount<=0 )
+        return 0;
 
-	int outCount = 0;
-
-	const cpu_vertex_out* pA = &pInV[inCount-1];
-	float dA = PlaneEval(plane, pA->clipPos);
-
-	for ( int i=0 ; i<inCount ; ++i )
-	{
-		const cpu_vertex_out* pB = &pInV[i];
-		float dB = PlaneEval(plane, pB->clipPos);
-
-		const bool ain = dA>=0.0f;
-		const bool bin = dB>=0.0f;
-
-		if ( ain && bin )
-		{
-			pOutV[outCount++] = *pB;
-		}
-		else if ( ain && bin==false )
-		{
-			float denom = dA - dB;
-			if ( fabsf(denom)>CPU_EPSILON )
-			{
-				float t = dA / denom; // A + t(B-A) est sur le plan
-				pOutV[outCount++].Lerp(*pA, *pB, t);
-			}
-		}
-		else if ( ain==false && bin )
-		{
-			float denom = dA - dB;
-			if ( fabsf(denom)>CPU_EPSILON )
-			{
-				float t = dA / denom;
-				pOutV[outCount++].Lerp(*pA, *pB, t);
-			}
-			pOutV[outCount++] = *pB;
-		}
-
-		pA = pB;
-		dA = dB;
-		if ( outCount>=8 )
-			break;
-	}
-
-	return outCount;
+    int outCount = 0;
+    const cpu_vertex_out* pA = &pInV[inCount-1];
+    float dA = PlaneEval(plane, pA->clipPos);
+    for ( int i=0 ; i<inCount ; ++i )
+    {
+        const cpu_vertex_out* pB = &pInV[i];
+        float dB = PlaneEval(plane, pB->clipPos);
+        const bool ain = dA>=0.0f;
+        const bool bin = dB>=0.0f;
+        if ( ain!=bin )
+        {
+            if ( dA!=0.0f && dB!=0.0f )
+            {
+                float t = dA / (dA - dB);
+                assert(outCount<16);
+                pOutV[outCount++].Lerp(*pA, *pB, t);
+            }
+        }
+        if ( bin )
+        {
+            assert(outCount<16);
+            pOutV[outCount++] = *pB;
+        }
+        pA = pB;
+        dA = dB;
+    }
+    return outCount;
 }
 
-int cpu_device::ClipTriangleFrustum(const cpu_vertex_out tri[3], cpu_vertex_out outV[8])
+int cpu_device::ClipTriangleFrustum(const cpu_vertex_out tri[3], cpu_vertex_out outV[16])
 {
-	cpu_vertex_out bufA[8];
-	cpu_vertex_out bufB[8];
+	cpu_vertex_out bufA[16];
+	cpu_vertex_out bufB[16];
 
 	int n = 3;
 	bufA[0] = tri[0];
