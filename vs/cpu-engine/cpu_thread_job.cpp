@@ -53,7 +53,7 @@ void cpu_thread_job::OnCallback()
 	{
 		WaitStartEvent();
 
-		if ( m_quitAsap )
+		if ( m_quitAsap.Get() )
 			break;
 
 		m_isWorking = true;

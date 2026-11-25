@@ -46,6 +46,12 @@ void cpu_aabb::Zero()
 
 bool XM_CALLCONV cpu_aabb::ToScreen(cpu_rectangle& out, FXMMATRIX wvp, int width, int height)
 {
+	// Reset rectangle
+	out.minX = 0;
+	out.minY = 0;
+	out.maxX = 0;
+	out.maxY = 0;
+
 	const float renderWidth = (float)width;
 	const float renderHeight = (float)height;
 
@@ -63,23 +69,30 @@ bool XM_CALLCONV cpu_aabb::ToScreen(cpu_rectangle& out, FXMMATRIX wvp, int width
 
 	float minX =  FLT_MAX, minY =  FLT_MAX;
 	float maxX = -FLT_MAX, maxY = -FLT_MAX;
+
 	for ( int i=0 ; i<8 ; ++i )
 	{
 		XMVECTOR clip = XMVector4Transform(pts[i], wvp);
 
 		float w = XMVectorGetW(clip);
-		if ( w<CPU_EPSILON )
-			w = CPU_EPSILON;
+
+		// Conservative fullscreen bounding box
+		if ( w<=CPU_EPSILON )
+		{
+			out.minX = 0;
+			out.minY = 0;
+			out.maxX = width;
+			out.maxY = height;
+			return true;
+		}
 
 		float invW = 1.0f / w;
 		float ndcX = XMVectorGetX(clip) * invW;
 		float ndcY = XMVectorGetY(clip) * invW;
 		ndcX = cpu::Clamp(ndcX, -1.0f, 1.0f);
 		ndcY = cpu::Clamp(ndcY, -1.0f, 1.0f);
-
 		float sx = (ndcX * 0.5f + 0.5f) * renderWidth;
 		float sy = (-ndcY * 0.5f + 0.5f) * renderHeight;
-
 		minX = std::min(minX, sx);
 		minY = std::min(minY, sy);
 		maxX = std::max(maxX, sx);

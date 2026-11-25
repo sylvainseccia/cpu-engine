@@ -29,5 +29,5 @@ protected:
 	ui32 m_idThread;
 	ui32 m_idThreadParent;
 	_METHOD m_callback;
-	bool m_quitAsap;
+	cpu_atomic<bool> m_quitAsap;
 };

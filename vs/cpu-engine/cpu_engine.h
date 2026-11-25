@@ -121,7 +121,7 @@ private:
 
 	// Jobs
 	int m_threadCount;
-	std::vector<cpu_thread_job> m_threads;
+	std::deque<cpu_thread_job> m_threads;
 	std::vector<cpu_job_entity> m_entityJobs;
 	std::vector<cpu_job_particle_physics> m_particlePhysicsJobs;
 	std::vector<cpu_job_particle_space> m_particleSpaceJobs;

@@ -49,6 +49,8 @@ bool cpu_engine::Create(int width, int height, bool fullscreen, bool amigaStyle)
 	// Cores
 #ifdef CPU_CONFIG_MT
 	m_threadCount = std::max(1u, std::thread::hardware_concurrency());
+	if ( m_threadCount>32 )
+		m_threadCount = 32;
 #else
 	m_threadCount = 1;
 #endif
@@ -715,7 +717,7 @@ void cpu_engine::Render_TileEntities(int iTile)
 		if ( pEntity->IsActive()==false || pEntity->clipped )
 			continue;
 	
-		bool entityHasTile = (pEntity->tile>>iTile) & 1 ? true : false;
+		bool entityHasTile = (pEntity->tile>>iTile) & 1ULL ? true : false;
 		if ( entityHasTile==false )
 			continue;
 
